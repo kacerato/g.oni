@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <unordered_map>
@@ -1691,7 +1692,35 @@ std::vector<Inspector::Field> EditorDocument::inspectorFields(
                  entity.index, entity.generation);
         return {};
     }
-    return fields.value();
+    std::vector<Inspector::Field> out = std::move(fields.value());
+    // Transform guarda a rotação em quat, mas a UI lê e escreve GRAUS
+    // (setTransformField) — o inspector mostra o mesmo que aceita.
+    if (component == "eng::math::Transform") {
+        const auto* t = scene->world().get<eng::math::Transform>(toFocus(entity));
+        if (t != nullptr) {
+            const eng::math::Vec3 deg = degreesFromQuat(t->rotation);
+            std::vector<Inspector::Field> trs;
+            for (auto& f : out) {
+                if (f.path == "rotation.w") {
+                    continue;
+                }
+                const float* axis = f.path == "rotation.x"   ? &deg.x
+                                    : f.path == "rotation.y" ? &deg.y
+                                    : f.path == "rotation.z" ? &deg.z
+                                                             : nullptr;
+                if (axis != nullptr) {
+                    char buf[32];
+                    const float v = std::round(*axis * 1e4f) / 1e4f;
+                    std::snprintf(buf, sizeof(buf), "%.9g",
+                                  static_cast<double>(v == 0.0f ? 0.0f : v));
+                    f.value = buf;
+                }
+                trs.push_back(std::move(f));
+            }
+            out = std::move(trs);
+        }
+    }
+    return out;
 }
 
 Result<void> EditorDocument::setInspectorField(eng::ecs::Entity entity,

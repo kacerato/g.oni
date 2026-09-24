@@ -103,6 +103,21 @@ namespace eng::scene {
 
 namespace {
 
+/// onValidate da camada: só aceita camadas que existem na cena (senão a
+/// cena salva não abriria mais). Mesmo hook no registro do editor.
+eng::core::Result<void> layerMemberValidate(
+    Scene& scene, eng::ecs::Entity entity,
+    const detail::ComponentEntry& /*entry*/)
+{
+    const auto* member = scene.world().get<LayerMember>(entity);
+    if (member == nullptr || scene.layers().has(member->layer)) {
+        return {};
+    }
+    return eng::core::makeUnexpected(eng::core::Error{
+        eng::core::StatusCode::InvalidArgument,
+        "camada '" + member->layer + "' não existe — crie em Ajustes"});
+}
+
 // --- built-ins: registrado no carregamento do módulo ------------------------
 // (SceneSerializer.cpp só entra no link se alguém usa o serializer —
 // garantia de que o registro acompanha o uso.)
@@ -115,7 +130,8 @@ const bool eng_scene_builtin_components_registered = [] {
     // vive NO módulo scene — registro built-in (idempotente: consumidor que
     // re-registra só sobrescreve a mesma entrada).
     (void)SceneSerializer::registerComponentType<eng::scene::LayerMember>(
-        "eng::scene::LayerMember");
+        "eng::scene::LayerMember", {}, nullptr, nullptr,
+        &layerMemberValidate);
     (void)SceneSerializer::registerComponentType<eng::scene::Template>(
         "eng::scene::Template");
 
@@ -140,7 +156,8 @@ const bool eng_scene_builtin_components_registered = [] {
         c.category = "Lógica";
         c.scriptAlias = "layer";
         eng::scene::detail::registerComponentContract(
-            "eng::scene::LayerMember", std::move(c));
+            "eng::scene::LayerMember", std::move(c), nullptr, nullptr,
+            &layerMemberValidate);
     }
     {
         ComponentContract c;

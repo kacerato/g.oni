@@ -110,6 +110,21 @@ eng::core::Result<void> colliderValidate(
     return {};
 }
 
+/// onValidate da camada: só aceita camadas que existem na cena (senão a
+/// cena salva não abriria mais).
+eng::core::Result<void> layerMemberValidate(
+    eng::scene::Scene& scene, eng::ecs::Entity entity,
+    const eng::scene::detail::ComponentEntry& /*entry*/)
+{
+    const auto* member = scene.world().get<eng::scene::LayerMember>(entity);
+    if (member == nullptr || scene.layers().has(member->layer)) {
+        return {};
+    }
+    return eng::core::makeUnexpected(eng::core::Error{
+        eng::core::StatusCode::InvalidArgument,
+        "camada '" + member->layer + "' não existe — crie em Ajustes"});
+}
+
 const bool goni_editor_components_registered = [] {
     using eng::scene::SceneSerializer;
     using eng::scene::detail::ComponentContract;
@@ -209,7 +224,8 @@ const bool goni_editor_components_registered = [] {
         c.category = "Lógica";
         c.scriptAlias = "layer";
         (void)SceneSerializer::registerComponentType<eng::scene::LayerMember>(
-            "eng::scene::LayerMember", std::move(c));
+            "eng::scene::LayerMember", std::move(c), nullptr, nullptr,
+            &layerMemberValidate);
     }
     // AudioSource — áudio authorável dirigindo o AudioMixer
     // REAL (AudioTick do documento no Play).

@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <optional>
+#include <cmath>
 #include <string>
 
 #include <nlohmann/json.hpp>
@@ -536,4 +538,122 @@ TEST_CASE("protocol: exemplo Chuva de caixas solta, empilha e limpa caixas",
     // Tempo de vida: depois de muitos segundos o número fica limitado.
     f.run(60 * 20);
     CHECK(entitiesNamed(scene, "Caixa").size() <= 18);
+}
+
+TEST_CASE("protocol: todo campo de todo componente edita, relê e sobrevive ao "
+          "salvar/recarregar",
+          "[protocol][props]")
+{
+    Fixture f;
+    f.ok({{"op", "project.new"}, {"name", "Props"}});
+    const Json id = f.ok({{"op", "entity.create"}, {"template", "empty"}});
+
+    // Adiciona tudo que o catálogo oferece (dependências vêm junto).
+    std::vector<std::string> failures;
+    for (int round = 0; round < 3; ++round) {
+        const Json catalog = f.ok({{"op", "component.catalog"}, {"id", id}});
+        for (const auto& c : catalog) {
+            const std::string name = c["name"].get<std::string>();
+            const Json r = f.call({{"op", "component.add"}, {"id", id}, {"name", name}});
+            // Dependências podem vir numa rodada seguinte; só a última conta.
+            if (round == 2 && !r["ok"].get<bool>() &&
+                r["error"].get<std::string>().find("conflita") == std::string::npos &&
+                r["error"].get<std::string>().find("já") == std::string::npos) {
+                failures.push_back("add " + name + ": " + r["error"].get<std::string>());
+            }
+        }
+    }
+
+    // Valor de teste por tipo de campo.
+    auto candidate = [](const Json& field) -> std::optional<std::string> {
+        const std::string kind = field["kind"].get<std::string>();
+        const std::string value = field["value"].get<std::string>();
+        if (kind == "number") return value == "0.5" ? "0.25" : "0.5";
+        if (kind == "int" || kind == "bitfield") return value == "2" ? "3" : "2";
+        if (kind == "bool") return value == "true" ? "false" : "true";
+        if (kind == "enum") {
+            const auto& opts = field["options"];
+            return opts.back().get<std::string>() == value
+                       ? opts.front().get<std::string>()
+                       : opts.back().get<std::string>();
+        }
+        if (kind == "color") return value.size() == 9 ? "#33669980" : "#336699";
+        if (kind == "text") return "Valor editado";
+        if (kind == "layer") return value == "SUBGAME" ? "GAME" : "SUBGAME";
+        return std::nullopt;  // referências a assets/código: cobertas à parte
+    };
+
+    std::size_t edited = 0;
+    const Json before = f.ok({{"op", "inspector"}, {"id", id}});
+    REQUIRE(before["components"].size() >= 12);
+    for (const auto& comp : before["components"]) {
+        const std::string cname = comp["name"].get<std::string>();
+        for (const auto& field : comp["fields"]) {
+            REQUIRE(field.contains("path"));
+            REQUIRE(field.contains("kind"));
+            const std::string path = field["path"].get<std::string>();
+            const auto value = candidate(field);
+            if (!value.has_value()) {
+                continue;
+            }
+            const Json r = f.call({{"op", "component.set"}, {"id", id},
+                                   {"component", cname}, {"path", path},
+                                   {"value", *value}});
+            if (!r["ok"].get<bool>()) {
+                failures.push_back("set " + cname + "." + path + "=" + *value +
+                                   ": " + r["error"].get<std::string>());
+                continue;
+            }
+            ++edited;
+            // Relê pelo inspector (o mesmo que a UI mostra).
+            const Json now = f.ok({{"op", "inspector"}, {"id", id}});
+            std::string readBack = "<ausente>";
+            for (const auto& c2 : now["components"]) {
+                if (c2["name"] != cname) continue;
+                for (const auto& f2 : c2["fields"]) {
+                    if (f2["path"] == path) readBack = f2["value"].get<std::string>();
+                }
+            }
+            const bool numeric = field["kind"] == "number";
+            const bool same = numeric
+                ? std::abs(std::atof(readBack.c_str()) - std::atof(value->c_str())) < 1e-4
+                : (readBack == *value ||
+                   (field["kind"] == "color" && readBack.size() == value->size()));
+            if (!same) {
+                failures.push_back("relida " + cname + "." + path + ": esperado " +
+                                   *value + ", veio " + readBack);
+            }
+        }
+    }
+    // Camada inexistente é recusada (a cena salva continuaria abrindo).
+    const Json badLayer = f.call({{"op", "component.set"}, {"id", id},
+                                  {"component", "eng::scene::LayerMember"},
+                                  {"path", "layer"}, {"value", "Inexistente"}});
+    CHECK_FALSE(badLayer["ok"].get<bool>());
+    INFO("campos editados: " << edited);
+    CHECK(edited >= 60);
+
+    // Salvar e recarregar mantém exatamente o que o inspector mostrava.
+    const Json edited_state = f.ok({{"op", "inspector"}, {"id", id}});
+    f.ok({{"op", "scene.save"}, {"path", "props"}});
+    f.ok({{"op", "scene.new"}});
+    f.ok({{"op", "scene.load"}, {"path", "props.json"}});
+    std::uint64_t reloaded = 0;
+    const Json reloadedState = f.state();
+    for (const auto& n : reloadedState["hierarchy"]) {
+        if (n["name"] == "Entidade") reloaded = n["id"].get<std::uint64_t>();
+    }
+    REQUIRE(reloaded != 0);
+    Json after = f.ok({{"op", "inspector"}, {"id", reloaded}});
+    after["id"] = edited_state["id"];
+    if (after != edited_state) {
+        failures.push_back("cena recarregada difere do que foi salvo");
+    }
+
+    std::string report;
+    for (const auto& failure : failures) {
+        report += "\n  - " + failure;
+    }
+    INFO(report);
+    CHECK(failures.empty());
 }

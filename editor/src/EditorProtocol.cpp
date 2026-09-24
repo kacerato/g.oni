@@ -200,7 +200,9 @@ std::string uiKind(std::string_view component, const Inspector::Field& f)
         (f.path == "layer" || f.path == "mask")) {
         return "bitfield";
     }
-    if (component == "eng::render::Light2D" && f.path == "layer") {
+    if ((component == "eng::render::Light2D" ||
+         component == "eng::scene::LayerMember") &&
+        f.path == "layer") {
         return "layer";
     }
     return f.kind.empty() ? "text" : f.kind;

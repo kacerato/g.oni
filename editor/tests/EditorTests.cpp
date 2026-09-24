@@ -318,12 +318,16 @@ TEST_CASE("editor: inspector lê/escreve campos por caminho", "[editor]")
     REQUIRE_FALSE(fields.empty());
     bool hasScaleY = false;
     bool hasRotationW = false;
+    bool hasRotationZ = false;
     for (const auto& field : fields) {
         if (field.path == "scale.y") { hasScaleY = true; }
         if (field.path == "rotation.w") { hasRotationW = true; }
+        if (field.path == "rotation.z") { hasRotationZ = true; }
     }
+    // Rotação aparece em graus (x/y/z), como é escrita; sem o w do quat.
     CHECK(hasScaleY);
-    CHECK(hasRotationW);
+    CHECK(hasRotationZ);
+    CHECK_FALSE(hasRotationW);
 }
 
 TEST_CASE("editor: inspector rejeita lixo com erro preciso", "[editor]")
@@ -3703,12 +3707,11 @@ TEST_CASE("editor: P1 — renderer desenha GIZMO por cima do sprite (readback)",
     REQUIRE(owned->renderFrame(1.f / 60.f));
     const auto& gizmoVerts = renderer->lastFrameGizmoVertices();
     REQUIRE_FALSE(gizmoVerts.empty());
-    // P4.1 (D3/D4) + P4.6 (L4 — handle chamferado com outline): por handle
-    // = outline (1 quad + 4 cortes) + fill (1 quad + 4 cortes) = 10 quads;
-    // 5 handles × 10 quads × 6 vértices = 300 + 4 hastes (4 segmentos × 6)
-    // = 324. O contrato acompanha a especificação (o gizmo continua
-    // INTEIRO por cima do sprite — a prova de pixel abaixo).
-    CHECK(gizmoVerts.size() == 324);
+    // Gizmos v3: centro em diamante chamferado com outline (10 quads × 6
+    // = 60) + 4 hastes com halo (8 segmentos × 6 = 48) + 4 setas
+    // triangulares com halo (8 triângulos × 3 = 24) = 132. O gizmo
+    // continua INTEIRO por cima do sprite — a prova de pixel abaixo.
+    CHECK(gizmoVerts.size() == 132);
 
     // Prova VISUAL: o pixel central da tela é o HANDLE CENTRAL amarelo
     // (kCenter 0.96/0.82/0.30) DESENHADO SOBRE o sprite vermelho/verde.

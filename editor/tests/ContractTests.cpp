@@ -294,7 +294,9 @@ TEST_CASE("p47: onAttach da luz casa com a camada via caminho do Inspector",
     ContractFixture f;
     f.withProject();
 
-    // Sprite em camada "UI" (o hook conta sprites LIT por camada).
+    // Sprite em camada "UI" (o hook conta sprites LIT por camada); a
+    // camada precisa existir na cena para o campo aceitar.
+    REQUIRE(f.doc->addLayer("UI").ok());
     auto sprite = f.doc->createEntity("Sprite", eng::scene::kNoEntity);
     REQUIRE(sprite.ok());
     REQUIRE(f.doc->addComponent(sprite.value(), "eng::editor::SpriteData").ok());
