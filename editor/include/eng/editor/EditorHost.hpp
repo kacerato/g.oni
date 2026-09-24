@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::editor::EditorHost — runtime Android do EDITOR (FASE 8).
+/// eng::editor::EditorHost — runtime Android do EDITOR.
 ///
 /// Espelha a arquitetura do `eng::android::AndroidRuntime` (FASE 7,
 /// ADR-039/040) com o mesmo contrato de estados/ownership — mas renderiza
@@ -58,7 +58,7 @@ struct HostStats {
     std::uint32_t surfaceDestructions{0};
     bool firstFrameSubmitted{false};
     bool firstFramePresented{false};
-    /// P3.1: primeiro frame APRESENTADO marcado como STARTUP_COMPLETE no
+    /// Primeiro frame APRESENTADO marcado como STARTUP_COMPLETE no
     /// diagnóstico persistente (uma vez por sessão do host).
     bool startupComplete{false};
 };
@@ -67,7 +67,7 @@ class EditorHost final {
 public:
     /// Registra as fábricas de backend (Vulkan+GLES reais — feito UMA vez,
     /// idempotente) e cria o documento com workspace no `workspaceRoot`.
-    /// O Renderer só nasce quando a surface chega (§8.7/ADR-039).
+    /// O Renderer só nasce quando a surface chega.
     ///
     /// FRONTEIRA DO WORKSPACE (RECOVERY P0): `workspaceRoot` é o local
     /// FÍSICO — absoluto no Android (filesDir/projects) ou relativo no
@@ -107,13 +107,13 @@ public:
     void stopAudio() noexcept;
     [[nodiscard]] bool audioRunning() const noexcept;
 
-    /// P4.1 (T3/D6) — estado do áudio para o HUD do editor (honesto):
+    /// Estado do áudio para o HUD do editor (honesto):
     /// "off" | "running:<backend>" | "null:<motivo>" | "fallback:<motivo>".
     /// O HUD do Play mostra ao autor o que está acontecendo — o silêncio
     /// calado era o defeito D6.
     [[nodiscard]] std::string audioStatusLine() const;
 
-    /// P3.4 — observa o primeiro callback real do device (backend
+    /// Observa o primeiro callback real do device (backend
     /// AAudio marca um átomo na thread de áudio; o host persiste o
     /// marco backend_stage::CallbackFirstFrame aqui, na UI thread).
     void checkAudioFirstCallbackFrame();
@@ -124,7 +124,7 @@ public:
     /// false quando não desenhou (sem surface/paused/minimized).
     bool renderFrame(float deltaSeconds);
 
-    /// P4.7.0 Bloco 6: fonte do TÉRMICO (ADPF — android/thermal.h).
+    /// Fonte do TÉRMICO (ADPF — android/thermal.h).
     /// O JNI Android instala `fn` (AThermal_getCurrentThermalStatus →
     /// 0..6); no Linux/testes NINGUÉM instala — o governor roda só com
     /// frame time (ThermalLevel::Unknown). Thread do render (main).
@@ -278,8 +278,8 @@ private:
 
     std::unique_ptr<EditorDocument> document_{};
     std::optional<ViewportRenderer> viewportRenderer_{};
-    TextureCache textureCache_{};  ///< texturas GPU por nome de asset (P0-3)
-    GizmoDrawData gizmoDraw_{};   ///< geometria do gizmo do frame (P1)
+    TextureCache textureCache_{};  ///< texturas GPU por nome de asset
+    GizmoDrawData gizmoDraw_{};   ///< geometria do gizmo do frame
     /// Backend de áudio (P2 §12): AAudio no Android, null no Linux. O
     /// mixer vive no DOCUMENTO (vozes do Play + previews) — o backend
     /// apenas PUXA o mix na thread própria do device. P3.5:
@@ -287,10 +287,10 @@ private:
     /// snapshot enquanto o worker troca; o objeto antigo só morre
     /// quando o último leitor solta.
     std::shared_ptr<eng::audio::IAudioBackend> audioBackend_{};
-    /// P3.4 — o marco AUDIO_CALLBACK_FIRST_FRAME foi persistido?
-    /// P3.5: atômico — escrito pelo worker de áudio, lido na main.
+    /// O marco AUDIO_CALLBACK_FIRST_FRAME foi persistido?
+    /// Atômico — escrito pelo worker de áudio, lido na main.
     std::atomic<bool> audioFirstFrameMarked_{false};
-    /// P3.5 (T0/T4): posse serializada do AAudio + worker de retry.
+    /// Posse serializada do AAudio + worker de retry.
     mutable std::mutex audioPtrMutex_{};
     std::mutex audioOpMutex_{};
     std::mutex audioRetryMutex_{};
@@ -307,7 +307,7 @@ private:
     /// descarta e tenta device real de novo). audioOpMutex_.
     bool audioNullFallback_{false};
     HostStats stats_{};
-    /// P4.7.0 Bloco 6: cérebro de performance (EMA de frame + térmico →
+    /// Cérebro de performance (EMA de frame + térmico →
     /// preset com histerese) e métricas do último frame (overlay HUD).
     PerfGovernor governor_{};
     int (*thermalFn_)(void* user) = nullptr;  ///< ADPF (Android) — opcional

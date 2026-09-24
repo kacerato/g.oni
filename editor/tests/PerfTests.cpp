@@ -1,4 +1,4 @@
-/// P4.7.0 Bloco 6 — testes do CÉREBRO de performance: governor (EMA +
+/// Testes do CÉREBRO de performance: governor (EMA +
 /// térmico + histerese), retângulo de vista e CULLING de render.
 
 #include <catch2/catch_test_macros.hpp>

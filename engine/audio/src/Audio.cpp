@@ -1,6 +1,6 @@
 #include "eng/audio/Audio.hpp"
 
-/// AudioMixer + vozes + buses (FASE 9). Mix f32 por software; pull.
+/// AudioMixer + vozes + buses. Mix f32 por software; pull.
 
 #include <algorithm>
 #include <cmath>
@@ -507,7 +507,7 @@ std::string NullAudioBackend::describeDevice() const
 }
 
 // =============================================================================
-// Hook de progresso (P3.4) — armazenamento global do processo
+// Hook de progresso — armazenamento global do processo
 // =============================================================================
 
 namespace {

@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::render::Light2D — componente de luz 2D (P3, §5/§6).
+/// eng::render::Light2D — componente de luz 2D.
 ///
 /// LUZ REAL, não um círculo branco: o renderer alimenta o bloco "PerFrame"
 /// (FrameUniforms) e o FRAGMENT do sprite.lit resolve a iluminação
@@ -11,7 +11,7 @@
 /// ADR-051): a luz ilumina apenas sprites cuja entidade é membro da MESMA
 /// camada (LayerMember.layer; sem LayerMember = "GAME" default).
 ///
-/// Registrado no catálogo ÚNICO do SceneSerializer (ADR-043) pelo editor
+/// Registrado no catálogo ÚNICO do SceneSerializer pelo editor
 /// (ComponentRegistration.cpp) — Inspector/serialização/Play/clone vêm
 /// de graça pelo mesmo caminho de RigidBody/Animator/CameraData.
 
@@ -47,7 +47,7 @@ struct Light2D {
 }  // namespace eng::render
 
 /// Reflexão (ADR-043: campos por caminho — Inspector/serializer).
-/// Hints (ADR-052): colorR/G/B → UM editor de cor (grupo 0).
+/// Hints: colorR/G/B → UM editor de cor (grupo 0).
 /// clang-format off
 ENG_REFLECT_BEGIN(eng::render::Light2D)
     ENG_REFLECT_FIELD(enabled)

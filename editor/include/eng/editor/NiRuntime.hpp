@@ -1,8 +1,8 @@
 #pragma once
 
-/// eng::editor::NiRuntime — runtime de scripts do editor (FASE 11).
+/// eng::editor::NiRuntime — runtime de scripts do editor.
 ///
-/// Posse e ciclo (ADR-044): vive DENTRO do EditorDocument e aponta para o
+/// Posse e ciclo: vive DENTRO do EditorDocument e aponta para o
 /// CLONE de Play. play(): compila os NiScriptComponent do clone, cria
 /// instâncias (ordem determinística de varredura do World), roda @init e
 /// `up start`. tick(): `up update` por instância (orçamento por chamada
@@ -27,7 +27,7 @@
 
 namespace eng::editor {
 
-/// P4.1 (T2/D5) — diagnóstico do runtime de scripts, VISÍVEL ao autor.
+/// Diagnóstico do runtime de scripts, VISÍVEL ao autor.
 /// O D5 device-verificado: script com erro compilava "em silêncio" (só
 /// log) e o autor via "nada acontece" no Play. Estes contadores são a
 /// fonte da UI (toast/painel do editor) e do diagnóstico persistido.
@@ -84,7 +84,7 @@ public:
     [[nodiscard]] std::vector<const eng::ni::NiScriptState*> instances()
         const;
 
-    /// P4.1 (T2/D5): estatística VISÍVEL do runtime (compilação, ticks,
+    /// Estatística VISÍVEL do runtime (compilação, ticks,
     /// faults) — o editor exibe ao autor (toast/painel), não só no log.
     [[nodiscard]] const NiScriptStats& stats() const noexcept
     {
@@ -123,7 +123,7 @@ public:
 private:
     struct HostImpl;
 
-    /// P4.7.0 Bloco 1: inscreve os eventos de gameplay no barramento da
+    /// Inscreve os eventos de gameplay no barramento da
     /// cena (on_hit/on_enter/on_exit/on_visible/on_invisible). A inscrição
     /// é RAII e vive APENAS entre start/shutdown (nunca sobrevive à cena).
     template<typename E>
@@ -167,7 +167,7 @@ private:
     bool (*actionQuery_)(std::string_view, int, void*) = nullptr;
     void* actionQueryUser_ = nullptr;
     NiScriptStats stats_{};
-    /// P4.7.0 Bloco 1: inscrições RAII nos eventos da cena (canceladas no
+    /// Inscrições RAII nos eventos da cena (canceladas no
     /// shutdown — antes do bus morrer com a cena de Play).
     std::vector<eng::events::Subscription> eventSubscriptions_;
     /// Recursão: handler de evento pode emitir contato (spawn/move) →

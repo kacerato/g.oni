@@ -3,7 +3,7 @@
 /// eng::fs::Path — wrapper fino sobre std::filesystem::path (FASE 3, missão
 /// §2.11; ADR-027).
 ///
-/// Decisões (ADR-027):
+/// Decisões:
 ///   - ENVOLVE std::filesystem::path; não substitui, não reparsing próprio.
 ///   - Forma canônica de texto = GENÉRICA ('/' como separador, sem aspectos
 ///     de host) — é o que se persiste e se compara.

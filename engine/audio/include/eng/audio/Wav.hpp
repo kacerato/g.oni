@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::audio::Wav — parser RIFF/WAVE (FASE 9, missão §6.8).
+/// eng::audio::Wav — parser RIFF/WAVE.
 ///
 /// Suporta PCM 8-bit unsigned, 16-bit, 24-bit e 32-bit float (formato 3).
 /// Saída NORMALIZADA: f32 interleaved [-1..1] — o mixer só conhece floats.

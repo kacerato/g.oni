@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::editor::Viewport — câmera 2D, hit-test e lista de quads do editor
-/// (FASE 8, missão §8.6; auditoria D3).
+///.
 ///
 /// Modelo de coordenadas:
 ///   - MUNDO: unidades arbitrárias, Y para cima, X para direita;
@@ -11,7 +11,7 @@
 ///
 /// Quads: cada nó vira um quad centralizado na posição-mundo derivada do
 /// `computeWorldMatrix` do nó (hierarquia composta), tamanho = escala local
-/// (clamp mínimo), rotação = ângulo no plano XY. CORRETO > COMPLEXO (§8.6):
+/// (clamp mínimo), rotação = ângulo no plano XY. CORRETO > COMPLEXO:
 /// é um marcador visual de entidade, não um renderer de jogo.
 
 #include <cstddef>
@@ -160,7 +160,7 @@ public:
         float rotation{0.f};
     };
 
-    /// P4.7.0 Bloco 6: retângulo de CULLING em MUNDO (AABB — a rotação da
+    /// Retângulo de CULLING em MUNDO (AABB — a rotação da
     /// vista já vem expandida pelos cantos). `margin` cobre sprites que
     /// renderizam MAIORES que a escala da entidade (região px/ppu não é
     /// conhecida na camada de dados): quem toca o rect expandido DESENHA
@@ -221,7 +221,7 @@ public:
     [[nodiscard]] const Camera2D& camera() const noexcept { return camera_; }
     [[nodiscard]] Camera2D& camera() noexcept { return camera_; }
 
-    /// P4.1 (T1/D3/D4) — densidade do device (dp → px da surface). 1.0 no
+    /// Densidade do device (dp → px da surface). 1.0 no
     /// Linux/testes; a Activity instala `resources.displayMetrics.density`.
     /// Alvos de toque e handles do gizmo ESCALAM por isto (48 dp = 48×s px
     /// de alvo) — os 13 px do P1 eram intocáveis no dedo (defeito D3/D4).
@@ -264,7 +264,7 @@ public:
         const eng::scene::Scene& scene,
         const std::optional<eng::ecs::Entity>& selection) const;
 
-    /// P4.7.0 Bloco 6: overload com CULLING — quads FORA do rect (com
+    /// Overload com CULLING — quads FORA do rect (com
     /// margem) não entram na lista; `culledOut` (opcional) recebe quantos
     /// foram cortados (métrica do round 7: cull ≈ 180 com 200 entidades,
     /// 180 off-screen). Pais culled CONTINUAM visitando filhos (filho em
@@ -274,7 +274,7 @@ public:
         const std::optional<eng::ecs::Entity>& selection,
         const CullRect& cull, std::uint32_t* culledOut) const;
 
-    /// P4.7.0 Bloco 6 (pooling): preenche `out` — o host reutiliza o
+    /// Preenche `out` — o host reutiliza o
     /// buffer entre frames (clear() interno preserva capacidade; o frame
     /// quente não realoca). Cull opcional (null = sem culling).
     void buildQuadsInto(std::vector<EntityQuad>& out,
@@ -307,10 +307,10 @@ public:
 
 private:
     Camera2D camera_{};
-    const Camera2D* gameCamera_ = nullptr;  ///< câmera de jogo (P0-5)
+    const Camera2D* gameCamera_ = nullptr;  ///< câmera de jogo
     float screenW_{1.f};
     float screenH_{1.f};
-    float uiScale_{1.f};  ///< densidade do device (P4.1 — dp → px)
+    float uiScale_{1.f};  ///< densidade do device
 };
 
 } // namespace eng::editor

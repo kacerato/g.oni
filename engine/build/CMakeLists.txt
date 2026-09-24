@@ -1,5 +1,5 @@
 # =============================================================================
-# engine/build — Build & Export Pipeline (FASE 12, ADR-050)
+# engine/build — Build & Export Pipeline
 #
 # Projeto → manifest determinístico → dep-graph/scan → validação → cook
 # (envelope GONI) → cache conteúdo-endereçado → bundle verificado → export.
@@ -20,7 +20,7 @@ target_compile_features(eng_build PUBLIC cxx_std_20)
 eng_apply_warnings(eng_build)
 eng_apply_sanitizers(eng_build)
 eng_apply_lto(eng_build)
-# Mesmo contrato das libs do motor: sem exceções/RTTI (ADR-004/005).
+# Mesmo contrato das libs do motor: sem exceções/RTTI.
 target_compile_options(eng_build PRIVATE ${ENG_RUNTIME_FLAGS})
 
 target_link_libraries(eng_build PUBLIC

@@ -15,7 +15,7 @@
 ///   - rename move arquivo ou árvore inteira.
 ///   - list devolve entradas em ordem determinística (crescente por path).
 ///
-/// Thread-safety (ADR-034): thread-compatible — instâncias independentes em
+/// Thread-safety: thread-compatible — instâncias independentes em
 /// threads distintas são seguras; uma MESMA instância não é safe para
 /// mutação concorrente (sem locks internos).
 #include <cstddef>

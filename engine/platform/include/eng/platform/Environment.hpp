@@ -1,9 +1,9 @@
 #pragma once
 
 /// eng::platform::Environment — wrapper de variáveis de ambiente
-/// (FASE 3, missão §2.2; ADR-026).
+///.
 ///
-/// Thread-safety (ADR-034): get é reatrido; set/unset modificam o processo
+/// Thread-safety: get é reatrido; set/unset modificam o processo
 /// inteiro (semântica de setenv) — NÃO usem concorrentemente.
 #include <optional>
 #include <string>

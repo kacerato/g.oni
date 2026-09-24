@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::rhi — tipos de dados da interface de hardware gráfico (FASE 4).
+/// eng::rhi — tipos de dados da interface de hardware gráfico.
 ///
 /// Este header (e TODO o módulo eng::rhi) é deliberadamente AGNÓSTICO de
 /// API gráfica: nenhum tipo, enum, handle ou header de Vulkan/OpenGL ES/EGL
@@ -183,8 +183,8 @@ struct BufferDesc {
 };
 
 /// Shader como DADO (missão §27/§40): a abstraction carrega AMBAS as
-/// representações. O backend Vulkan (FASE 5) exige SPIR-V; o backend GLES
-/// (FASE 6) exige GLSL ES. A ausência da representação exigida é erro
+/// representações. O backend Vulkan exige SPIR-V; o backend GLES
+/// exige GLSL ES. A ausência da representação exigida é erro
 /// preciso — isso garante que a abstraction não é modelada em torno de
 /// nenhuma das duas APIs (paridade, missão §40).
 struct ShaderDesc {
@@ -340,7 +340,7 @@ struct RendererCapabilities {
     std::string apiVersion{};   ///< "1.4.309", "3.2", ...
     DeviceInfo device{};
     /// Renderização por software (lavapipe/llvmpipe/SwiftShader) — verdade
-    /// honesta: suporte real de SOFTWARE não é suporte de hardware (§47).
+    /// honesta: suporte real de SOFTWARE não é suporte de hardware.
     bool softwareRendering{false};
     std::uint32_t maxTextureSize{0};
     std::uint32_t maxVertexAttributes{0};

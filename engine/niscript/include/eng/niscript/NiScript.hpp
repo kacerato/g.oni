@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::ni — pipeline de compilação do NI-Script (FASE 11, design §1).
+/// eng::ni — pipeline de compilação do NI-Script.
 ///
 ///   .nis → Lexer → Parser → Sema → Compiler → NiProgram (bytecode)
 ///

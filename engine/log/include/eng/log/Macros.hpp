@@ -1,6 +1,6 @@
 #pragma once
 
-/// Macros de log (§4.3). A categoria é fixada por unidade de tradução com
+/// Macros de log. A categoria é fixada por unidade de tradução com
 /// ENG_LOG_CATEGORY("nome") ANTES do primeiro uso das macros — sem categoria
 /// declarada, o uso dos macros é erro de compilação (explícito de propósito).
 ///

@@ -1,5 +1,5 @@
 # =============================================================================
-# eng:: — Warnings (ADR-020: -Wall -Wextra -Wpedantioc, -Werror)
+# eng:: — Warnings
 # Aplicado apenas a alvos do próprio projeto; dependências (FetchContent)
 # compilam com seus flags nativos.
 # =============================================================================

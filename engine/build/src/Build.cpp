@@ -289,7 +289,7 @@ struct BuildConfig {
 }
 
 // =============================================================================
-// Cache (§8) — conteúdo-endereçado
+// Cache — conteúdo-endereçado
 // =============================================================================
 
 [[nodiscard]] std::string cacheKeyHex(std::uint32_t cookerVersion,
@@ -593,7 +593,7 @@ Result<BuildReport> buildProject(eng::fs::FileSystem& fs,
         sceneTexts.push_back(std::move(sceneText).value());
     }
 
-    // scripts embutidos nas cenas + standalone — validar compilando (§4.3)
+    // scripts embutidos nas cenas + standalone — validar compilando
     std::size_t scriptsValidated = 0;
     {
         eng::ni::NiNativeTable natives;
@@ -752,7 +752,7 @@ Result<BuildReport> buildProject(eng::fs::FileSystem& fs,
         if (!fromCache) {
             ++cacheMisses;
             envelope = eng::serial::encodeEnvelope(
-                envelopeType, 1, bytes.value()); // SOURCE/verbatim (§5)
+                envelopeType, 1, bytes.value()); // SOURCE/verbatim
             if (!options.forceCook) {
                 (void)fs.mkdirs(cacheDir);
                 (void)fs.writeAllBytes(cacheFile, envelope);

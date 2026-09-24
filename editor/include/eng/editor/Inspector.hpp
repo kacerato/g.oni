@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::editor::Inspector — acesso genérico a componentes/campos via
-/// reflection (FASE 8, missão §8.4).
+/// reflection.
 ///
 /// - Catálogo: `eng::scene::detail::componentEntries()` (ÚNICO registry —
 ///   auditoria D2; inclui os built-ins Name/Transform e tudo que as fases
@@ -14,7 +14,7 @@
 /// - Escrita: parse por tipo → escrita por offset. Erros precisos (campo
 ///   desconhecido, valor inválido, entidade obsoleta, componente ausente).
 ///
-/// Evolução P0-6 (ADR-052): cada Field carrega um KIND semântico + options
+/// Evolução P0-6: cada Field carrega um KIND semântico + options
 /// para o host renderizar editores REAIS (não EditText livre):
 ///     "bool"    → Switch/checkbox
 ///     "enum"    → opções legais em `options` (separadas por '|')
@@ -52,14 +52,14 @@ public:
         std::string path;     ///< "position.x", "value", "tintR,tintG,tintB"
         std::string typeName; ///< "f32", "string", nome do enum, "color"...
         std::string value;    ///< representação textual (cor: "#RRGGBB[AA]")
-        std::string kind;     ///< semântico p/ UI (P0-6): ver header
+        std::string kind;     ///< semântico p/ UI: ver header
         std::string options;  ///< enums: enumeradores por '|' ("" se não-enum)
     };
 
     /// Catálogo completo de componentes registrados (ordenado por nome).
     [[nodiscard]] static std::vector<std::string> catalog();
 
-    /// Entrada do catálogo com metadados do contrato (P4.7.0 Bloco 1) —
+    /// Entrada do catálogo com metadados do contrato —
     /// categoria do Inspector + apelido NI-Script, ambos gerados do MESMO
     /// registro (ComponentContract no catálogo do serializer).
     struct CatalogEntry {
@@ -103,7 +103,7 @@ public:
     [[nodiscard]] static bool isRemovable(std::string_view component);
 
     /// Adiciona componente default-construído via catálogo (D2).
-    /// P4.7.0 Bloco 1: valida o ComponentContract (requires/conflicts/
+    /// Valida o ComponentContract (requires/conflicts/
     /// single) com erro PRECISO, executa onAttach (registro nativo de
     /// efeitos colaterais — luz/física/materiais) e onValidate pós-anexo.
     /// `attachUser` é contexto do chamador (ex.: EditorDocument) entregue

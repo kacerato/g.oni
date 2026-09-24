@@ -5,7 +5,7 @@
 
 namespace eng::log {
 
-/// Severidade canônica (§4.3). A ordem enumérica define a filtragem:
+/// Severidade canônica. A ordem enumérica define a filtragem:
 /// mensagens abaixo do nível mínimo do Logger são descartadas.
 enum class LogLevel : std::uint8_t {
     Trace,

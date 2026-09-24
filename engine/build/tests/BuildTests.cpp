@@ -1,4 +1,4 @@
-/// Testes do Build & Export Pipeline (FASE 12).
+/// Testes do Build & Export Pipeline.
 ///
 /// Cobertura obrigatória da missão (design phase12_audit/design.md §11):
 /// projeto vazio/mínimo, asset ausente/não-usado/duplicado, script que
@@ -358,7 +358,7 @@ TEST_CASE("build: cena com JSON corrompido → BLOCK", "[build]")
 }
 
 // =============================================================================
-// Cache (§8) — hit/miss/invalidação; clean vs incremental
+// Cache — hit/miss/invalidação; clean vs incremental
 // =============================================================================
 
 TEST_CASE("build: cache — 1º miss, 2º hit (incremental)", "[build]")
@@ -424,7 +424,7 @@ TEST_CASE("build: forceCook (clean) — ignora o cache", "[build]")
 }
 
 // =============================================================================
-// E2E export (§9/§11) + verify
+// E2E export + verify
 // =============================================================================
 
 TEST_CASE("build E2E: export android-arm64 + linux-dev + verify", "[build][e2e]")

@@ -1,10 +1,10 @@
 #pragma once
 
-/// eng::scene::Name — nome exibível de nó (FASE 8).
+/// eng::scene::Name — nome exibível de nó.
 ///
 /// Componente de DOMÍNIO (não de editor): nomes são a forma humana de
 /// referenciar entidades — hierarchy/inspector os exibem e a futura camada
-/// de scripting (FASE 11) fará lookup por nome. Registrado no reflect e no
+/// de scripting fará lookup por nome. Registrado no reflect e no
 /// SceneSerializer como componente persistido (audit FASE 8, decisão D1).
 ///
 /// - Ausente ⇒ consumidores tratam como anônimo (padrão "Entity" é

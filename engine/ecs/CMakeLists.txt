@@ -1,4 +1,4 @@
-# eng::ecs — World + sparse-sets + handles geracionais (FASE 2, missão §B.4; ADR-024)
+# eng::ecs — World + sparse-sets + handles geracionais
 eng_add_module(ecs
     src/Ecs.cpp
 )

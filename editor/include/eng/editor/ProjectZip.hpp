@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::editor::ProjectZip — exportação/importação de projeto em zip (P4.2).
+/// eng::editor::ProjectZip — exportação/importação de projeto em zip.
 ///
 /// BUG B-A (device round 2): o export/import vivia em Kotlin
 /// (java.util.zip) com DUPLA quebra: o export não embrulhava as entradas

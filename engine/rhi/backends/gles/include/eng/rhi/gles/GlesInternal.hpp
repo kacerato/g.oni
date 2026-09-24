@@ -1,6 +1,6 @@
 #pragma once
 
-/// Internos compartilhados do backend OpenGL ES (FASE 6). NÃO é API pública.
+/// Internos compartilhados do backend OpenGL ES. NÃO é API pública.
 
 #include <cstdint>
 #include <map>
@@ -136,7 +136,7 @@ namespace eng::rhi::gles {
 }
 
 /// Tabela de recursos com handles generacionais — mesmo contrato do
-/// Vulkan (ADR-035): índice nos 32 bits baixos (+1), geração nos altos.
+/// Vulkan: índice nos 32 bits baixos (+1), geração nos altos.
 template <typename Entry>
 class HandleTable {
 public:

@@ -1,16 +1,16 @@
 #pragma once
 
 /// eng::serial::JsonValue — wrapper MÍNIMO verificado sobre nlohmann::json
-/// (FASE 3, missão §2.4; ADR-030).
+///.
 ///
 /// Por que wrapper (e não alias direto): o runtime compila -fno-exceptions
-/// (ADR-004) — o uso de nlohmann fica CONFINADO às vias que não lançam:
+/// — o uso de nlohmann fica CONFINADO às vias que não lançam:
 ///   - parse via allow_exceptions=false + is_discarded();
 ///   - leitura SEMPRE pré-checada (isString/isNumber/... antes de get);
 ///   - dump com error_handler replace (UTF-8 inválido → U+FFFD, sem abort).
 /// A fachada torna essas regras IMPOSSÍVEIS de contornar por engano.
 ///
-/// Determinismo (ADR-030): objetos são std::map internamente → chaves
+/// Determinismo: objetos são std::map internamente → chaves
 /// ordenadas no dump, independente da ordem de inserção; floats saem na
 /// forma mais curta que preserva o valor (round-trip exato).
 #include <cstddef>

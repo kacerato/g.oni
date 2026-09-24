@@ -7,7 +7,7 @@
 /// no payloadVersion do envelope; arquivos com versão MAIOR que a suportada
 /// são erro claro; MENOR → roda a cadeia de migrations registradas.
 ///
-/// Thread-safety (ADR-034): registro em inicialização single-threaded;
+/// Thread-safety: registro em inicialização single-threaded;
 /// depois de construído, o registry é read-only e seguro para leitura
 /// concorrente (sem locks — contrato documentado, igual ao TypeRegistry
 /// exceto pela ausência de escrita pós-init).

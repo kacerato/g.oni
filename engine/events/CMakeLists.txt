@@ -1,4 +1,4 @@
-# eng::events — EventBus + Subscription RAII (FASE 2, missão §B.2; ADR-022)
+# eng::events — EventBus + Subscription RAII
 eng_add_module(events
     src/Events.cpp
 )

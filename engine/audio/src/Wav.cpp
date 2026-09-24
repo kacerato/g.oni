@@ -1,6 +1,6 @@
 #include "eng/audio/Wav.hpp"
 
-/// Wav — parser RIFF/WAVE (FASE 9). Sem exceções; chunks extras pulsados.
+/// Wav — parser RIFF/WAVE. Sem exceções; chunks extras pulsados.
 
 #include <cstring>
 

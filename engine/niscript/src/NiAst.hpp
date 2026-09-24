@@ -33,7 +33,7 @@ enum class TokKind : std::uint8_t {
     // símbolos
     Colon, LParen, RParen, Dot, Comma, Amp,
     Assign, Eq, Ne, Lt, Le, Gt, Ge, Plus, Minus, Star, Slash, Percent,
-    // P4.1 (D5): atribuição composta — `x += v` etc. Desugared no Parser
+    // Atribuição composta — `x += v` etc. Desugared no Parser
     // para `x = x op v` (reusa 1:1 o caminho NEST_SET/DYN_SET do emitAssign).
     PlusAssign, MinusAssign, StarAssign, SlashAssign,
 };

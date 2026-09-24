@@ -1,4 +1,4 @@
-/// Lexer do NI-Script — tokens com linha/coluna (FASE 11, design §2).
+/// Lexer do NI-Script — tokens com linha/coluna.
 ///
 /// Puro: sem I/O, sem estado global. Erros são NiDiag (nunca throw —
 /// ADR-004). Comentários: `#` até o fim da linha. Strings: "..." com
@@ -193,7 +193,7 @@ std::vector<Token> lex(std::string_view source, std::vector<NiDiag>& diags)
             continue;
         }
 
-        // número: [0-9]+ ('.' [0-9]+)? — SEM exceções (ADR-004):
+        // número: [0-9]+ ('.' [0-9]+)? — SEM exceções:
         // from_chars nunca lança; overflow é diagnóstico com linha/coluna.
         if (isDigit(c)) {
             std::string digits;
@@ -280,7 +280,7 @@ std::vector<Token> lex(std::string_view source, std::vector<NiDiag>& diags)
         if (c == '!' && two('=', TokKind::Ne)) { continue; }
         if (c == '<' && two('=', TokKind::Le)) { continue; }
         if (c == '>' && two('=', TokKind::Ge)) { continue; }
-        // P4.1 (D5): atribuição composta — += -= *= /= (o script canônico
+        // Atribuição composta — += -= *= /= (o script canônico
         // do editor usa `position.x -= dt`; sem isto o PLAY falha em
         // silêncio para o autor — erro só no log).
         if (c == '+' && two('=', TokKind::PlusAssign)) { continue; }

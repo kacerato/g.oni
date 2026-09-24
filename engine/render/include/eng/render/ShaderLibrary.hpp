@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::render::ShaderLibrary — o Shader Core do 2D (P3, §2).
+/// eng::render::ShaderLibrary — o Shader Core do 2D.
 ///
 /// Camada ENTRE o engine high-level e o eng::rhi:
 ///
@@ -20,7 +20,7 @@
 /// SPIR-V+set/binding no Vulkan, GLSL ES+block binding no GLES, ambas as
 /// representações embutidas em RenderShaders.hpp).
 ///
-/// Ownership (ADR-035): handles são do RENDERER dono; a library é um
+/// Ownership: handles são do RENDERER dono; a library é um
 /// VALUE move-only SEM dtor destrutivo — o dono chama destroy(renderer)
 /// no SEU destroyResources (o mesmo protocolo dos demais handles do
 /// ViewportRenderer).

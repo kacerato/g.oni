@@ -1,9 +1,9 @@
 #pragma once
 
-/// eng::ni — bytecode do NI-Script (FASE 11, design §6.4).
+/// eng::ni — bytecode do NI-Script.
 ///
 /// Compilação UMA VEZ para bytecode (`.nis → compile() → NiProgram`); o VM
-/// executa bytecode (ADR-049 — sem JIT, sem loader externo em v1).
+/// executa bytecode.
 ///
 /// Instruções: `struct NiInstr { op; a; b; }` — operandos imediatos u32;
 /// desvios (JMP/JMPF) são RELATIVOS ao pc (int32 em `a`); ENDERECOS
@@ -38,11 +38,11 @@
 ///   TO_ENTITY     pop v; Entity → push; CompView → push entidade EXTRAÍDA
 ///                 (normaliza o slot raiz em atribuições `e.campo.x = …`)
 ///   SELF          push entidade da instância dona do frame
-///   LINK_TO       pop entidade → tabela de links da instância (§4)
+///   LINK_TO       pop entidade → tabela de links da instância
 ///   EMIT a        evento consts[a]: handler local + propagação BFS
-///   ENTER_REPAIR a / EXIT_REPAIR   região guardada (§5.3)
-///   ENTER_TIMEOUT / EXIT_TIMEOUT   orçamento (§5.4)
-///   REPEAT_INIT a / REPEAT_STEP a  iteração controlada (§5.2)
+///   ENTER_REPAIR a / EXIT_REPAIR   região guardada
+///   ENTER_TIMEOUT / EXIT_TIMEOUT   orçamento
+///   REPEAT_INIT a / REPEAT_STEP a  iteração controlada
 
 #include <cstdint>
 #include <string>

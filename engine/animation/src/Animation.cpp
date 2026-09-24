@@ -1,6 +1,6 @@
 #include "eng/animation/Animation.hpp"
 
-/// Animation — implementação (FASE 10).
+/// Animation — implementação.
 
 #include <algorithm>
 #include <cmath>
@@ -73,7 +73,7 @@ float AnimationClip::duration() const noexcept
         end = std::max(end, scale.back().time);
     }
     if (!frames.empty()) {
-        // P2: o último frame SEGURA o slot dele (frameHold) — ver header.
+        // O último frame SEGURA o slot dele (frameHold) — ver header.
         end = std::max(end, frames.back().time + frameHold);
     }
     return end;
@@ -108,7 +108,7 @@ const AnimationClip* AnimationBank::find(std::string_view name) const noexcept
 }
 
 // =============================================================================
-// AnimatorStateMachine (§7.10)
+// AnimatorStateMachine
 // =============================================================================
 
 void AnimatorStateMachine::transition(const AnimationBank& bank,
@@ -159,7 +159,7 @@ AnimatorState AnimatorStateMachine::state() const noexcept
 }
 
 // =============================================================================
-// AnimationSystem (§7.8/§7.9)
+// AnimationSystem
 // =============================================================================
 
 AnimationSystem::Pose AnimationSystem::sample(const AnimationClip& clip,
@@ -207,7 +207,7 @@ void AnimationSystem::update(eng::scene::Scene& scene,
             return;
         }
 
-        // Avanço com velocidade (§7.9 speed) — APENAS tocando; pausado
+        // Avanço com velocidade — APENAS tocando; pausado
         // mantém o cursor (seek continua aplicando a pose do instante).
         if (animator.playing) {
             animator.time += dt * animator.speed;
@@ -215,7 +215,7 @@ void AnimationSystem::update(eng::scene::Scene& scene,
                 animator.time = std::fmod(animator.time, clip->duration());
             } else if (animator.time >= clip->duration()) {
                 animator.time = clip->duration();
-                animator.playing = false; // fim (§7.9 stop natural)
+                animator.playing = false; // fim
             }
         }
 

@@ -1,4 +1,4 @@
-/// Testes de eng::physics (FASE 10, missão §7.14).
+/// Testes de eng::physics.
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -45,7 +45,7 @@ struct WorldFixture {
 }  // namespace
 
 // =============================================================================
-// Corpos (§7.3)
+// Corpos
 // =============================================================================
 
 TEST_CASE("physics: massa zero é estático; gravidade integra", "[physics]")
@@ -91,7 +91,7 @@ TEST_CASE("physics: velocity/impulso/força por passo fixo", "[physics]")
 }
 
 // =============================================================================
-// Colisões (§7.2)
+// Colisões
 // =============================================================================
 
 TEST_CASE("physics: esfera-esfera resolve e reporta contato", "[physics]")
@@ -179,7 +179,7 @@ TEST_CASE("physics: esfera-AABB e AABB-AABB", "[physics]")
 }
 
 // =============================================================================
-// Raycast (§7.4)
+// Raycast
 // =============================================================================
 
 TEST_CASE("physics: raycast acerta o mais próximo com ponto/normal", "[physics]")
@@ -240,7 +240,7 @@ TEST_CASE("physics: raycast em esfera (dentro/fora)", "[physics]")
 }
 
 // =============================================================================
-// Timestep fixo (§7.6/§7.14)
+// Timestep fixo
 // =============================================================================
 
 TEST_CASE("physics: timestep fixo é determinístico entre fatiamentos",
@@ -278,7 +278,7 @@ TEST_CASE("physics: acumulador não explode com frame congelado", "[physics]")
 }
 
 // =============================================================================
-// CharacterBody (§7.5)
+// CharacterBody
 // =============================================================================
 
 TEST_CASE("physics: character body desliza contra parede", "[physics]")
@@ -357,7 +357,7 @@ TEST_CASE("physics: snapToGround projeta o personagem ao chão (C-18)", "[physic
 }
 
 // =============================================================================
-// P4.6 (Bloco 1): BodyType — static / kinematic / dynamic-lite
+// BodyType — static / kinematic / dynamic-lite
 // =============================================================================
 
 TEST_CASE("p46: bodyType default é DynamicLite (comportamento pré-P4.6 1:1)",
@@ -475,7 +475,7 @@ TEST_CASE("p46: filtragem de mask funciona nos DOIS sentidos "
 }
 
 // =============================================================================
-// P4.6 (Bloco 1): moveAndSlide — substeps anti-túnel + mask do corpo
+// MoveAndSlide — substeps anti-túnel + mask do corpo
 // =============================================================================
 
 TEST_CASE("p46: moveAndSlide com movimento > raio NÃO atravessa parede fina "
@@ -524,7 +524,7 @@ TEST_CASE("p46: moveAndSlide respeita o MASK do próprio corpo",
 }
 
 // =============================================================================
-// P4.7.0 (Bloco 5): kinematicSweepMove/From — o script ingênuo COLIDE
+// KinematicSweepMove/From — o script ingênuo COLIDE
 // =============================================================================
 
 TEST_CASE("p47: kinematicSweepMove para na parede SEM CharacterBody "

@@ -134,7 +134,7 @@ std::optional<detail::Task> JobSystem::tryPopOwn(unsigned id)
     }
     detail::Task task = std::move(queue.jobs.back()); // LIFO local
     queue.jobs.pop_back();
-    transferToInFlight(); // inFlight++ antes de queued-- (ADR-023)
+    transferToInFlight(); // inFlight++ antes de queued--
     return task;
 }
 
@@ -149,7 +149,7 @@ std::optional<detail::Task> JobSystem::trySteal(unsigned id)
         }
         detail::Task task = std::move(queue.jobs.front());
         queue.jobs.pop_front();
-        transferToInFlight(); // inFlight++ antes de queued-- (ADR-023)
+        transferToInFlight(); // inFlight++ antes de queued--
         return task;
     }
     return std::nullopt;

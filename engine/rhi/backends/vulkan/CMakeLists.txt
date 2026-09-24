@@ -1,5 +1,5 @@
 # =============================================================================
-# eng::rhi::vulkan — backend Vulkan REAL (FASE 5, missão §17–§29; ADR-037)
+# eng::rhi::vulkan — backend Vulkan REAL
 #
 # - Headers: FetchContent Khronos/Vulkan-Headers v1.4.309 (hash fixado —
 #   mesmo padrão de Catch2/nlohmann, ADR-030). SEM dependência de SDK local.

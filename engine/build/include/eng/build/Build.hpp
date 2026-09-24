@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::build — Build & Export Pipeline (FASE 12, ADR-050).
+/// eng::build — Build & Export Pipeline.
 ///
 /// Projeto → manifesto determinístico → grafo de dependências → scan de
 /// referências → validação bloqueante → cook em envelope GONI → cache
@@ -19,7 +19,7 @@
 ///   - scripts: validados por COMPILAÇÃO no build (bloqueante) e
 ///     empacotados como FONTE (serialização de bytecode é futuro do
 ///     ADR-049 — uma única fonte de verdade);
-///   - envelope GONI por asset (ADR-030) marcado SOURCE/DERIVED (v1:
+///   - envelope GONI por asset marcado SOURCE/DERIVED (v1:
 ///     tudo SOURCE — o marcador existe para cooks derivados futuros não
 ///     mudarem o formato do bundle).
 

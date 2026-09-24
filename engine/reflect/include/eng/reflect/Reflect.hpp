@@ -1,9 +1,9 @@
 #pragma once
 
 /// eng::reflect — metadados de tipos para editor, serialização, scripting e
-/// inspector (FASE 2, missão §B.1).
+/// inspector.
 ///
-/// A reflexão nativa de C++ (P2996) ainda não existe; este módulo fornece
+/// A reflexão nativa de C++ ainda não existe; este módulo fornece
 /// registro EXPLÍCITO via macros (ENG_REFLECT*). O desenho completo —
 /// incluindo o que a reflexão deliberadamente NÃO faz — está em
 /// docs/adr/ADR-021-reflection-strategy.md.
@@ -98,7 +98,7 @@ struct TypeInfo {
 
 /// Registro de tipos do processo.
 ///
-/// Propriedades de concorrência (ADR-021): escrita (registro) sob lock
+/// Propriedades de concorrência: escrita (registro) sob lock
 /// exclusivo; leitura (find/count) sob lock compartilhado — leituras
 /// concorrentes são seguras e testadas. Registro esperado em startup
 /// (inicialização estática das macros ENG_REFLECT*), leitura a qualquer

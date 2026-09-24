@@ -3,7 +3,7 @@
 /// eng::particles — emissor CPU com simulação determinística (FASE 10,
 /// missão §7.12/§7.13).
 ///
-/// - CPU v1 (§7.13): a decisão é REGISTRADA — GPU particles exigem
+/// - CPU v1: a decisão é REGISTRADA — GPU particles exigem
 ///   compute/texturas que o RHI ainda não tem; a estrutura (pool por
 ///   emissor) já suporta a migração.
 /// - Spawn por ACUMULADOR de rate (determinístico dado o dt).
@@ -22,7 +22,7 @@
 namespace eng::particles {
 
 // =============================================================================
-// Emitter (§7.12) — componente refletido/serializável
+// Emitter — componente refletido/serializável
 // =============================================================================
 
 struct ParticleEmitter {
@@ -76,7 +76,7 @@ struct ParticlePool {
 };
 
 // =============================================================================
-// Sistema (§7.12/§7.13)
+// Sistema
 // =============================================================================
 
 class ParticleSystem final {

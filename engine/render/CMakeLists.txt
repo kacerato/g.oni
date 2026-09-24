@@ -1,4 +1,4 @@
-# eng::render — Shader Core / Material / Light2D / DrawList do 2D (P3).
+# eng::render — Shader Core / Material / Light2D / DrawList do 2D.
 #
 # Camada ENTRE o engine high-level e o eng::rhi:
 #   Editor/runtime → Shader/Material abstraction → eng::rhi → Vulkan/GLES

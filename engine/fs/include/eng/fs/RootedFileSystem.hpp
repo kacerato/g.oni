@@ -34,7 +34,7 @@
 ///     o chamador nunca vê — nem persiste — o root absoluto.
 ///   - writeAll* NÃO cria pais (paridade exata com Native/Memory — as
 ///     implementações não divergem no que criam implicitamente: nada).
-///   - Thread-safety: thread-compatible, como o resto de eng::fs (ADR-034).
+///   - Thread-safety: thread-compatible, como o resto de eng::fs.
 #include "eng/fs/FileSystem.hpp"
 
 namespace eng::fs {

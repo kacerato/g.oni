@@ -1,6 +1,6 @@
 #include "eng/editor/AnimationAssets.hpp"
 
-/// eng::editor::AnimationAssets — implementação do codec JSON (P2, §8).
+/// eng::editor::AnimationAssets — implementação do codec JSON.
 
 #include <algorithm>
 #include <cmath>
@@ -128,7 +128,7 @@ Result<AnimationAsset> animationDecode(std::string_view json,
     if (const auto loop = root.find("loop"); loop.has_value() && loop->isBool()) {
         asset.meta.loop = loop->asBool();
     }
-    // P2: hold do último frame (default = 1/fps do meta).
+    // Hold do último frame (default = 1/fps do meta).
     asset.clip.frameHold =
         asset.meta.fps > 0.f ? 1.f / asset.meta.fps : 0.f;
     if (const auto hold = root.find("frameHold");

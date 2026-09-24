@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::scene::SceneEvents — eventos de gameplay tipados (P4.7.0 Bloco 1).
+/// eng::scene::SceneEvents — eventos de gameplay tipados.
 ///
 /// Publicados no barramento da cena (`Scene::events()`, eng::events —
 /// ADR-022: ordem de inscrição, reentrante na mesma thread, sem alocação

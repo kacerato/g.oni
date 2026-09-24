@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::scene::SceneIdentity — identidade PERSISTENTE de nós de cena
-/// (FASE 3, missão §2.7; ADR-033).
+///.
 ///
 /// Entity{index,generation} da FASE 2 é handle de RUNTIME — gravá-lo em
 /// disco seria frágil (índices mudam entre builds, gerações dependem da

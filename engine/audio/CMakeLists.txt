@@ -14,7 +14,7 @@ eng_apply_sanitizers(eng_audio)
 eng_apply_lto(eng_audio)
 # Mesa de áudio usa std::mutex (não é exceção — é sincronização §D7).
 target_compile_options(eng_audio PRIVATE ${ENG_RUNTIME_FLAGS})
-# P3.4: log PRIVADO (o backend AAudio loga a drenagem do callback) —
+# Log PRIVADO (o backend AAudio loga a drenagem do callback) —
 # mesmo padrão de rhi/fs/platform/scene: eng::log é fundação (regra 2
 # do grafo), a aresta não propaga para quem depende de eng::audio.
 target_link_libraries(eng_audio PUBLIC eng::core eng::fs eng::serial

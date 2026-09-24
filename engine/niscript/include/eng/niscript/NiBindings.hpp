@@ -1,8 +1,8 @@
 #pragma once
 
-/// eng::ni — bindings do NI-Script (FASE 11, design §7).
+/// eng::ni — bindings do NI-Script.
 ///
-/// TRÊS peças, camadas separadas (ADR-049):
+/// TRÊS peças, camadas separadas:
 ///
 /// 1. NiNativeTable — nativos fechados em COMPILE time (segurança §8.1):
 ///    &BL (biblioteca base pura, visível só com `add &BL`) + nativos de
@@ -36,7 +36,7 @@ class NiExecContext; // NiVm.hpp (frente apenas)
 
 /// Assinatura de nativo: devolve `out` ou preenche `fault`.
 /// `argc` é a contagem REAL de argumentos (variadic: [arity, maxArity]).
-/// SEM exceções (ADR-004) — falha é Fault.
+/// SEM exceções — falha é Fault.
 using NiNativeFn = bool (*)(NiExecContext& ctx, const NiValue* args,
                             std::uint16_t argc, NiValue& out, NiFault& fault);
 
@@ -93,7 +93,7 @@ public:
 
     /// Delta do tick corrente (segundos).
     [[nodiscard]] virtual float deltaSeconds() const = 0;
-    /// Estado de uma ação de input (§6.3 — gameplay não conhece dispositivo).
+    /// Estado de uma ação de input.
     [[nodiscard]] virtual bool actionDown(std::string_view action) const = 0;
     [[nodiscard]] virtual bool actionPressed(std::string_view action) const = 0;
     [[nodiscard]] virtual bool actionReleased(std::string_view action) const = 0;
@@ -105,7 +105,7 @@ public:
     [[nodiscard]] virtual eng::ecs::Entity find(
         std::string_view name) const = 0;
 
-    // --- P4.6 (Bloco 1): movimento de gameplay (padrão Godot/Unity) -------
+    // --- P4.6: movimento de gameplay (padrão Godot/Unity) -------
     // Ambos operam sobre a PRÓPRIA entidade (self do script), em unidades
     // de MUNDO, no eixo XY (z preservado).
     /// move(dx,dy): P4.7.0 B5 — com kinematic_sweep ON (default da cena),
@@ -136,7 +136,7 @@ public:
         eng::ecs::Entity self, float dx, float dy,
         eng::math::Vec3& outPosition) = 0;
 
-    // --- P4.7.0 (Bloco 4): câmera de jogo como API de script --------------
+    // --- P4.7.0: câmera de jogo como API de script --------------
     // Operam sobre a PRIMEIRA câmera ativa da cena (ordem estável — o
     // mesmo "primeiro ativo vence" do CameraTick). Default no-op seguro
     // (hosts sem cena de jogo): false = sem câmera ativa.
@@ -206,7 +206,7 @@ private:
 /// (ex.: alias "position" → componente Transform, basePath "position" —
 /// os caminhos do script "position.x" resolvem relativos ao campo).
 /// `valid` (opcional) checa vitalidade do handle para distinguir
-/// EntityStale de ComponentMissing (ADR-024).
+/// EntityStale de ComponentMissing.
 ///
 /// Regras de campo (typeName do reflect):
 ///   f32/f64 → Float (escrita f64→f32 checada: NaN/inf/overflow = Fault);

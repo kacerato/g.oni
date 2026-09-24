@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::rhi — frontend alto nível (FASE 4, missão §4).
+/// eng::rhi — frontend alto nível.
 ///
 /// `Renderer` é a API que o restante do engine consome: criação/seleção de
 /// backend com validação completa (missão §10), resources por handles
@@ -12,7 +12,7 @@
 /// (grafo alvo de docs/architecture/00-overview.md, regra 1): `eng::rhi`
 /// não conhece — nem em compilação, nem em link — Vulkan ou OpenGL ES.
 ///
-/// Ownership/lifetime (ADR-035):
+/// Ownership/lifetime:
 /// - `Renderer` e `Frame` são move-only e RAII; moved-from é INUTILIZÁVEL
 ///   de forma definida (operações retornam erro, não UB);
 /// - o destrutor do `Renderer` encerra frame pendente e libera TODOS os
@@ -21,7 +21,7 @@
 ///   `Renderer` com frame gravando é SEGURO — o frame termina no dtor e o
 ///   backend é liberado depois (sem UB, ordem documentada).
 ///
-/// Thread affinity (ADR-035): o `Renderer` inteiro é single-threaded
+/// Thread affinity: o `Renderer` inteiro é single-threaded
 /// (uma thread de render). O registry de backends é thread-safe
 /// (escrita exclusiva, leitura compartilhada — política ADR-021).
 

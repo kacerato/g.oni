@@ -16,11 +16,11 @@ namespace eng::tick {
 
 ActiveCamera resolveActiveCamera(const eng::scene::Scene& scene)
 {
-    // cada<CameraData> itera o pool na ORDEM DE INSERÇÃO (ADR-024) —
+    // cada<CameraData> itera o pool na ORDEM DE INSERÇÃO —
     // índice de criação = ordem estável e determinística. Dados COPIADOS
     // por valor (ActiveCamera não retém ponteiro de pool — ver Camera.hpp).
     //
-    // P2 (§11 — "o runtime usa a câmera real"): posX/posY são OFFSETS a
+    // PosX/posY são OFFSETS a
     // partir da posição-MUNDO da ENTIDADE (a câmera é acoplada ao
     // Transform — mover a entidade no editor move a vista no Play).
     // Entidades na origem (todas as cenas pré-P2) preservam o

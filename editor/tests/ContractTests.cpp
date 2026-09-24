@@ -1,9 +1,9 @@
-// P4.7.0 Bloco 1 — ComponentContract v2 + hooks + categorias + event bus.
+// ComponentContract v2 + hooks + categorias + event bus.
 //
 // Contratos são APLICAÇÃO DE AUTORIA: add/remove do Inspector recusam com
 // erro PRECISO; hooks nativos (luz casa com camada, validação de
 // geometria) rodam pelo MESMO caminho que a UI usa. O catálogo único
-// (ADR-043) alimenta Inspector, NI-Script e estas provas.
+// alimenta Inspector, NI-Script e estas provas.
 
 #include <cstdio>
 #include <algorithm>
@@ -403,7 +403,7 @@ TEST_CASE("p47: bridge NI-Script — up on_hit roda no self atingido",
 }
 
 // =============================================================================
-// P4.7.0 Bloco 2 — Gizmos v3: setas reais + anti-sobreposição
+// Gizmos v3: setas reais + anti-sobreposição
 // =============================================================================
 
 TEST_CASE("p47: gizmo MOVE — centro DIAMANTE e 4 setas triangulares para fora",
@@ -638,7 +638,7 @@ TEST_CASE("p47: bus da cena — publish determinístico e contagem de inscritos"
 }
 
 // =============================================================================
-// P4.7.0 Bloco 4 — Camera2D: rotação, moldura no editor, persistência
+// Camera2D: rotação, moldura no editor, persistência
 // =============================================================================
 
 TEST_CASE("p47: viewport rotation — round-trip mundo↔tela a 90°",
@@ -837,7 +837,7 @@ TEST_CASE("p47: verbos camera.* — script dirige a câmera ativa",
 }
 
 // =============================================================================
-// P4.7.0 Bloco 5 — kinematic_sweep: script ingênuo COLIDE (round 6)
+// Kinematic_sweep: script ingênuo COLIDE (round 6)
 // =============================================================================
 
 TEST_CASE("p47: kinematic_sweep ON — move ingênuo de 6u PARA na parede",
@@ -1062,7 +1062,7 @@ TEST_CASE("p47: physicsKinematicSweep persiste e o ausente volta a ON",
 }
 
 // =============================================================================
-// P4.7.0 Bloco 6 — logic LOD: off-screen pula, opt-out roda sempre
+// Logic LOD: off-screen pula, opt-out roda sempre
 // =============================================================================
 
 TEST_CASE("p47: logic LOD — script off-screen pula o update; opt-out roda; "

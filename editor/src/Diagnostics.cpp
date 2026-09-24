@@ -4,7 +4,7 @@
 /// estágio é irrelevante (dezenas de eventos por processo) e o benefício é
 /// total: evidência sobrevive à morte súbita.
 ///
-/// P3.5 — mapa das mudanças nesta revisão:
+/// Mapa das mudanças nesta revisão:
 ///  - mark(): thread-safe, timestamps duplos (wallclock+monotonic ms);
 ///  - espelho: FILA + thread de despacho dedicada (nenhuma thread que
 ///    marca toca JNI/MediaStore — T0/T1);
@@ -89,10 +89,10 @@ TracerState& tracer() {
 }
 
 // ---------------------------------------------------------------------------
-// P3.5 (T0/T1) — fila do espelho: UMA thread de despacho, SEM JNI na
+// Fila do espelho: UMA thread de despacho, SEM JNI na
 // thread que marcou.
 //
-// Por que: o retry de áudio (P3.5) e qualquer thread nativa futura podem
+// Por que: o retry de áudio e qualquer thread nativa futura podem
 // chamar mark(); o trampoline JNI do espelho exigiria AttachCurrentThread
 // (T0). A fila isola: marks de QUALQUER thread apenas empurram um ticket;
 // a thread de despacho (criada no primeiro setMirrorCallback com callback
@@ -173,7 +173,7 @@ int g_crashFd = -1;        ///< fd de goni_crash.log (aberto no install)
 char g_crashPath[288]{};    ///< path p/ re-abrir o fd DENTRO do handler
 
 struct CrashGlobals {
-    /// P3.5: mark() é chamado de QUALQUER thread (retry de áudio) — as
+    /// Mark() é chamado de QUALQUER thread (retry de áudio) — as
     /// escritas do estágio último são serializadas. O crash handler lê
     /// SEM lock (contexto de sinal — locks proibidos): leitura possivel-
     /// mente tornada é o trade-off documentado desde o P3.1 (evidência
@@ -397,7 +397,7 @@ FaultFrame faultFrameOf(const void* context) {
     return f;
 }
 
-/// P3.5 — [fp]: frame-pointer walk (cada frame validado contra o
+/// [fp]: frame-pointer walk (cada frame validado contra o
 /// snapshot de maps; formato module= base= off= para symbolização
 /// offline contra o libgoni.so NÃO-STRIPPED da build exata).
 void writeFpWalk(int fd, std::uintptr_t fp) {
@@ -442,7 +442,7 @@ void writeFpWalk(int fd, std::uintptr_t fp) {
     }
 }
 
-/// P3.5 — [scan]: caminhamento heurístico da pilha a partir da SP —
+/// [scan]: caminhamento heurístico da pilha a partir da SP —
 /// todo uintptr que cai em mapeamento EXECUTÁVEL é reportado como
 /// candidato a endereço de código (cross-check offline contra o [fp];
 /// captura frames que o fp-walk perde em binários de terceiro).
@@ -483,7 +483,7 @@ void writeScanWalk(int fd, std::uintptr_t sp) {
 }
 
 // ---------------------------------------------------------------------------
-// P3.5 (T3b) — dump forense COMPLETO de uma thread (contexto entregue ao
+// Dump forense COMPLETO de uma thread (contexto entregue ao
 // handler) + TODAS as threads do processo + maps CRU.
 // ---------------------------------------------------------------------------
 
@@ -789,7 +789,7 @@ void crashHandler(int sig, siginfo_t* info, void* context) {
     chainToPrevious(idx, sig, info, context);
 }
 
-/// P3.5 — sentinel do poke do watchdog: distingue NOSSO SIGUSR1 (dump)
+/// Sentinel do poke do watchdog: distingue NOSSO SIGUSR1 (dump)
 /// do SIGUSR1 do ART (suspensão de GC — DEVE chegar ao handler do ART).
 std::atomic<pid_t> g_pendingWatchdogTid{-1};
 
@@ -852,7 +852,7 @@ void otherThreadSignalHandler(int sig, siginfo_t* info, void* context) {
 }
 
 // ---------------------------------------------------------------------------
-// P3.5 (T3) — watchdog de hang da main thread
+// Watchdog de hang da main thread
 // ---------------------------------------------------------------------------
 
 struct WatchdogState {
@@ -985,7 +985,7 @@ void mark(const char* stage, const char* status, const char* detail) {
         std::snprintf(g.lastDetail, sizeof g.lastDetail, "%s", dt);
     }
 
-    // P3.5: timestamps duplos — wallclock (correlação com logcat) +
+    // Timestamps duplos — wallclock (correlação com logcat) +
     // monotônico (deltas confiáveis entre micro-marks; resolução ms).
     char line[kMaxStage + kMaxDetail + 160];
     const int n = std::snprintf(line, sizeof line,
@@ -1005,7 +1005,7 @@ void mark(const char* stage, const char* status, const char* detail) {
             (void)::fsync(::fileno(t.startupFile));
         }
     }
-    // P3.5 (T0/T1): espelho VIA FILA — a thread que marcou NUNCA toca
+    // Espelho VIA FILA — a thread que marcou NUNCA toca
     // JNI/MediaStore; a cópia pública é feita pela thread de despacho.
     enqueueMirror();
 #ifdef __ANDROID__
@@ -1110,7 +1110,7 @@ bool hasPreviousCrashReport() {
     if (!t.initialized) {
         return false;
     }
-    // P3.2: a nota benigna "[handler] instalado" NÃO conta — um crash
+    // A nota benigna "[handler] instalado" NÃO conta — um crash
     // real é uma linha "[crash] ..." escrita pelo signal handler.
     std::FILE* f = std::fopen(t.crashPath, "r");
     if (f == nullptr) {
@@ -1129,7 +1129,7 @@ bool hasPreviousCrashReport() {
 }
 
 // =============================================================================
-// Watchdog (P3.5 — T3)
+// Watchdog
 // =============================================================================
 
 namespace watchdog {

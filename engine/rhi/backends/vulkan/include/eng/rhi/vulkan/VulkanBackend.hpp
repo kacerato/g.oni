@@ -1,12 +1,12 @@
 #pragma once
 
-/// eng::rhi::vulkan — backend Vulkan REAL (FASE 5, missão §17–§29).
+/// eng::rhi::vulkan — backend Vulkan REAL.
 ///
 /// Implementa `eng::rhi::RhiBackend` com a API Vulkan real: instance real,
 /// validation layers reais, GPUs físicas enumeradas com motivo de rejeição
 /// por candidata, device real, filas reais, surface (Headless nesta fase —
 /// Xcb/Wayland/Android entregues pelas fases de plataforma), swapchain
-/// real com recriação, render pass clássico (ADR-037), buffers com upload
+/// real com recriação, render pass clássico, buffers com upload
 /// por staging REAL, SPIR-V validado, submissão e apresentação reais.
 ///
 /// NENHUM Fake/Mock: se o loader/ICD não existir, o probe/reporta
@@ -127,7 +127,7 @@ private:
     struct SamplerEntry {
         VkSampler sampler{VK_NULL_HANDLE};
     };
-    /// Frame in flight (ADR-035/auditoria F5): um slot por frame pendente.
+    /// Frame in flight: um slot por frame pendente.
     struct FrameSlot {
         VkCommandBuffer command{VK_NULL_HANDLE};
         VkFence fence{VK_NULL_HANDLE};

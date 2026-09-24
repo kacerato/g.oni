@@ -1,11 +1,11 @@
 #pragma once
 
-/// eng::animation — clips, animator e máquina de estados (FASE 10, §7.7–§7.11).
+/// eng::animation — clips, animator e máquina de estados.
 ///
 /// - Clips com keyframes TRS (position lerp, rotation SLERP — §7.8);
-/// - Animator é COMPONENTE: play/pause/stop/loop/speed/seek (§7.9);
-/// - Estados + transições com cross-fade linear (§7.10);
-/// - SKELETAL (§7.11): a hierarquia de nós da cena É a preparação (pose =
+/// - Animator é COMPONENTE: play/pause/stop/loop/speed/seek;
+/// - Estados + transições com cross-fade linear;
+/// - SKELETAL: a hierarquia de nós da cena É a preparação (pose =
 ///   transforms de nós); skinning/mesh é EXTENSÃO FUTURA documentada —
 ///   ainda não há mesh renderer no engine.
 /// - Sem RHI/Android; aplica TRS no Transform do próprio nó.
@@ -24,7 +24,7 @@
 namespace eng::animation {
 
 // =============================================================================
-// Keyframes (§7.8)
+// Keyframes
 // =============================================================================
 
 template <typename T>
@@ -38,7 +38,7 @@ using PositionKey = Keyframe<eng::math::Vec3>;
 using RotationKey = Keyframe<eng::math::Quat>;
 using ScaleKey = Keyframe<eng::math::Vec3>;
 
-/// Key de FRAME de sprite (P2, authoring 2D): a MEMA track de keyframes
+/// Key de FRAME de sprite: a MEMA track de keyframes
 /// da clip — o valor é a região do sprite que passa a valer a partir de
 /// `time` (flipbook 2D). Dados PUROS (string + floats): a engine não
 /// conhece o componente visual; o CONSUMIDOR (editor/runtime host)
@@ -49,7 +49,7 @@ struct SpriteFrameKey {
     float u0{0.f}, v0{0.f}, u1{1.f}, v1{1.f};  ///< região UV
 };
 
-/// Um clip de animação de TRANSFORM (§7.7/§7.8) + frames de sprite (P2).
+/// Um clip de animação de TRANSFORM + frames de sprite.
 struct AnimationClip {
     std::string name;
     std::vector<PositionKey> position;
@@ -59,7 +59,7 @@ struct AnimationClip {
     /// com time <= cursor vale. APLICADA pelo consumidor (editor), não
     /// pelo AnimationSystem (a engine não conhece SpriteData).
     std::vector<SpriteFrameKey> frames;
-    /// P2 (semântica de flipbook): quanto tempo o ÚLTIMO frame SEGURA
+    /// Quanto tempo o ÚLTIMO frame SEGURA
     /// (o slot 1/fps). A duração do clip estende frames.back().time +
     /// frameHold — sem isto o loop voltaria EXATAMENTE no último frame e
     /// ele nunca seria exibido (fmod no ponto de corte).
@@ -87,7 +87,7 @@ private:
 };
 
 // =============================================================================
-// Animator (§7.9) — componente ECS, refletido/serializável
+// Animator — componente ECS, refletido/serializável
 // =============================================================================
 
 struct Animator {
@@ -104,7 +104,7 @@ struct Animator {
     float speed{1.f};          ///< 0.5 = metade, 2 = dobro
     bool loop{true};
     bool playing{false};
-    /// P2: aplica a track de FRAMES ao sprite da entidade (quando houver
+    /// Aplica a track de FRAMES ao sprite da entidade (quando houver
     /// sprite E track de frames no clip). TRS continua sob apply*.
     bool applySprite{true};
     bool applyPosition{true};
@@ -129,7 +129,7 @@ ENG_REFLECT_BEGIN(eng::animation::Animator)
 ENG_REFLECT_END()
 
 // =============================================================================
-// Estados e transições (§7.10)
+// Estados e transições
 // =============================================================================
 
 struct AnimationTransition {
@@ -148,7 +148,7 @@ struct AnimatorState {
     float previousTime{0.f};
 };
 
-/// Máquina de estados mínima (§7.10): Idle→Run→Jump→Attack são NOMES —
+/// Máquina de estados mínima: Idle→Run→Jump→Attack são NOMES —
 /// as REGRAS ficam no gameplay (C++/script — §9); a engine fornece a
 /// transição com cross-fade.
 ///
@@ -178,7 +178,7 @@ private:
 };
 
 // =============================================================================
-// Sistema — aplica TRS interpolado (§7.8/§7.9)
+// Sistema — aplica TRS interpolado
 // =============================================================================
 
 class AnimationSystem final {

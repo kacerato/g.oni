@@ -1,4 +1,4 @@
-# eng::log — Logger, sinks, format "{}", macros (§17.1 item 15)
+# eng::log — Logger, sinks, format "{}", macros
 eng_add_module(log
     src/Format.cpp
     src/ConsoleSink.cpp

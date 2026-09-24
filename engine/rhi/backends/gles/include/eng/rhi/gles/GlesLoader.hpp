@@ -1,7 +1,7 @@
 #pragma once
 
-/// Loader dinâmico de EGL/OpenGL ES (FASE 6, missão §33) — mesmo padrão do
-/// VulkanLoader (ADR-037): dlopen + tabela de ponteiros, zero link com
+/// Loader dinâmico de EGL/OpenGL ES — mesmo padrão do
+/// VulkanLoader: dlopen + tabela de ponteiros, zero link com
 /// libEGL/libGLESv2. O mesmo binário serve a desktop (libEGL.so.1) e
 /// Android (libEGL.so — FASE 7).
 

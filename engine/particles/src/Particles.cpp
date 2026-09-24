@@ -1,6 +1,6 @@
 #include "eng/particles/Particles.hpp"
 
-/// Particles — implementação (FASE 10). CPU determinístico.
+/// Particles — implementação. CPU determinístico.
 
 #include <algorithm>
 #include <cmath>

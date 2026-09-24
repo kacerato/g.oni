@@ -176,7 +176,7 @@ TEST_CASE("project: systemDefaults via eng::platform", "[project]")
 }
 
 // =============================================================================
-// P4.6 (Bloco 1): camadas de colisão nomeadas — chave aditiva
+// Camadas de colisão nomeadas — chave aditiva
 // =============================================================================
 
 TEST_CASE("p46 project: collisionLayers ausente = tabela default",

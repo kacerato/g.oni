@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::jobs — sistema de tarefas com work stealing (FASE 2, missão §B.3).
+/// eng::jobs — sistema de tarefas com work stealing.
 ///
 /// Modelo (detalhes e decisões em ADR-023):
 ///   - N workers (default: `std::thread::hardware_concurrency()`, mínimo 1),
@@ -31,7 +31,7 @@
 ///     EVOLUÇÃO documentada em ADR-023 — SEM código stub nesta fase.
 ///   - `submit()` concorrente com `shutdown()` a partir de threads externas
 ///     deve ser serializado pelo chamador (ver ADR-023, seção "ordas").
-///   - Ciclo de vida e contabilidade LINEARIZÁVEL (ADR-023): `queued_`
+///   - Ciclo de vida e contabilidade LINEARIZÁVEL: `queued_`
 ///     conta o job ANTES da publicação na fila; a transferência
 ///     fila→execução incrementa `inFlight_` ANTES de decrementar `queued_`
 ///     — a soma `queued_ + inFlight_` nunca cai a zero durante uma
@@ -225,7 +225,7 @@ public:
     /// sistema já está desligado (sem crash — documentado). Complexidade:
     /// O(1) (deque do worker alvo + possível heap do callable).
     /// Contabilidade: o job é CONTADO antes de ser publicado — waitAll é
-    /// linearizável em relação a submits concorrentes (ADR-023).
+    /// linearizável em relação a submits concorrentes.
     template<typename F>
     [[nodiscard]] JobHandle submit(F&& task)
     {

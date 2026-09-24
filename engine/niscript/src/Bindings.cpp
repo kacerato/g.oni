@@ -1,5 +1,5 @@
 /// Bindings do NI-Script — nativos (&BL + host), tabela de componentes e
-/// adaptador refletido (FASE 11, design §7).
+/// adaptador refletido.
 ///
 /// &BL é PURO (funções matemáticas/construtores — sem estado, sem I/O);
 /// os nativos de HOST operam sobre NiHost (implementado pelo consumidor);
@@ -608,7 +608,7 @@ void noHost(NiFault& fault, const char* who)
     return true;
 }
 
-/// P4.6 (Bloco 1): extrai um número (Float OU Int) dos argumentos de
+/// Extrai um número (Float OU Int) dos argumentos de
 /// move/move_and_slide — scripts autoram com literais dos dois tipos.
 [[nodiscard]] bool argNumber(const NiValue& v, float& out,
                              const char* who, NiFault& fault)
@@ -794,13 +794,13 @@ void NiNativeTable::addStandardHost()
         {"despawn", 1, hostn::fnDespawn, NiType::Bool},
         {"self", 0, hostn::fnSelf, NiType::Entity},
         {"find", 1, hostn::fnFind, NiType::Entity},
-        // P4.6 (Bloco 1): movimento de gameplay — move cru (teletransporte
+        // Movimento de gameplay — move cru (teletransporte
         // documentado) e move_and_slide (varredura com deslize).
         {"move", 2, hostn::fnMove, NiType::Bool},
         {"move_and_slide", 2, hostn::fnMoveAndSlide, NiType::Bool},
-        // P4.7.0 (Bloco 4): câmera de jogo autorável por script — mesma
+        // Câmera de jogo autorável por script — mesma
         // câmera do Inspector/CameraTick (primeira ativa vence).
-        // P4.7.0 (Bloco 5): teleporte cru — NUNCA varrido (spawn).
+        // Teleporte cru — NUNCA varrido (spawn).
         {"teleport", 2, hostn::fnTeleport, NiType::Bool},
         {"camera.zoom", 1, hostn::fnCameraZoom, NiType::Bool},
         {"camera.position", 2, hostn::fnCameraPosition, NiType::Bool},

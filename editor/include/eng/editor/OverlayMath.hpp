@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::editor::OverlayMath — geometria canônica dos OVERLAYS do editor
-/// (P4.3 — N3/N4; ver docs/p4-editor-ux.md).
+///.
 ///
 /// CAUSA RAIZ corrigida: toda a geometria (gizmos, bounds, grid,
 /// contornos de collider, partículas, marcador de luz, SPRITES) era

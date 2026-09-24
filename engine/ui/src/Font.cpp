@@ -1,6 +1,6 @@
 #include "eng/ui/Ui.hpp"
 
-/// Font 5×7 pontilhada (FASE 9, ADR-046). Matriz clássica de pontos
+/// Font 5×7 pontilhada. Matriz clássica de pontos
 /// estilo LCD 5×7 (domínio público), 95 glifos ASCII 32..126 — dados
 /// originais do TU, mantidos aqui como fonte única. NOTA (auditoria
 /// final 4–10): o script `gen_ui_font.py` citado antes NÃO existe no

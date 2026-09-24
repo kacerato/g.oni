@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::platform::PlatformPaths — raízes conhecidas do sistema hospedeiro
-/// (FASE 3, missão §2.2; ADR-026).
+///.
 ///
 /// - Produz apenas RAÍZES (userData/cache/temp/executable) usando
 ///   fs::Path como value type — platform DEPENDE de fs, nunca o contrário

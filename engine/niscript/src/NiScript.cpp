@@ -1,10 +1,10 @@
-/// Pipeline de compilação do NI-Script (FASE 11, design §1).
+/// Pipeline de compilação do NI-Script.
 ///
 ///   .nis → Lexer → Parser → Sema → Compiler → NiProgram (bytecode)
 ///
 /// Puro e determinístico: mesmo input + mesma tabela de nativos produzem
 /// o MESMO bytecode (testado). Diagnósticos com linha/coluna em toda
-/// etapa; erros NUNCA são exceções (ADR-004).
+/// etapa; erros NUNCA são exceções.
 
 #include "eng/niscript/NiScript.hpp"
 

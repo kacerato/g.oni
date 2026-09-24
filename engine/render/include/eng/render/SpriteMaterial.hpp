@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::render::SpriteMaterial — material 2D REAL (P3, §3).
+/// eng::render::SpriteMaterial — material 2D REAL.
 ///
 /// Arquitetura do bloco: Entity → Sprite → MATERIAL → Shader → RHI.
 /// O sprite renderer consome o material de FATO (shader escolhe o

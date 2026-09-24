@@ -49,7 +49,7 @@ namespace {
 
 /// Registro global de componentes serializáveis. std::map → iteração
 /// ORDENADA POR NOME (determinismo dos componentes por tipo, ADR-033).
-/// Registro esperado em init single-threaded (ADR-034).
+/// Registro esperado em init single-threaded.
 std::map<std::string, ComponentEntry>& componentRegistry()
 {
     static std::map<std::string, ComponentEntry> registry;
@@ -111,13 +111,13 @@ const bool eng_scene_builtin_components_registered = [] {
         "eng::math::Transform");
     (void)SceneSerializer::registerComponentType<eng::scene::Name>(
         "eng::scene::Name");
-    // Evolução P0-5 (ADR-051): camadas são ESTRUTURA DE CENA e o componente
+    // Evolução P0-5: camadas são ESTRUTURA DE CENA e o componente
     // vive NO módulo scene — registro built-in (idempotente: consumidor que
     // re-registra só sobrescreve a mesma entrada).
     (void)SceneSerializer::registerComponentType<eng::scene::LayerMember>(
         "eng::scene::LayerMember");
 
-    // P4.7.0 Bloco 1 — contratos dos built-ins (categoria do Inspector;
+    // Contratos dos built-ins (categoria do Inspector;
     // LayerMember é organização de tick/camadas → "Lógica"; Name é
     // rótulo → "Transform"). Sem hooks nativos aqui (nada a registrar).
     using eng::scene::detail::ComponentContract;
@@ -246,7 +246,7 @@ eng::core::Result<std::string> SceneSerializer::save(Scene& scene)
     //    ordem — irmãos e raízes SOBREVIVEM ao round-trip (a ordem antiga
     //    por SceneEntityId/UUID recriava a cena com raízes/irmãos
     //    embaralhados — o autor perdia a arrumação). Determinismo
-    //    preservado (ADR-033): mesmo estado → mesma sequência → mesmos
+    //    preservado: mesmo estado → mesma sequência → mesmos
     //    bytes; resave de um clone é idêntico (ordem do clone = ordem do
     //    arquivo = DFS da original).
     {
@@ -681,7 +681,7 @@ eng::core::Result<void> SceneSerializer::load(Scene& scene,
     }
 
     // LayerMember (evolução P0-5): membros precisam referenciar camadas
-    // DEFINIDAS — sem fallback silencioso (ADR-051). Validação após o load
+    // DEFINIDAS — sem fallback silencioso. Validação após o load
     // das definições e das entidades.
     {
         bool orphan = false;

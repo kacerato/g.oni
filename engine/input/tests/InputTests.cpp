@@ -1,4 +1,4 @@
-/// Testes de eng::input (FASE 9, missão §6.11) — estado puro, sem
+/// Testes de eng::input — estado puro, sem
 /// plataforma: eventos sintéticos exercitam o MESMO pipeline que o TU JNI
 /// alimenta no Android.
 
@@ -36,7 +36,7 @@ InputEvent keyEvent(Key key, bool down)
 }  // namespace
 
 // =============================================================================
-// Touch (§6.11: down/move/up/multitouch/pointer identity)
+// Touch
 // =============================================================================
 
 TEST_CASE("input: touch down/move/up com identidade por pointer", "[input]")
@@ -118,7 +118,7 @@ TEST_CASE("input: eventos na fila só aplicam no update (janela por frame)",
 }
 
 // =============================================================================
-// Teclado canônico (§6.1 — sem KeyCodes Android)
+// Teclado canônico
 // =============================================================================
 
 TEST_CASE("input: teclado pressed/released com janela de um update", "[input]")
@@ -151,7 +151,7 @@ TEST_CASE("input: keyFromName round-trip do canônico", "[input]")
 }
 
 // =============================================================================
-// Ações (§6.3/§6.11: action mapping)
+// Ações
 // =============================================================================
 
 TEST_CASE("input: ação por tecla e por zona de toque (combina fontes)",

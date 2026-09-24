@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::editor::TransformGizmo — gizmo 2D de transformação (P1).
+/// eng::editor::TransformGizmo — gizmo 2D de transformação.
 ///
 /// Camada de DADOS/LÓGICA PURA (sem GPU, sem documento): recebe o
 /// Viewport (conversões tela↔mundo) + os bounds da entidade
@@ -8,7 +8,7 @@
 /// durante o drag, (c) geometria de desenho (quads/segmentos em MUNDO)
 /// para o ViewportRenderer.
 ///
-/// Ferramentas (P1.6 — TOOL MODES): Select/Move/Rotate/Scale vivem no
+/// Ferramentas: Select/Move/Rotate/Scale vivem no
 /// EditorDocument; o gizmo só desenha/age nas três de transformação.
 ///
 /// Convenções:
@@ -28,7 +28,7 @@
 
 namespace eng::editor {
 
-/// Ferramenta ativa do editor (P1.6). Pan/zoom continuam gestos de
+/// Ferramenta ativa do editor. Pan/zoom continuam gestos de
 /// navegação SEMPRE disponíveis (drag em espaço vazio / pinch) — não
 /// são ferramentas de autoria.
 enum class EditorTool : std::uint8_t {
@@ -38,7 +38,7 @@ enum class EditorTool : std::uint8_t {
     Scale        ///< gizmo de escala (4 cantos)
 };
 
-/// Handle do gizmo — alvo do toque/drag (P1.3–P1.5; arestas P4.1/D4).
+/// Handle do gizmo — alvo do toque/drag.
 enum class GizmoHandle : std::uint8_t {
     None = 0,
     MoveCenter,  ///< move livre (X+Y)
@@ -59,7 +59,7 @@ enum class GizmoHandle : std::uint8_t {
 /// e clamps de escala usam EXATAMENTE o tamanho desenhado (posição,
 /// rotação, escala, textura e ppu — P1.2), nunca um tamanho arbitrário.
 ///
-/// P2 (bug §5): dois pontos de referência distintos, ambos derivados do
+/// Dois pontos de referência distintos, ambos derivados do
 /// estado ATUAL da entidade (nenhum dado temporário):
 ///   - worldX/worldY: CENTRO VISUAL (com offset de pivot do sprite) —
 ///     pivô do ROTATE, cantos do SCALE e desenho do gizmo;
@@ -77,7 +77,7 @@ struct GizmoBounds {
 };
 
 /// Estado TRS que o gizmo lê/escreve (graus — convenção do Inspector).
-/// P2: posX/posY são a posição de MUNDO da ORIGEM do nó — o DOCUMENTO
+/// PosX/posY são a posição de MUNDO da ORIGEM do nó — o DOCUMENTO
 /// converte o delta de mundo para o espaço LOCAL do pai (filhos de pais
 /// rotacionados/escalados movem no eixo de TELA certo).
 struct GizmoTransform {
@@ -100,7 +100,7 @@ struct GizmoQuad {
     float b{1.f};
 };
 
-/// Triângulo preenchido do gizmo (P4.7.0 Bloco 2 — SETAS REAIS), em
+/// Triângulo preenchido do gizmo, em
 /// MUNDO. Aponta para o +X LOCAL da rotação (radianos): halfW =
 /// comprimento centro→ápice, halfH = meia-base. Substitui os "quadrados
 /// girados" que o round 6 leu como cubo.
@@ -127,7 +127,7 @@ struct GizmoSegment {
 };
 
 /// Pacote de desenho do gizmo (quads + triângulos + segmentos em MUNDO)
-/// — o documento produz, o renderer consome (P1).
+/// — o documento produz, o renderer consome.
 struct GizmoDrawData {
     std::vector<GizmoQuad> quads;
     std::vector<GizmoTriangle> triangles;
@@ -136,7 +136,7 @@ struct GizmoDrawData {
 
 class TransformGizmo final {
 public:
-    /// Dimensões de UI em DP (P4.1 — alvo de dedo §8.8; defeitos D3/D4):
+    /// Dimensões de UI em DP:
     /// constantes em ZOOM e convertidas a px da surface pela densidade do
     /// viewport (uiScale). Regras da missão P4.1:
     ///   - handle visual 28–40 px independentes de zoom;
@@ -150,7 +150,7 @@ public:
     static constexpr float kRingPadDp = 26.f;  ///< folga do anel p/ fora
     static constexpr float kRingMinDp = 64.f;  ///< raio mínimo do anel
     static constexpr float kHitDp = 24.f;      ///< raio de acerto (48dp ⌀)
-    // P4.7.0 Bloco 2 — setas REAIS + anti-sobreposição:
+    // Setas REAIS + anti-sobreposição:
     static constexpr float kHeadTriLenDp = 16.f; ///< comprimento do triângulo (12–16dp)
     static constexpr float kHeadTriBaseDp = 14.f; ///< base do triângulo
     static constexpr float kShaftDp = 2.f;       ///< espessura da haste
@@ -160,7 +160,7 @@ public:
     /// Snap de rotação: 15° com ímã de 4° (opcional, previsível).
     static constexpr float kRotateSnapStepDeg = 15.f;
     static constexpr float kRotateSnapPullDeg = 4.f;
-    /// Escala — impedir valores inválidos (P1.5).
+    /// Escala — impedir valores inválidos.
     static constexpr float kScaleMin = 0.01f;
     static constexpr float kScaleMax = 100.f;
 
@@ -224,13 +224,13 @@ public:
 
     /// Handle sob o toque (px de tela). Invalid bounds / tool sem gizmo
     /// → None. Handles têm precedência sobre o corpo da entidade — a
-    /// Activity consulta isto ANTES do viewportTap (P1.3).
+    /// Activity consulta isto ANTES do viewportTap.
     [[nodiscard]] GizmoHandle hitTest(const Viewport& viewport,
                                      EditorTool tool,
                                      const GizmoBounds& bounds,
                                      float screenX, float screenY) const;
 
-    // --- drag (P1.3–P1.5) ------------------------------------------------------
+    // --- drag ------------------------------------------------------
 
     /// Captura o estado inicial (transform + ponto de agarre). O drag é
     /// uma operação ATÔMICA: begin → dragTo* → endDrag.
@@ -239,7 +239,7 @@ public:
                    float screenX, float screenY);
 
     /// Transform ALVO para a posição do pointer. Sem drag ativo →
-    /// devolve o transform inicial inalterado. NÃO-const (P4.2/B-C): a
+    /// devolve o transform inicial inalterado. NÃO-const: a
     /// rotação ACUMULA o ângulo por evento (ver accumulatedRotationDeg_)
     /// — o drag é a única fonte do estado do gesto.
     [[nodiscard]] GizmoTransform dragTo(const Viewport& viewport,
@@ -249,7 +249,7 @@ public:
     void endDrag() noexcept
     {
         active_ = GizmoHandle::None;
-        // P4.2 (B-C): o acumulador de rotação morre com o drag — nenhum
+        // O acumulador de rotação morre com o drag — nenhum
         // estado de gesto atravessa re-armo (regra P4.1/D1 mantida).
         accumulatedRotationDeg_ = 0.f;
         lastAngleRad_ = 0.f;
@@ -265,7 +265,7 @@ public:
 
     // --- desenho ----------------------------------------------------------------
 
-    /// P4.6 (L4): transição entre ferramentas — POP de 120ms (ease-out
+    /// Transição entre ferramentas — POP de 120ms (ease-out
     /// cúbico; 0.88 → 1.0). Função PURA do tempo decorrido (testável sem
     /// clock); o renderer só multiplica os halfes dos handles.
     static constexpr float kToolTransitionMs = 120.f;
@@ -292,7 +292,7 @@ public:
         const Viewport& viewport, EditorTool tool,
         const GizmoBounds& bounds) const;
 
-    /// P4.7.0 Bloco 2 — posições dos handles de SCALE com o CLAMP
+    /// Posições dos handles de SCALE com o CLAMP
     /// anti-sobreposição: bounds pequenos colapsariam a esquina dos
     /// cantos sobre o centro (round 6). Cantos/arestas são EMPURRADOS
     /// para fora até a distância mínima do centro (kMinCornerCenterDp /
@@ -320,7 +320,7 @@ private:
     float grabWorldX_ = 0.f;   ///< ponto de agarre em MUNDO (move)
     float grabWorldY_ = 0.f;
     float startAngleRad_ = 0.f; ///< ângulo pointer↔pivot no begin (rotate)
-    /// P4.2 (B-C — rotação inoperante além de 180°): o ANGULO TOTAL era
+    /// O ANGULO TOTAL era
     /// normalizado contra o ponto de agarre fixo — dedo além de 180°
     /// flipava o sinal e a entidade girava PARA TRÁS. Agora cada evento
     /// contribui com o DELTA curto (sempre <180°) acumulado aqui; a soma

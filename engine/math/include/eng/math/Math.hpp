@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::math — biblioteca matemática própria (ADR-006).
+/// eng::math — biblioteca matemática própria.
 /// Convenções: column-major, right-handed, ângulos em radianos.
 /// Profundidade: GL [-1,1] por padrão; Vulkan [0,1] com ENG_MATH_VULKAN_DEPTH.
 #include "eng/math/Mat4.hpp"

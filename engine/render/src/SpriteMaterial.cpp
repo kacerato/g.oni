@@ -1,6 +1,6 @@
 #include "eng/render/SpriteMaterial.hpp"
 
-/// eng::render — codec do asset .mat.json (P3, §3/§9).
+/// eng::render — codec do asset .mat.json.
 
 #include "eng/serial/Json.hpp"
 

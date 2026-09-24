@@ -20,7 +20,7 @@ template <typename E>
     return Unexpected<std::decay_t<E>>{std::forward<E>(error)};
 }
 
-/// Result<T, E> — canal de erros do runtime (ADR-004). Sem exceções:
+/// Result<T, E> — canal de erros do runtime. Sem exceções:
 /// funções que podem falhar retornam Result em vez de lançar.
 ///
 /// - `value()`/`error()` só podem ser chamados no estado correspondente

@@ -1,4 +1,4 @@
-# eng::jobs — sistema de tarefas work-stealing (FASE 2, missão §B.3; ADR-023)
+# eng::jobs — sistema de tarefas work-stealing
 eng_add_module(jobs
     src/Jobs.cpp
 )

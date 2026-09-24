@@ -12,13 +12,13 @@
 #include "eng/scene/SceneSerializer.hpp"
 #include "eng/tick/Camera.hpp"
 
-/// Registro dos componentes de GAMEPLAY (FASE 10, missão §8 integração):
+/// Registro dos componentes de GAMEPLAY:
 /// physics/animation/particles entram no CATÁLOGO ÚNICO do serializer —
-/// aparecem no inspector do editor e persistem em cena (ADR-043). O
+/// aparecem no inspector do editor e persistem em cena. O
 /// registro vive no CONSUMIDOR (editor) porque engine/scene não pode
 /// depender das camadas de gameplay (grafo 00-overview).
 ///
-/// P4.7.0 Bloco 1 — ComponentContract v2: TODO componente declara
+/// ComponentContract v2: TODO componente declara
 /// categoria (grupos do Inspector) + apelido NI-Script (mesma fonte p/
 /// scripts e Inspector) e, quando há efeito colateral nativo, HOOKS
 /// (onAttach/onDetach/onValidate) — o caso especial "Light2D casa com a
@@ -29,7 +29,7 @@ namespace eng::editor {
 
 namespace {
 
-// --- hooks nativos (P4.7.0 Bloco 1) -----------------------------------------
+// --- hooks nativos -----------------------------------------
 
 /// onAttach da Light2D: luz nova CASA COM A CAMADA onde vivem os sprites
 /// lit da cena (defaults coerentes — P4.6 Bloco 2). Contagem por
@@ -172,7 +172,7 @@ const bool goni_editor_components_registered = [] {
         (void)SceneSerializer::registerComponentType<eng::editor::SpriteData>(
             "eng::editor::SpriteData", std::move(c));
     }
-    // FASE 11: scripts NI-Script anexados a nós (ADR-043 — mesmo catálogo)
+    // Scripts NI-Script anexados a nós
     {
         Contract c;
         c.category = "Lógica";
@@ -181,9 +181,9 @@ const bool goni_editor_components_registered = [] {
             eng::editor::NiScriptComponent>("eng::editor::NiScriptComponent",
                                             std::move(c));
     }
-    // Evolução P0-5 (ADR-051): câmera de jogo como cidadã da cena +
+    // Evolução P0-5: câmera de jogo como cidadã da cena +
     // membro de camada (GAME/SUBGAME/nomeadas) — Inspector/persistência/clone.
-    // P4.7.0: MÚLTIPLAS câmeras são permitidas (Play = 1ª ativa vence,
+    // MÚLTIPLAS câmeras são permitidas (Play = 1ª ativa vence,
     // Bloco 4) — sem `single`.
     {
         Contract c;
@@ -193,7 +193,7 @@ const bool goni_editor_components_registered = [] {
             "eng::tick::CameraData", std::move(c));
     }
     // LayerMember: registro DUPLO (built-in no scene + consumidor aqui) é
-    // idempotente por design (ADR-043); o contrato é o MESMO nos dois —
+    // idempotente por design; o contrato é o MESMO nos dois —
     // a ordem de init estático entre TUs não altera o resultado.
     {
         Contract c;
@@ -202,7 +202,7 @@ const bool goni_editor_components_registered = [] {
         (void)SceneSerializer::registerComponentType<eng::scene::LayerMember>(
             "eng::scene::LayerMember", std::move(c));
     }
-    // P2 (§12): AudioSource — áudio authorável dirigindo o AudioMixer
+    // AudioSource — áudio authorável dirigindo o AudioMixer
     // REAL (AudioTick do documento no Play).
     {
         Contract c;
@@ -211,9 +211,9 @@ const bool goni_editor_components_registered = [] {
         (void)SceneSerializer::registerComponentType<eng::editor::AudioSource>(
             "eng::editor::AudioSource", std::move(c));
     }
-    // P3: Light2D — luz 2D real alimentando o bloco PerFrame do sprite.lit
+    // Light2D — luz 2D real alimentando o bloco PerFrame do sprite.lit
     // (renderiza no Edit e no Play; clone via serializacao).
-    // P4.7.0 Bloco 1: o default "casa com a camada" é HOOK nativo.
+    // O default "casa com a camada" é HOOK nativo.
     {
         Contract c;
         c.category = "FX";

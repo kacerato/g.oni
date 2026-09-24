@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::rhi::gles — backend OpenGL ES REAL (FASE 6, missão §32–§41).
+/// eng::rhi::gles — backend OpenGL ES REAL.
 ///
 /// Contexto EGL REAL (plataforma surfaceless + pbuffer para present),
 /// GLSL ES compilado/linkado de verdade com info log nos erros, VAO/VBO
@@ -172,7 +172,7 @@ private:
     bool hasSurface_{false};
     bool surfaceLost_{false};
     bool contextLost_{false};
-    std::uint64_t activeFrameId_{0};  // uma sessão de gravação por vez (ADR-035)
+    std::uint64_t activeFrameId_{0};  // uma sessão de gravação por vez
     std::uint64_t nextFrameId_{0};
     std::uint32_t pendingPresents_{0};
 

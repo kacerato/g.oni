@@ -111,7 +111,7 @@ eng::core::Result<ProjectConfig> ProjectFile::configFromJson(
         }
     }
 
-    // P4.6 (Bloco 1): camadas de colisão nomeadas — chave ADITIVA
+    // Camadas de colisão nomeadas — chave ADITIVA
     // (ausente = tabela default "default" bit 1, compatível com projetos
     // pré-P4.6). Estrita quando presente: nome não-vazio único + bit
     // potência de 2 não repetido (erros precisos, nunca silêncio).
@@ -162,7 +162,7 @@ eng::core::Result<ProjectConfig> ProjectFile::configFromJson(
         }
     }
 
-    // P4.6 (Bloco 5/L2): grade do viewport — chave ADITIVA (ausente =
+    // Grade do viewport — chave ADITIVA (ausente =
     // default). Estrita quando presente (valores do nosso writer).
     GridConfig grid{};
     const auto gridKey = value.find("grid");
@@ -245,7 +245,7 @@ eng::core::Result<eng::serial::JsonValue> ProjectFile::toJson(
     value.set("assetRegistryPath",
               JsonValue::string(config.assetRegistryPath.str()));
     value.set("sceneRoots", std::move(roots));
-    // P4.6 (Bloco 1): SEMPRE escreve a tabela — vazio no struct significa
+    // SEMPRE escreve a tabela — vazio no struct significa
     // "tabela default" e é NORMALIZADO aqui (um array vazio no arquivo
     // seria rejeitado pelo parse estrito; default é gerido num lugar só).
     std::vector<CollisionLayerName> defaultTable;
@@ -262,7 +262,7 @@ eng::core::Result<eng::serial::JsonValue> ProjectFile::toJson(
         layersJson.append(std::move(entry));
     }
     value.set("collisionLayers", std::move(layersJson));
-    // P4.6 (Bloco 5/L2): grade do viewport — SEMPRE escreve (aditivo).
+    // Grade do viewport — SEMPRE escreve (aditivo).
     {
         JsonValue gridJson = JsonValue::object();
         gridJson.set("visible", JsonValue::boolean(config.grid.visible));

@@ -1,14 +1,14 @@
 #pragma once
 
-/// eng::ui — widgets, layout e draw-list (FASE 9, missão §6.5–§6.7).
+/// eng::ui — widgets, layout e draw-list.
 ///
 /// - RETAINED-MODE puro, SEM RHI: a UI produz uma DRAW-LIST (quads de cor)
 ///   que o HOST desenha — eng::ui não conhece Vulkan/GLES (§6.7: a UI
 ///   pertence à engine; acoplamento zero com Android Views).
-/// - LAYOUT (§6.6): rect relativo ao pai + ANCHORS fracionários + pivot;
+/// - LAYOUT: rect relativo ao pai + ANCHORS fracionários + pivot;
 ///   resolução-independente por DESIGN-RESOLUTION (escala px = design→
 ///   tela) + fator de escala (DPI).
-/// - EVENTOS (§6.7): fn-ptr + contexto sem captura (padrão do engine,
+/// - EVENTOS: fn-ptr + contexto sem captura (padrão do engine,
 ///   ADR-004) — Button(pressed/released/click), Slider(valueChanged).
 /// - TEXTO v1: fonte 5×7 PONTILHADA em quads de cor (a abstraction RHI
 ///   não tem texturas — ADR-046; upgrade quando texturas existirem).
@@ -25,7 +25,7 @@
 namespace eng::ui {
 
 // =============================================================================
-// Geometria (§6.6)
+// Geometria
 // =============================================================================
 
 struct UiRect {
@@ -65,7 +65,7 @@ struct UiQuad {
     int layer{0}; ///< ordem de desenho (pais primeiro)
 };
 
-/// Callbacks sem captura (ADR-004 — nada de std::function no runtime).
+/// Callbacks sem captura.
 using ButtonClicked = void (*)(void* context, std::uint32_t widgetId);
 using SliderChanged = void (*)(void* context, std::uint32_t widgetId,
                                float value);
@@ -87,7 +87,7 @@ public:
     void setEnabled(bool enabled) noexcept { enabled_ = enabled; }
     [[nodiscard]] bool enabled() const noexcept { return enabled_; }
 
-    // --- layout (§6.6) ---------------------------------------------------------
+    // --- layout ---------------------------------------------------------
 
     void setRect(const UiRect& rect) noexcept { rect_ = rect; }
     [[nodiscard]] const UiRect& rect() const noexcept { return rect_; }
@@ -111,7 +111,7 @@ public:
     void setValue(float value) noexcept;
     [[nodiscard]] float value() const noexcept { return value_; }
 
-    // --- eventos (§6.7) ------------------------------------------------------------
+    // --- eventos ------------------------------------------------------------
 
     void setOnClick(ButtonClicked callback, void* context) noexcept
     {

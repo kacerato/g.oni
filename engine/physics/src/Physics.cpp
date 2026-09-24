@@ -2,7 +2,7 @@
 
 #include "eng/scene/SceneEvents.hpp"
 
-/// Physics — implementação (FASE 10). Esfera + AABB; semi-implícito.
+/// Physics — implementação. Esfera + AABB; semi-implícito.
 
 #include <algorithm>
 #include <cmath>
@@ -235,7 +235,7 @@ struct WorldShape {
     return (a.layer & b.mask) != 0u && (b.layer & a.mask) != 0u;
 }
 
-/// P4.6 (Bloco 1): massa inversa EFETIVA na resolução. Static e
+/// Massa inversa EFETIVA na resolução. Static e
 /// Kinematic não são empurrados (inv 0 — empurram os dinâmicos e os
 /// impulsos não lhes aplicam); DynamicLite = regra da massa atual.
 [[nodiscard]] float effectiveInvMass(const RigidBody* body)
@@ -253,7 +253,7 @@ struct WorldShape {
 /// Um passo do deslize (mesma matemática do v1 — §7.5): avança ao
 /// destino, acha a MAIOR penetração da esfera e projeta para fora ao
 /// longo da normal — a componente normal do movimento é absorvida, a
-/// tangential desliza. `selfMask` (P4.6): o mask do PRÓPRIO corpo
+/// tangential desliza. `selfMask`: o mask do PRÓPRIO corpo
 /// decide contra quem o deslize acontece (padrão Godot p/ cinemáticos;
 /// 0xFFFFFFFF = colide com tudo — default, não muda cenários antigos).
 [[nodiscard]] Vec3 sweepSphereOnce(const eng::scene::Scene& scene,
@@ -273,7 +273,7 @@ struct WorldShape {
             return;
         }
         if ((selfMask & collider.layer) == 0u) {
-            return; // P4.6: filtragem por mask do corpo (uma direção)
+            return; // filtragem por mask do corpo (uma direção)
         }
         const WorldShape other = worldShapeOf(scene, e, collider);
         WorldShape self;
@@ -306,7 +306,7 @@ void PhysicsWorld::step(eng::scene::Scene& scene, float fixedDt)
 {
     contacts_.clear();
 
-    // P4.7.0 Bloco 1: par canônico (menor índice primeiro — geração
+    // Par canônico (menor índice primeiro — geração
     // desempata) para o diff de triggers entre passos.
     auto canonicalPair = [](eng::ecs::Entity a,
                             eng::ecs::Entity b) {
@@ -326,16 +326,16 @@ void PhysicsWorld::step(eng::scene::Scene& scene, float fixedDt)
     scene.world().each<RigidBody>(
         [&](eng::ecs::Entity e, RigidBody& body) {
             if (body.bodyType == BodyType::Static) {
-                return; // P4.6: nunca integra (mesmo com mass > 0)
+                return; // nunca integra (mesmo com mass > 0)
             }
             if (body.mass <= 0.f) {
                 return; // legado pré-P4.6: massa 0 = estático
             }
             if (!scene.participatesIn(e, eng::scene::LayerStage::Physics)) {
-                return; // camada sem física (ADR-051)
+                return; // camada sem física
             }
             if (body.bodyType == BodyType::Kinematic) {
-                // P4.6 (Bloco 1): cinemático — a velocidade é 100%
+                // Cinemático — a velocidade é 100%
                 // AUTORADA (script/Inspector): sem gravidade, sem
                 // damping. Integra e EMPURRA os dinâmicos na resolução
                 // (massa inversa efetiva 0 — ver effectiveInvMass).
@@ -361,7 +361,7 @@ void PhysicsWorld::step(eng::scene::Scene& scene, float fixedDt)
             }
         });
 
-    // 2) Broad/narrow (P4.7.0 Bloco 6 — SPATIAL HASH): a v1 varria TODOS
+    // 2) Broad/narrow: a v1 varria TODOS
     //    os pares (O(n²) — 200 corpos = 20k checagens por passo no C33).
     //    Agora: AABB de cada colisor insere o índice nas células que
     //    cobre (célula ≥ 2× a maior extensão da cena); pares candidatos
@@ -466,13 +466,13 @@ void PhysicsWorld::step(eng::scene::Scene& scene, float fixedDt)
             contacts_.push_back(ContactEvent{
                 a, b, normal, mid, depth, trigger});
             if (trigger) {
-                // P4.7.0 Bloco 1: par de trigger ATIVO neste passo (diff
+                // Par de trigger ATIVO neste passo (diff
                 // com o passo anterior publica on_enter/on_exit no fim).
                 currentTriggers.push_back(canonicalPair(a, b));
-                continue; // contato SEM resolução (§7.2)
+                continue; // contato SEM resolução
             }
 
-            // P4.7.0 Bloco 1: on_hit nos DOIS sentidos (o bridge do
+            // On_hit nos DOIS sentidos (o bridge do
             // NI-Script roda o handler do script cujo self == evento;
             // normal aponta de other PARA self — convenção do doc).
             eng::scene::HitEvent hitAB;
@@ -490,7 +490,7 @@ void PhysicsWorld::step(eng::scene::Scene& scene, float fixedDt)
 
             // 3) Resolução: projeção posicional proporcional às massas
             //    inversas + impulso escalar ao longo da normal.
-            //    P4.6: invA/invB via effectiveInvMass — Static/Kinematic
+            //    InvA/invB via effectiveInvMass — Static/Kinematic
             //    têm massa inversa efetiva 0 (não são empurrados).
             RigidBody* bodyA = scene.world().get<RigidBody>(a);
             RigidBody* bodyB = scene.world().get<RigidBody>(b);
@@ -578,7 +578,7 @@ void PhysicsWorld::step(eng::scene::Scene& scene, float fixedDt)
 }
 
 // =============================================================================
-// raycast (§7.4)
+// raycast
 // =============================================================================
 
 eng::core::Result<RaycastHit> PhysicsWorld::raycast(
@@ -660,10 +660,10 @@ eng::core::Result<RaycastHit> PhysicsWorld::raycast(
 }
 
 // =============================================================================
-// CharacterBody (§7.5)
+// CharacterBody
 // =============================================================================
 
-/// P4.7.0 Bloco 5 (comum ao moveAndSlide/kinematicSweepMove): fatia o
+/// Fatia o
 /// motion em substeps de no máximo MEIO raio (anti-túnel, teto 64) e
 /// compõe sweepSphereOnce por chunk. Escreve a posição final em
 /// `outResolved` (a posição inicial `from` é imutável — chamador mantém).
@@ -690,7 +690,7 @@ void sweptSphereMove(const eng::scene::Scene& scene, eng::ecs::Entity body,
 Vec3 PhysicsWorld::kinematicSweepMove(const eng::scene::Scene& scene,
                                       eng::ecs::Entity body, Vec3 motion)
 {
-    // P4.7.0 Bloco 5: varredura por COLLIDER (sem CharacterBody). O raio
+    // Varredura por COLLIDER (sem CharacterBody). O raio
     // da esfera varrida: Sphere = radius; Box = círculo inscrito na
     // meia-extensão MÍNIMA (conservador — para no espaço mais apertado).
     const eng::math::Mat4 world = scene.computeWorldMatrix(body);
@@ -735,7 +735,7 @@ Vec3 PhysicsWorld::moveAndSlide(const eng::scene::Scene& scene,
     Vec3 position = {world.at(3, 0), world.at(3, 1), world.at(3, 2)};
     const float radius = character->radius;
 
-    // P4.6 (Bloco 1 — anti-túnel): o v1 fazia UMA passada (checava só o
+    // O v1 fazia UMA passada (checava só o
     // destino — movimento > raio atravessava paredes finas). Agora o
     // motion é fatiado em substeps de no máximo meio raio; cada substep
     // projeta a penetração (sweepSphereOnce) — parar/deslizar é a
@@ -775,7 +775,7 @@ Vec3 PhysicsWorld::moveAndSlide(const eng::scene::Scene& scene,
 }
 
 // =============================================================================
-// TimestepAccumulator (§7.6)
+// TimestepAccumulator
 // =============================================================================
 
 std::uint32_t TimestepAccumulator::advance(float frameDt) noexcept

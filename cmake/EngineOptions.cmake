@@ -1,5 +1,5 @@
 # =============================================================================
-# eng:: — Opções globais e helpers de módulos (FASE 1, §17.1)
+# eng:: — Opções globais e helpers de módulos
 # =============================================================================
 
 option(ENG_BUILD_TESTS       "Construir testes unitários do motor"                 ON)
@@ -31,7 +31,7 @@ function(eng_apply_lto target)
 endfunction()
 
 # --- eng_apply_test_policy(<target>) -----------------------------------------
-# Política para executáveis de teste: warnings (ADR-020), sanitizers, LTO e
+# Política para executáveis de teste: warnings, sanitizers, LTO e
 # -fno-rtti. O RTTI nos testes forçaria referências a typeinfo de classes do
 # motor (compiladas com -fno-rtti, ADR-005) — Catch2 v3.5.2 compila limpo
 # sem RTTI nesta configuração, então os testes também ficam sem RTTI.
@@ -46,7 +46,7 @@ endfunction()
 
 # --- eng_add_module(<name> [fontes...]) ---------------------------------------
 # Cria a biblioteca estática eng::<name> com a política completa de flags:
-# C++20, warnings (ADR-020), sanitizers, -fno-exceptions/-fno-rtti (ADR-004/005),
+# C++20, warnings, sanitizers, -fno-exceptions/-fno-rtti,
 # LTO opcional e include público em include/.
 function(eng_add_module name)
     set(ENG_MODULE_SOURCES ${ARGN})

@@ -281,3 +281,50 @@ linha no PR:
    roteiro de aceite (recomendação: plataforma 2D).
 4. **Export:** começar pelo bundle aberto no próprio app (recomendação) ou ir
    direto ao APK standalone.
+
+---
+
+## 10. Estado (execução)
+
+Decisões tomadas na execução: **Compose** para a interface, **Plataforma 2D**
+como modelo principal, **exportação `.goni` jogável dentro do app** antes do
+APK independente. O backend continua em `auto`; a escolha GLES × Vulkan
+depende de medir no C33.
+
+Feito:
+
+- **Etapa 0**: docs e scripts de fase em `docs/archive/`; runtime-demo
+  (triângulo) removido; espelho de diagnóstico, watchdog e marks de boot
+  fora do app (fica um crash log nativo + um Kotlin, exportáveis em Ajustes);
+  ~630 marcações de fase removidas dos comentários C++; README e roadmap
+  reescritos.
+- **Etapa 1**: `EditorProtocol` (C++): `snapshot` + `call` em JSON,
+  documentado em `docs/editor-protocol.md` e coberto por `ProtocolTests`
+  (todas as operações usadas pela UI). JNI de 130 para 21 funções, com o
+  contrato lido do `NativeBridge.kt`. Modelos de entidade e de projeto, grupo
+  de desfazer (um modelo = um passo) e controles padrão do jogo.
+- **Etapa 2**: módulo `:ui` em Compose com design system próprio e testes de
+  screenshot; `:app` com `MainActivity` + `EditorController`.
+- **Etapa 3 (parte)**: exportar `.goni`, importar (cria cópia se o jogo já
+  existe) e **Jogar** direto da tela inicial, sem o editor.
+
+Correções de motor encontradas no caminho:
+
+- `NiRuntime`: os bindings do catálogo guardavam ponteiro para memória já
+  liberada e checavam a entidade com o ponteiro errado. Um script que
+  escrevia `e.rigidbody.velocity` lia lixo, o que no aparelho podia travar
+  ou crashar o Play.
+- Scripts eram **copiados** para a entidade ao anexar; editar o arquivo
+  depois não mudava nada. Agora o componente fica ligado ao arquivo
+  (`scriptAsset`): salvar atualiza as entidades e o Play usa a versão atual.
+- Sem ações de input configuradas, `action_down(...)` nunca disparava no
+  Play. Agora há controles padrão (toque + teclado) e a UI os desenha.
+
+Pendente:
+
+- Validar o roteiro da seção 7 no Realme C33. A interface foi verificada por
+  screenshots e o motor por testes, mas nada rodou no aparelho ainda.
+- APK independente a partir do `.goni`.
+- Dividir `EditorDocument` em serviços e `EditorTests.cpp` por área. O
+  protocolo já é a porta única da UI, então a divisão interna não bloqueia
+  nada.

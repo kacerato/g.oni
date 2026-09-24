@@ -10,7 +10,7 @@
 ///   todas as conversões world↔screen passam pela câmera em foco).
 /// - Ortográfica 2D: posX/posY em unidades de mundo, zoom em
 ///   PIXELS POR UNIDADE (mesma semântica da câmera do editor — conversão
-///   direta). Rotação/perspectiva ficam para o rework de câmera 3D (P1):
+///   direta). Rotação/perspectiva ficam para o rework de câmera 3D:
 ///   campo sem consumidor seria API inerte (missão proíbe).
 /// - Várias câmeras: a PRIMEIRA ativa em ordem estável (índice de criação)
 ///   vence; o CameraTickSystem AVISA ambiguidade (dados não ficam em
@@ -88,7 +88,7 @@ struct ActiveCamera {
 /// ambiguidade. Consumidores com scheduler consultam o cache; sem
 /// scheduler, `resolveActiveCamera` direto.
 ///
-/// P4.7.0 Bloco 4 — pipeline do follow: DEADZONE → SMOOTHING → CLAMP
+/// Pipeline do follow: DEADZONE → SMOOTHING → CLAMP
 /// pós-zoom (ordem fixa documentada). O resultado final (posição
 /// suavizada/limitada) é ESCRITO no cache `activeCamera()` — o editor e
 /// o runtime consomem a posição FINAL, nunca a base.

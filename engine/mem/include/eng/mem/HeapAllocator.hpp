@@ -13,7 +13,7 @@ namespace eng::mem {
 ///
 /// Estatísticas são O(1); `owns`/`deallocate` são O(1) amortizado via mapa
 /// de ponteiros vivos — o custo existe de propósito nesta fase (rastreio em
-/// debug) e será reduzido em hot paths nas fases seguintes (ADR-007).
+/// debug) e será reduzido em hot paths nas fases seguintes.
 class HeapAllocator final : public Allocator {
 public:
     /// `name` deve apontar para armazenamento durável (string literal).

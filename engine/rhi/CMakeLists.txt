@@ -1,4 +1,4 @@
-# eng::rhi — Renderer Abstraction (FASE 4, missão §5; ADR-035/036)
+# eng::rhi — Renderer Abstraction
 # Interface de hardware gráfico: conceitos de alto nível, ZERO dependência
 # de Vulkan/OpenGL ES/EGL. Backends reais entram em backends/ nas FASES 5/6
 # (opções ENG_BUILD_RHI_VULKAN / ENG_BUILD_RHI_GLES) e são linkados no

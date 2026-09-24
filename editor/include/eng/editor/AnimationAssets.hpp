@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::editor::AnimationAssets — codec JSON de AnimationClip (P2, §8).
+/// eng::editor::AnimationAssets — codec JSON de AnimationClip.
 ///
 /// Formato do asset .anim.json (assets/animations/<nome>.anim.json):
 ///

@@ -9,7 +9,7 @@
 
 namespace eng::core {
 
-/// Versão semântica do motor e do formato de projeto (§8: formatVersion).
+/// Versão semântica do motor e do formato de projeto.
 /// Agregado: `Version{0, 1, 0}`. Comparação lexicográfica por
 /// (major, minor, patch) via operator<=>.
 struct Version {

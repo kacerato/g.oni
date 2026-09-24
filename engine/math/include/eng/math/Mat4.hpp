@@ -7,7 +7,7 @@
 
 namespace eng::math {
 
-/// Matriz 4x4 de floats, column-major (ADR-006): `m[col * 4 + row]`.
+/// Matriz 4x4 de floats, column-major: `m[col * 4 + row]`.
 /// Vetores são colunas: `v' = M * v` com `v'(r) = Σ_k M(k, r) * v(k)`.
 /// Convenção right-handed, câmera olhando para -Z, ângulos em radianos.
 ///

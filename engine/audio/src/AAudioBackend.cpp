@@ -1,9 +1,9 @@
 #include "eng/audio/Audio.hpp"
 #include "eng/audio/AudioAdapt.hpp"
 
-/// AAudioBackend — saída REAL no Android (FASE 9, §6.9; ADR-047).
+/// AAudioBackend — saída REAL no Android.
 ///
-/// P3.4 (Realme C33 SIGSEGV na janela de áudio): este backend é a
+/// Este backend é a
 /// frente de batalha da missão. A janela de morte foi pinada pelo
 /// diagnóstico P3.3 DENTRO de start() — entre o marco "STARTUP_AUDIO
 /// backend AAudio" e "started/failed". As correções (ver
@@ -39,7 +39,7 @@
 /// segue VIVO sem device de áudio (fallback NullBackend do host — o
 /// editor continua 100% funcional, previews/Play seguem sem som).
 ///
-/// Padrão dos backends gráficos (ADR-037/038): dlopen("libaaudio.so")
+/// Padrão dos backends gráficos: dlopen("libaaudio.so")
 /// em runtime + dlsym — SEM link edit e SEM include de headers Android
 /// no engine (o include existe apenas sob __ANDROID__ neste TU).
 /// Dispositivo < API 26: libaaudio.so não existe → start() falha com
@@ -101,18 +101,18 @@ struct AAudioApi {
     StreamControlFn requestStop{nullptr};
     StreamCloseFn closeStream{nullptr};
     BuilderDeleteFn deleteBuilder{nullptr};
-    // P3.3 — leitura dos parâmetros EFETIVOS do stream aberto.
+    // Leitura dos parâmetros EFETIVOS do stream aberto.
     StreamGetIntFn getChannelCount{nullptr};
     StreamGetIntFn getSampleRate{nullptr};
     StreamGetFormatFn getFormat{nullptr};
-    // P3.4 — estado do stream (causa 2), parada determinística (causa
+    // Estado do stream (causa 2), parada determinística (causa
     // 3) e dimensionamento do scratch do callback.
     StreamGetStateFn getState{nullptr};
     WaitForStateChangeFn waitForStateChange{nullptr};
     StreamGetIntFn getBufferCapacityInFrames{nullptr};
-    // P3.4 — texto legível do código de erro nos marcos "failed".
+    // Texto legível do código de erro nos marcos "failed".
     ResultTextFn resultText{nullptr};
-    // P3.5 (T4) — SEM MMAP: PERFORMANCE_MODE_NONE força o caminho Legacy
+    // SEM MMAP: PERFORMANCE_MODE_NONE força o caminho Legacy
     // (AudioTrack do framework) — o MMAP do AAudio só é suportado em
     // devices selecionados (Pixel, S10, Mate20…); em HALs budget como o
     // Unisoc T612 o path MMAP falha ou crasha. Padrão da indústria (Oboe).
@@ -268,7 +268,7 @@ public:
 
         // ---- AUDIO_BUILDER_CREATE ---------------------------------------
         reportStage(backend_stage::BuilderCreate, "begin", "");
-        // P3.5: AAudio_createStreamBuilder NÃO devolve aaudio_result_t —
+        // AAudio_createStreamBuilder NÃO devolve aaudio_result_t —
         // um null aqui é falha de alocação/estado interno da libaaudio.
         // O errno no momento da chamada é a ÚNICA evidência disponível;
         // em device REAL isto é ERRO grave (não "esperado" — mensagem
@@ -302,7 +302,7 @@ public:
         // ---- AUDIO_BUILDER_CONFIG ---------------------------------------
         // Pedimos os parâmetros do MIXER — mas são SUGESTÕES: o que
         // vale é o que o HAL abriu (verificado/adaptado adiante).
-        // P3.5 (T4):
+        // 
         //  - PERFORMANCE_MODE_NONE explícito — SEM MMAP no Unisoc (o
         //    caminho Legacy do framework é o comprovadamente seguro);
         //  - taxa 48000 (default do mixer) + canais/formato EXPLÍCITOS.
@@ -698,7 +698,7 @@ private:
 
 }  // namespace
 
-/// P4.1 (T3/D6): fábrica EXPOSTA do AAudio — o Auto backend (cadeia de
+/// Fábrica EXPOSTA do AAudio — o Auto backend (cadeia de
 /// seleção automática, AutoBackend.cpp) tenta esta PRIMEIRO e cai para o
 /// OpenSL ES quando o HAL recusa. O createDefaultBackend mudou de dono:
 /// vive no AutoBackend.cpp nos dois builds.
@@ -715,7 +715,7 @@ std::unique_ptr<IAudioBackend> createAAudioBackend()
 
 namespace eng::audio {
 
-// P4.1 (T3/D6): no Linux a cadeia Auto NÃO existe (não há device) — a
+// No Linux a cadeia Auto NÃO existe (não há device) — a
 // fábrica do AAudio também não; AutoBackend.cpp dá o createDefaultBackend.
 
 }  // namespace eng::audio

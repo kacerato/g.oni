@@ -8,7 +8,7 @@ ENG_LOG_CATEGORY("rhi")
 namespace eng::rhi {
 namespace {
 
-/// Fail-safe do dtor/move: encerra sessão pendente sem lançar (ADR-035).
+/// Fail-safe do dtor/move: encerra sessão pendente sem lançar.
 void endIfPending(const std::shared_ptr<detail::RendererState>& state,
                   std::uint64_t frameId, bool ended) noexcept {
     if (ended || state == nullptr || state->backend == nullptr || frameId == 0) {

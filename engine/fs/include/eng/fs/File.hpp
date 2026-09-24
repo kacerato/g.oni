@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::fs::File — handle de arquivo RAII (FASE 3, missão §2.1; ADR-027).
+/// eng::fs::File — handle de arquivo RAII.
 ///
 /// - Envolve std::FILE* (C API): sem exceções, sem flags de stream C++.
 /// - Modos: Read (rb) ou Write (wb, trunca). Append não entra na FASE 3.

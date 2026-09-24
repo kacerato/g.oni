@@ -1,6 +1,6 @@
 #include "eng/editor/AssetBrowser.hpp"
 
-/// AssetBrowser — composição registry × disco (FASE 8, §8.5; auditoria G7).
+/// AssetBrowser — composição registry × disco.
 
 #include <algorithm>
 #include <unordered_map>
@@ -265,7 +265,7 @@ Result<void> AssetBrowser::rename(std::string_view category,
     if (moved.isError()) {
         return makeUnexpected(moved.error());
     }
-    // Referências por AssetId sobrevivem (ADR-029) — atualiza sourcePath.
+    // Referências por AssetId sobrevivem — atualiza sourcePath.
     for (const auto& meta : registry_.all()) {
         if (meta.sourcePath == from) {
             auto updated = meta;
@@ -308,7 +308,7 @@ Result<std::vector<std::byte>> AssetBrowser::read(std::string_view category,
                                            "categoria desconhecida"));
     }
     // categoryDir é relativo ao assetsRoot do projeto; Path::operator/
-    // valida contra traversal (ADR-027) — "../" não escapa.
+    // valida contra traversal — "../" não escapa.
     const eng::fs::Path path = categoryDir(category) / eng::fs::Path{std::string{name}};
     return fs_->readAllBytes(path);
 }

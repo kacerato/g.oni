@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::assets::AssetSerial — codec de campo para AssetId em componentes
-/// serializados (FASE 3, missão §2.7; ADR-033).
+/// serializados.
 ///
 /// "AssetId em componentes é serializado como string UUID": o StructCodec
 /// consulta codecs por NOME de tipo — este header registra o de

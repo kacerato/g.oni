@@ -1,6 +1,6 @@
 #pragma once
 
-/// Loader dinâmico de Vulkan (FASE 5, missão §17) — estilo volk, minimal.
+/// Loader dinâmico de Vulkan — estilo volk, minimal.
 ///
 /// Carrega o loader da plataforma (`libvulkan.so.1` no Linux,
 /// `libvulkan.so` no Android) via `dlopen` e resolve `vkGetInstanceProcAddr`.
@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <string>
 
-// FASE 7: surface Android real (VkAndroidSurfaceCreateInfoKHR exige a
+// Surface Android real (VkAndroidSurfaceCreateInfoKHR exige a
 // platform-macro; apenas no NDK — o Linux não a define nem a usa). Sem
 // qualquer header de JNI aqui (missão §II.4: NDK API, fronteira rhi).
 #ifdef __ANDROID__

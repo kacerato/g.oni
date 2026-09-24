@@ -1,5 +1,5 @@
 # =============================================================================
-# libgoni.so — alvo nativo do APK (FASE 7, missão §XXIII/§XXIV).
+# libgoni.so — alvo nativo do APK.
 #
 # REUSA os targets do engine via add_subdirectory — NENHUMA fonte
 # duplicada. Os MESMOS runtime/AndroidRuntime.cpp testados no Linux
@@ -12,7 +12,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(goni LANGUAGES CXX)
 
-# Mesmas políticas do build raiz do engine (ADR-001/ADR-003).
+# Mesmas políticas do build raiz do engine.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -32,7 +32,7 @@ set(ENG_BUILD_TESTS OFF CACHE BOOL "Sem testes no APK" FORCE)
 
 # Módulos do engine (mesmos CMakeLists do Linux — sem cópias).
 add_subdirectory("${GONI_ROOT}/engine" engine)
-# FASE 8: núcleo C++ do editor — MESMA biblioteca testada no Linux
+# Núcleo C++ do editor — MESMA biblioteca testada no Linux
 # (eng::editor + suite Catch2); fontes JAMAIS duplicadas.
 add_subdirectory("${GONI_ROOT}/editor" editor)
 

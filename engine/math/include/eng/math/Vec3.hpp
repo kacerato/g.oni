@@ -3,7 +3,7 @@
 namespace eng::math {
 
 /// Vetor 3D de floats (posições, direções, cores lineares).
-/// Convenção: right-handed, ângulos em radianos (ADR-006).
+/// Convenção: right-handed, ângulos em radianos.
 struct Vec3 {
     float x{0.0f};
     float y{0.0f};

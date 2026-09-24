@@ -1,6 +1,6 @@
 #include "eng/ui/Ui.hpp"
 
-/// eng::ui — implementação (FASE 9).
+/// eng::ui — implementação.
 
 #include <algorithm>
 #include <cmath>

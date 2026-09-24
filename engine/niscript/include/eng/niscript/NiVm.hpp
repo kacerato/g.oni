@@ -1,16 +1,16 @@
 #pragma once
 
-/// eng::ni — VM do NI-Script (FASE 11, design §6).
+/// eng::ni — VM do NI-Script.
 ///
 /// Execução: stack machine com ORÇAMENTO GLOBAL de instruções (§6.2 —
-/// determinístico, sem threads); regiões `repair`/`timeout` (§5.3/§5.4);
+/// determinístico, sem threads); regiões `repair`/`timeout`;
 /// Faults reparáveis (nunca exceções — ADR-004).
 ///
 /// Instância (NiScriptState) = programa compartilhado + entidade self +
 /// globais + links + lastFault. O CONJUNTO de instâncias (NiInstanceSet)
-/// vive no host/consumidor e dá a propagação BFS de `emit` (§4).
+/// vive no host/consumidor e dá a propagação BFS de `emit`.
 ///
-/// Determinismo (§6.3): sem relógio/RNG/threads/hash-ordem; f64 IEEE sem
+/// Determinismo: sem relógio/RNG/threads/hash-ordem; f64 IEEE sem
 /// fast-math; iteração por ORDEM DE INSERÇÃO. Mesma cena + mesmos scripts +
 /// mesma sequência de eventos ⇒ mesmos efeitos (testado).
 
@@ -44,7 +44,7 @@ public:
         NiHost* host = nullptr;                ///< nulos só se não usados
         const NiBindingTable* bindings = nullptr;
         NiInstanceSet* set = nullptr;          ///< propagação de emit
-        std::uint64_t budget = kDefaultBudget; ///< instruções (§6.2)
+        std::uint64_t budget = kDefaultBudget; ///< instruções
     };
 
     /// Informação de trace (hook de depuração — §6.5).
@@ -89,7 +89,7 @@ private:
         std::uint32_t pc = 0;
         std::uint32_t base = 0;          ///< base dos args+locais na pilha
         std::size_t regionBase = 0;      ///< regions.size() na entrada
-        bool fromEmit = false;           ///< criado por emit (§4: profundidade)
+        bool fromEmit = false;           ///< criado por emit
     };
 
     Params params_{};
@@ -172,7 +172,7 @@ private:
 /// Máquina virtual — executa UM evento em UMA instância (design §7.4).
 class NiVm final {
 public:
-    /// Hook de depuração (§6.5): chamado a cada `stride` instruções.
+    /// Hook de depuração: chamado a cada `stride` instruções.
     /// stride == 0 desliga. O hook vê o estado (const) — não pode mutar.
     void setTraceHook(std::function<void(const NiExecContext::TraceInfo&)> hook,
                       std::uint32_t stride) noexcept

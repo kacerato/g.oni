@@ -1,4 +1,4 @@
-/// Testes do NI-Script (FASE 11) — suite completa.
+/// Testes do NI-Script — suite completa.
 ///
 /// Cobertura (missão FASE 11):
 ///   - Lexer/Parser/Sema: tokens, formas, diagnósticos com LINHA/COLUNA;
@@ -13,7 +13,7 @@
 ///   - Segurança: nativos fechados, orçamento obrigatório, sem nil.
 ///
 /// Componente de teste (TScriptable) + bindings seguem o MESMO padrão do
-/// editor: registro no CONSUMIDOR, reflexão por offset (ADR-043/D2).
+/// editor: registro no CONSUMIDOR, reflexão por offset.
 
 #include <cmath>
 #include <cstring>
@@ -119,7 +119,7 @@ struct TestHost final : eng::ni::NiHost {
         return found;
     }
 
-    // --- P4.6 (Bloco 1): hosts de teste implementam os serviços reais ----
+    // --- P4.6: hosts de teste implementam os serviços reais ----
     // translate: transform direto; moveAndSlide: DELEGA para a física REAL
     // (o comportamento do verbo no test é o do jogo — zero fake de física).
 
@@ -445,10 +445,10 @@ TEST_CASE("ni vm: divisão por zero é Fault", "[ni]")
     REQUIRE(fault.has_value());
     REQUIRE(fault->kind == NiFault::Kind::DivByZero);
     REQUIRE(fault->line == 3);      // linha/coluna precisos (missão)
-    REQUIRE(st.global("g")->i == 0); // instrução NÃO aplicou escrita (§5.3.3)
+    REQUIRE(st.global("g")->i == 0); // instrução NÃO aplicou escrita
 }
 
-// P4.1 (T2/D5): atribuição composta — o script canônico do editor usa
+// Atribuição composta — o script canônico do editor usa
 // `position.x -= dt`; sem os operadores o PLAY falhava em silêncio.
 TEST_CASE("ni vm: atribuição composta += -= *= /=", "[ni][p41]")
 {
@@ -503,7 +503,7 @@ TEST_CASE("ni vm: curto-circuito and/or", "[ni]")
         "stop\n");
     auto& st = env.instantiate(p, env.scene.createNode());
     REQUIRE(env.vm.run(st, "update", env.params()) == std::nullopt);
-    REQUIRE(st.global("hits")->i == 0); // RHS nunca avaliado (§3.1)
+    REQUIRE(st.global("hits")->i == 0); // RHS nunca avaliado
     REQUIRE(st.global("r1")->i == 0);
     REQUIRE(st.global("r2")->i == 1);
 }
@@ -664,7 +664,7 @@ TEST_CASE("ni §5.2: var do corpo reinicia por iteração", "[ni]")
         "stop\n");
     auto& st = env.instantiate(p, env.scene.createNode());
     REQUIRE(env.vm.run(st, "update", env.params()) == std::nullopt);
-    REQUIRE(st.global("g")->i == 5); // x reinicia a cada iteração (§5.2.5)
+    REQUIRE(st.global("g")->i == 5); // x reinicia a cada iteração
 }
 
 TEST_CASE("ni §5.2: repeat dinâmico fora do range → RepeatFault reparável",
@@ -707,7 +707,7 @@ TEST_CASE("ni §5.3: repair captura divisão por zero e continua", "[ni][semanti
         "stop\n");
     auto& st = env.instantiate(p, env.scene.createNode());
     REQUIRE(env.vm.run(st, "update", env.params()) == std::nullopt);
-    // NÃO-transacional (§5.3.3): efeitos ANTERIORES persistem (g=99);
+    // NÃO-transacional: efeitos ANTERIORES persistem (g=99);
     // instruções seguintes da região NÃO executam; continua após o stop.
     REQUIRE(st.global("g")->i == 109);
     REQUIRE(st.lastFault().has_value());
@@ -751,7 +751,7 @@ TEST_CASE("ni §5.3: fault SEM repair aborta apenas o EVENTO", "[ni][semantica]"
     REQUIRE(fault.has_value());
     REQUIRE(fault->kind == NiFault::Kind::DivByZero);
     REQUIRE(st.global("g")->i == 1);
-    // o script NÃO morre: próximo evento roda (§5.3.5)
+    // o script NÃO morre: próximo evento roda
     REQUIRE(env.vm.run(st, "outro", env.params()) == std::nullopt);
     REQUIRE(st.global("g")->i == 3);
 }
@@ -925,7 +925,7 @@ TEST_CASE("ni §4: emissão aninhada além de 32 → EmitDepth", "[ni][semantica
     const auto fault = env.vm.run(st, "eco", env.params());
     REQUIRE(fault.has_value());
     REQUIRE(fault->kind == NiFault::Kind::EmitDepth);
-    REQUIRE(st.global("g")->i == 33); // raiz + 32 entregues por emit (§4)
+    REQUIRE(st.global("g")->i == 33); // raiz + 32 entregues por emit
 }
 
 TEST_CASE("ni §4: link duplicado é idempotente; auto-link é Fault", "[ni]")
@@ -955,7 +955,7 @@ TEST_CASE("ni §4: link duplicado é idempotente; auto-link é Fault", "[ni]")
 }
 
 // =============================================================================
-// Bindings — reflexão + ECS (ADR-024: geração, nunca UB)
+// Bindings — reflexão + ECS
 // =============================================================================
 
 TEST_CASE("ni bindings: get/set por reflexão (float/int/string/bool)", "[ni][bindings]")
@@ -1226,7 +1226,7 @@ TEST_CASE("ni E2E: fonte .nis muda componente ECS via reflexão", "[ni][e2e]")
 }
 
 // =============================================================================
-// Determinismo (§6.3) — mesma entrada ⇒ mesmos efeitos
+// Determinismo — mesma entrada ⇒ mesmos efeitos
 // =============================================================================
 
 TEST_CASE("ni determinismo: duas execuções idênticas byte-a-byte", "[ni][determinismo]")
@@ -1268,7 +1268,7 @@ TEST_CASE("ni determinismo: duas execuções idênticas byte-a-byte", "[ni][dete
 }
 
 // =============================================================================
-// Segurança (§8) — nativos fechados, orçamento obrigatório, sem nil
+// Segurança — nativos fechados, orçamento obrigatório, sem nil
 // =============================================================================
 
 TEST_CASE("ni segurança: loop infinito é impossível (orçamento)", "[ni][segurança]")
@@ -1379,7 +1379,7 @@ TEST_CASE("ni ferramentas: hook de trace observa execução (§6.5)", "[ni][tool
 }
 
 // =============================================================================
-// P4.6 (Bloco 1): verbos de movimento — move / move_and_slide
+// Verbos de movimento — move / move_and_slide
 // =============================================================================
 
 TEST_CASE("p46 ni: move(dx,dy) transla o SELF (teletransporte cru)",

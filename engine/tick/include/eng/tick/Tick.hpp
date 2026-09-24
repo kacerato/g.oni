@@ -3,7 +3,7 @@
 /// eng::tick — arquitetura de Tick: fases, agendador determinístico e os
 /// ticks concretos de gameplay (evolução P0-5; ADR-051).
 ///
-/// Taxonomia = composição sobre o ECS (ADR-051):
+/// Taxonomia = composição sobre o ECS:
 ///   Um "tipo de Tick" no G.ONI é o PAR (componente que declara, sistema
 ///   que executa), agendado por um TickScheduler com fases canônicas:
 ///
@@ -22,7 +22,7 @@
 ///     que é camada de composição (mesmo padrão do catálogo de
 ///     componentes, ADR-043).
 ///   - dt é o dt do FRAME; sistemas per-entidade escalam pela camada via
-///     `Scene::timeScaleOf` (ADR-051).
+///     `Scene::timeScaleOf`.
 
 #include <cstdint>
 #include <memory>
@@ -46,7 +46,7 @@ enum class Phase : std::uint8_t {
 };
 constexpr std::size_t kPhaseCount = 4;
 
-/// Um sistema de tick (ADR-051 — composição sobre o ECS).
+/// Um sistema de tick.
 class TickSystem {
 public:
     virtual ~TickSystem() = default;
@@ -109,13 +109,13 @@ private:
 
 // =============================================================================
 // Ticks concretos — wrappers finos dos sistemas de gameplay que JÁ
-// existem (FASE 10). O valor é a ORDEM DECLARADA e o ponto de extensão
+// existem. O valor é a ORDEM DECLARADA e o ponto de extensão
 // único para o frame do jogo (editor hoje, runtime de bundles depois).
 // =============================================================================
 
-/// Física com timestep fixo (FASE 10, §7.6): o dt do frame acumula; passos
+/// Física com timestep fixo: o dt do frame acumula; passos
 /// de tamanho fixo rodam a física. Corpos em camadas sem participação de
-/// física são pulados dentro do próprio PhysicsWorld (ADR-051).
+/// física são pulados dentro do próprio PhysicsWorld.
 class PhysicsTick final : public TickSystem {
 public:
     PhysicsTick(eng::physics::PhysicsWorld& world,
@@ -133,7 +133,7 @@ private:
     eng::physics::TimestepAccumulator& accumulator_;
 };
 
-/// Animação TRS (FASE 10, §7.9): dt do frame escalado POR ENTIDADE pela
+/// Animação TRS: dt do frame escalado POR ENTIDADE pela
 /// camada (`Scene::timeScaleOf` — ADR-051).
 class AnimationTick final : public TickSystem {
 public:
@@ -151,7 +151,7 @@ private:
     eng::animation::AnimationBank& bank_;
 };
 
-/// Partículas CPU (FASE 10, §7.12): idem animação — dt escalado por
+/// Partículas CPU: idem animação — dt escalado por
 /// entidade pela camada.
 class ParticleTick final : public TickSystem {
 public:

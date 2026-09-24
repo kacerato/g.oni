@@ -1,4 +1,4 @@
-/// Testes do editor (FASE 8, missão §8.10) — rodam no LINUX.
+/// Testes do editor — rodam no LINUX.
 ///
 /// Cobertura exigida pela missão: projeto (new/open/save/settings),
 /// entidades (create/delete/duplicate/rename/hierarchy/componentes),
@@ -10,7 +10,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <dlfcn.h>  // P4.5.2: contrato JNI (dlsym RTLD_DEFAULT)
+#include <dlfcn.h>  // contrato JNI (dlsym RTLD_DEFAULT)
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -97,7 +97,7 @@ void ensureProject(EditorDocument& doc, const char* name)
 }  // namespace
 
 // =============================================================================
-// 1. Projeto (§8.10: criar/abrir/salvar projeto)
+// 1. Projeto
 // =============================================================================
 
 TEST_CASE("editor: cria projeto com estrutura completa", "[editor]")
@@ -154,7 +154,7 @@ TEST_CASE("editor: settings renomeia e marca dirty", "[editor]")
 }
 
 // =============================================================================
-// 2. Entidades (§8.10: criar/apagar/duplicar/rename/hierarchy)
+// 2. Entidades
 // =============================================================================
 
 TEST_CASE("editor: cria entidade com nome e componente Name", "[editor]")
@@ -271,7 +271,7 @@ TEST_CASE("editor: hierarquia snapshot com profundidade estável", "[editor]")
 }
 
 // =============================================================================
-// 3. Componentes + Inspector (§8.10)
+// 3. Componentes + Inspector
 // =============================================================================
 
 TEST_CASE("editor: catálogo contém os built-ins", "[editor]")
@@ -638,7 +638,7 @@ TEST_CASE("editor: scriptWrite/Read round-trip + registry (P0-7)", "[editor]")
     REQUIRE(read.ok());
     CHECK(read.value() == src);
 
-    // Substituição preserva o id (ADR-029).
+    // Substituição preserva o id.
     auto before = f.doc->assets()->list("scripts");
     REQUIRE(before.ok());
     REQUIRE(before.value().size() == 1);
@@ -815,7 +815,7 @@ TEST_CASE("editor: transform Euler↔Quat round-trip", "[editor]")
 }
 
 // =============================================================================
-// 5. Cena save/load (§8.10)
+// 5. Cena save/load
 // =============================================================================
 
 TEST_CASE("editor: save/load de cena com dirty flags", "[editor]")
@@ -850,7 +850,7 @@ TEST_CASE("editor: save/load de cena com dirty flags", "[editor]")
 }
 
 // =============================================================================
-// 6. Play/Stop — separação editor × runtime (§8.10)
+// 6. Play/Stop — separação editor × runtime
 // =============================================================================
 
 TEST_CASE("editor: play clona, edição rejeitada, mutação não vaza", "[editor]")
@@ -984,7 +984,7 @@ TEST_CASE("editor: PLAY roda scripts NI-Script do clone (FASE 11)",
     CHECK(nameAfter.value() == "motor");
 
     // STOP: up destroy (best-effort) roda ANTES do descarte; edição NUNCA
-    // foi tocada (ADR-044).
+    // foi tocada.
     f.doc->stop();
     CHECK(f.doc->runtimeScripts().empty());
     auto editX = eng::editor::Inspector::getField(
@@ -1027,7 +1027,7 @@ TEST_CASE("editor: script com erro de compilação é desabilitado, cena segue",
 }
 
 // =============================================================================
-// P4.1 — T2/D5: linguagem (atribuição composta) + diagnóstico VISÍVEL
+// T2/D5: linguagem (atribuição composta) + diagnóstico VISÍVEL
 // =============================================================================
 
 TEST_CASE("editor: P4.1 — D5: atribuição composta (-= += *= /=) compila e roda",
@@ -1383,7 +1383,7 @@ TEST_CASE("editor: quads refletem hierarquia (world matrix)", "[editor]")
 }
 
 // =============================================================================
-// 8. AssetBrowser (§8.10: asset discovery)
+// 8. AssetBrowser
 // =============================================================================
 
 TEST_CASE("editor: importa, lista, renomeia, move e remove assets", "[editor]")
@@ -1412,7 +1412,7 @@ TEST_CASE("editor: importa, lista, renomeia, move e remove assets", "[editor]")
     CHECK(listed.value()[0].registered);
     CHECK(listed.value()[0].id == imported.value());
 
-    // Rename: id preservado (ADR-029).
+    // Rename: id preservado.
     REQUIRE(browser->rename("textures", "grass.png", "lava.png").ok());
     listed = browser->list("textures");
     REQUIRE(listed.ok());
@@ -1568,7 +1568,7 @@ TEST_CASE("editor: viewport renderer desenha quads (GLES/llvmpipe)",
     CHECK(renderer != nullptr);
     CHECK(owned->selectedBackend() == eng::rhi::BackendType::OpenGLES);
 
-    // Ciclo de surface (§XXVIII FASE 7 adaptado): destroy→recreate→render.
+    // Ciclo de surface: destroy→recreate→render.
     owned->surfaceDestroyed();
     CHECK(owned->state() == eng::editor::HostSurfaceState::Destroyed);
     CHECK_FALSE(owned->renderFrame(1.f / 60.f)); // sem surface: no-op
@@ -1666,7 +1666,7 @@ TEST_CASE("editor: reabre projeto de execução anterior via workspace", "[edito
 }
 
 // =============================================================================
-// 11. FASE 10 — física/animação/partículas em PLAY (§8 integração)
+// 11. FASE 10 — física/animação/partículas em PLAY
 // =============================================================================
 
 TEST_CASE("editor: componentes de gameplay no catálogo/serialização",
@@ -1683,7 +1683,7 @@ TEST_CASE("editor: componentes de gameplay no catálogo/serialização",
     }
 
     // Round-trip pela cena: cria com physics/animation/particles, salva,
-    // recarrega — componentes persistem (ADR-033).
+    // recarrega — componentes persistem.
     DocFixture f;
     f.withProject();
     auto entity = f.doc->createEntity("Gameplay", eng::scene::kNoEntity);
@@ -1741,7 +1741,7 @@ TEST_CASE("editor: PLAY avança física (timestep fixo) sobre o CLONE",
     CHECK(fallen < 1.3f); // ~0.5s de queda (1.22m)
 
     f.doc->stop();
-    // Edição INTACTA (§8.7): y continua 10.
+    // Edição INTACTA: y continua 10.
     auto editY = eng::editor::Inspector::getField(
         *f.doc->sceneInFocus(), ball.value(), "eng::math::Transform",
         "position.y");
@@ -2068,7 +2068,7 @@ TEST_CASE("editor: host renderiza sprite TEXTURIZADO (GLES/llvmpipe real)",
     const auto* renderer = host->viewportRenderer();
     REQUIRE(renderer != nullptr);
     CHECK(renderer->lastFrameTexturedSprites() == 1);
-    // P3: sprite SEM material usa o pipeline LIT (default — luz visível ao
+    // Sprite SEM material usa o pipeline LIT (default — luz visível ao
     // adicionar Light2D sem tocar em cada sprite). Os vértices vão para o
     // lote lit (48B, mesmos campos u/v).
     const auto& spriteVerts = renderer->lastFrameLitSpriteVertices();
@@ -2195,7 +2195,7 @@ TEST_CASE("editor: P0 — PNG no viewport: tamanho, orientação e hit CORRETOS"
     // (Antes: 0.0 — o half-extent do sprite carregava um 0.5 espúrio e a
     // imagem desenhava com METADE do tamanho mundial, menor que a própria
     // borda de seleção.)
-    // P3: default LIT — vértices no lote lit (48B; mesmos pos/uv).
+    // Default LIT — vértices no lote lit (48B; mesmos pos/uv).
     const auto& verts = renderer->lastFrameLitSpriteVertices();
     REQUIRE(verts.size() == 6);
     CHECK(verts[5].y == Catch::Approx(0.375f).margin(1e-3f));
@@ -2292,7 +2292,7 @@ TEST_CASE("editor: host com workspace ABSOLUTO — import e script funcionam "
 
     auto& doc = host->document();
 
-    // --- 1. Ciclo de vida do projeto (§4) -----------------------------------
+    // --- 1. Ciclo de vida do projeto -----------------------------------
     REQUIRE(doc.newProject("MeuJogo").ok());
     REQUIRE(doc.hasProject());
     CHECK(doc.projectName() == "MeuJogo");
@@ -2324,7 +2324,7 @@ TEST_CASE("editor: host com workspace ABSOLUTO — import e script funcionam "
 
     // --- 3. Criação de script (o bug nº 2 do APK) ---------------------------
     REQUIRE(doc.scriptCreate("Movimento").ok());  // ← ANTES: "caminho absoluto proibido"
-    // Conteúdo maior que 512 bytes (§12 — sem buffer JNI truncando).
+    // Conteúdo maior que 512 bytes.
     std::string big = "# comentário grande\n";
     for (int i = 0; i < 40; ++i) {
         big += "# linha de preenchimento " + std::to_string(i) + "\n";
@@ -2376,7 +2376,7 @@ TEST_CASE("editor: host com workspace ABSOLUTO — import e script funcionam "
         CHECK(transform.value().scale.x == Catch::Approx(2.f).margin(1e-4f));
     }
 
-    // --- 5. Persistência LIMPA: nada de absoluto nos arquivos (§2.6) ---------
+    // --- 5. Persistência LIMPA: nada de absoluto nos arquivos ---------
     REQUIRE(doc.saveProject().ok());
     {
         eng::fs::NativeFileSystem raw;
@@ -2624,7 +2624,7 @@ TEST_CASE("editor: §10 — player com collider CAI no chão e PARA (física "
     }
 
     f.doc->stop();
-    // Authoring intacto (§8.7): player volta para y=5 — e a seleção pós-
+    // Authoring intacto: player volta para y=5 — e a seleção pós-
     // stop foi RESETADA (handle de clone não vaza para a edição).
     {
         const auto fields = f.doc->inspectorFields(
@@ -2638,7 +2638,7 @@ TEST_CASE("editor: §10 — player com collider CAI no chão e PARA (física "
 }
 
 // =============================================================================
-// P1 — COMPLETE 2D AUTHORING VERTICAL SLICE
+// COMPLETE 2D AUTHORING VERTICAL SLICE
 //
 // CREATE SCENE → ADD SPRITE → IMPORT IMAGE → IMAGE VISIBLE → SELECT →
 // MOVE → ROTATE → SCALE → INSPECT → DUPLICATE → DELETE → SAVE → RELOAD
@@ -2683,7 +2683,7 @@ TEST_CASE("editor: P1 — seleção sobrevive a transformações e invalida em d
     REQUIRE(doc.select(g.entity).ok());
     CHECK(doc.isSelected(g.entity));
 
-    // Transformações NÃO derrubam a seleção (P1.1).
+    // Transformações NÃO derrubam a seleção.
     eng::editor::TransformDesc desc;
     desc.position = eng::math::Vec3{3.f, -2.f, 0.f};
     desc.rotationDegrees = eng::math::Vec3{0.f, 0.f, 45.f};
@@ -2893,7 +2893,7 @@ TEST_CASE("editor: P1 — gizmo MOVE: centro e eixos X/Y com drag REAL", "[edito
     tr = doc.transform(other.value());  // B não se mexeu
     REQUIRE(tr.ok());
     CHECK(tr.value().position.x == Catch::Approx(3.75f).margin(1e-4f));
-    CHECK(doc.isSelected(g.entity));  // seleção de A sobreviveu (P1.1)
+    CHECK(doc.isSelected(g.entity));  // seleção de A sobreviveu
 }
 
 TEST_CASE("editor: P1 — gizmo MOVE com textura REAL: bounds desenhado é o alvo",
@@ -3017,7 +3017,7 @@ TEST_CASE("editor: P1 — gizmo SCALE: cantos X/Y, clamp e round-trip", "[editor
     CHECK(tr.value().scale.y == Catch::Approx(2.f).margin(1e-2f));
 
     // IMPEDIR VALORES INVÁLIDOS: arrasto PARA DENTRO do centro (ratio
-    // ~0) → clamp no mínimo (P1.5), nunca 0/negativo/NaN.
+    // ~0) → clamp no mínimo, nunca 0/negativo/NaN.
     REQUIRE(doc.gizmoDragTo(101.f, 74.f).ok());
     tr = doc.transform(g.entity);
     REQUIRE(tr.ok());
@@ -3042,7 +3042,7 @@ TEST_CASE("editor: P1 — gizmo ROTATE/SCALE sobre sprite ROTACIONADO (frame loc
           "[editor]")
 {
     // O frame LOCAL do nó desconta a rotação: escalar um sprite girado 90°
-    // tem de escalar os EIXOS DO SPRITE, não os do mundo (P1.5).
+    // tem de escalar os EIXOS DO SPRITE, não os do mundo.
     GizmoFixture g;
     auto& doc = *g.f.doc;
     using eng::editor::GizmoHandle;
@@ -3097,12 +3097,12 @@ TEST_CASE("editor: P1 — tool modes: abstração única, Select sem gizmo, Play
             CHECK_FALSE(draw.segments.empty());  // anel
             CHECK(draw.triangles.size() == 1);   // handle triangular
         } else if (tool == EditorTool::Move) {
-            // P4.1 (D1/D2): 4 HASTES — setas nos DOIS lados de cada eixo
+            // 4 HASTES — setas nos DOIS lados de cada eixo
             // (±X, ±Y) com pontas visíveis; era 2 (só +X/+Y).
             CHECK(draw.segments.size() == 4);
             CHECK(draw.triangles.size() == 4);   // setas reais (B2)
         } else {
-            // P4.1 (D4): 4 diagonais (guia) + 8 meias-arestas do quad
+            // 4 diagonais (guia) + 8 meias-arestas do quad
             // (as arestas ganharam handles de escala de um eixo).
             CHECK(draw.segments.size() == 12);
             CHECK(draw.triangles.size() == 4);   // setas de aresta (B2)
@@ -3117,7 +3117,7 @@ TEST_CASE("editor: P1 — tool modes: abstração única, Select sem gizmo, Play
     CHECK(doc.gizmoDragBegin(100.f, 75.f, nullptr) ==
           eng::editor::GizmoHandle::None);
     doc.stop();
-    // P4.2 (T5 — contrato REVISTO; era a7fd366 "stop reseta"): o Modo
+    // O Modo
     // Jogo exige voltar COM a seleção intacta → o gizmo CONTINUA na
     // entidade selecionada (nova seleção também re-arma).
     CHECK_FALSE(doc.gizmoDraw(nullptr).quads.empty());
@@ -3126,7 +3126,7 @@ TEST_CASE("editor: P1 — tool modes: abstração única, Select sem gizmo, Play
 }
 
 // =============================================================================
-// P4.1 — T1: re-armo determinístico + métricas de toque (D1–D4)
+// T1: re-armo determinístico + métricas de toque (D1–D4)
 // =============================================================================
 
 TEST_CASE("editor: P4.1 — D1: seleção A → drag → seleção B → drag FUNCIONA",
@@ -3198,7 +3198,7 @@ TEST_CASE("editor: P4.1 — D1: troca de ferramenta/play/stop matam drag vivo",
             GizmoHandle::MoveCenter);
     REQUIRE(doc.play().ok());
     doc.stop();
-    // P4.2 (T5): stop PRESERVA a seleção (contrato revisto, era a7fd366)
+    // Stop PRESERVA a seleção (contrato revisto, era a7fd366)
     // → o drag re-arma imediatamente (o re-armo P4.1 segue: NENHUM estado
     // do drag pré-Play sobrevive — mas um toque NOVO funciona).
     CHECK(doc.gizmoDragBegin(100.f, 75.f, nullptr) ==
@@ -3757,7 +3757,7 @@ TEST_CASE("editor: P1 — placeholder xadrez de sprite sem textura (readback)",
     ensureProject(doc, "P1PlaceholderGame");
 
     // createSprite SEM textura: placeholder xadrez claramente identificado
-    // (P1.10 — não confundir com sprite renderizado).
+    //.
     auto sprite = doc.createSprite("Ghost");
     REQUIRE(sprite.ok());
 
@@ -3905,7 +3905,7 @@ TEST_CASE("editor: P1 — VERTICAL SLICE: import→sprite→gizmos→duplicate�
 }
 
 // =============================================================================
-// P2 — GIZMO: bug crítico §5 + matrix de regressão §6
+// GIZMO: bug crítico §5 + matrix de regressão §6
 //
 // Reporte do P1: "o gizmo funciona quando o Sprite/Entity é criado/
 // aplicado inicialmente, mas depois de certas alterações o gizmo deixa
@@ -4211,7 +4211,7 @@ TEST_CASE("editor: P2 — gizmo NÃO quebra após mudanças (matrix §5)",
         REQUIRE(doc.select(sprite.value()).ok());
         doc.setTool(eng::editor::EditorTool::Rotate);
         const auto b = doc.selectionBounds(&cache);
-        // P4.1 (D3): o teste usa a MESMA métrica do gizmo — raio com
+        // O teste usa a MESMA métrica do gizmo — raio com
         // mínimo de 64 px em tela (anel agarrável em qualquer zoom).
         const float ringR =
             eng::editor::TransformGizmo::ringRadiusPx(
@@ -4381,8 +4381,8 @@ TEST_CASE("editor: P2 — gizmo em entity SEM Sprite (só Transform) §6",
 }
 
 // =============================================================================
-// P2 — COMPONENT/TICK AUTHORING (§2/§14), ANIMAÇÃO (§8), ÁUDIO (§12),
-// CÂMERA (§11), EMISSOR (§10) — workflow real.
+// COMPONENT/TICK AUTHORING, ANIMAÇÃO, ÁUDIO,
+// CÂMERA, EMISSOR — workflow real.
 // =============================================================================
 
 TEST_CASE("editor: P2 — addableComponents: catálogo real com hints (§2)",
@@ -5301,7 +5301,7 @@ TEST_CASE("p3-watchdog: Auto pula backend morto e promove o saudável",
 }
 
 // =============================================================================
-// P3 — SHADER/MATERIAL/LIGHT2D: componentes reais, material authorável,
+// SHADER/MATERIAL/LIGHT2D: componentes reais, material authorável,
 // iluminação por fragmento (bloco PerFrame), EDIT/PLAY parity.
 // =============================================================================
 
@@ -5661,7 +5661,7 @@ TEST_CASE("editor: P3 — sprite com Light2D muda o pixel (A != B, readback)",
     if (editorGraphicsUnavailable()) {
         SKIP("sem driver gráfico (lavapipe/EGL) — suite completo roda no CI");
     }
-    // GLES: o ÚNICO backend com readCenterPixel (P0 — validação visual);
+    // GLES: o ÚNICO backend com readCenterPixel;
     // Vulkan readback entra com o render-graph futuro. Workspace LIMPO no
     // início: o marcador do watchdog (P3 §0) persiste entre runs e
     // demoveria o backend da run anterior — teste determinístico.
@@ -5860,7 +5860,7 @@ TEST_CASE("editor: P3 — material unlit vs lit via Inspector (readback)",
 
 
 // =============================================================================
-// P3.1 — Diagnóstico de startup persistente + crash handler nativo
+// Diagnóstico de startup persistente + crash handler nativo
 // =============================================================================
 
 TEST_CASE("editor: P3.1 — tracer persiste estágios na hora (formato grep-ável)",
@@ -5968,7 +5968,7 @@ TEST_CASE("editor: P3.1 — crash handler registra e NÃO mascara (SIGSEGV)",
         ("goni_diag_noteonly_" + std::to_string(::getpid()))).string();
     const pid_t pid = ::fork();
     if (pid == 0) {
-        // P3.2 (probe negativo): arquivo contendo APENAS a nota benigna
+        // Arquivo contendo APENAS a nota benigna
         // "[handler] instalado" NÃO pode contar como crash — senão o export
         // automático dispararia em toda execução pós-instalação.
         if (std::FILE* tf = std::fopen(eng::editor::diag::crashLogPath(), "w")) {
@@ -6013,7 +6013,7 @@ TEST_CASE("editor: P3.1 — crash handler registra e NÃO mascara (SIGSEGV)",
         CHECK((WTERMSIG(status) == SIGSEGV || WTERMSIG(status) == SIGABRT));
     }
 
-    // P3.2 (probe negativo): o filho registrou 0 esperado — nota benigna
+    // O filho registrou 0 esperado — nota benigna
     // sozinha NÃO conta como crash anterior.
     if (std::FILE* rf = std::fopen(noteOnlyResult.c_str(), "r")) {
         int v = -1;
@@ -6038,16 +6038,16 @@ TEST_CASE("editor: P3.1 — crash handler registra e NÃO mascara (SIGSEGV)",
         INFO("crash log:\n" << text);
         CHECK(text.find("SIGSEGV") != std::string::npos);
         CHECK(text.find("ESTAGIO_ANTECRASH") != std::string::npos);
-        // P3.2: crash REAL registrado → hasPreviousCrashReport true (a
+        // Crash REAL registrado → hasPreviousCrashReport true (a
         // linha "[crash]" do handler é o gatilho, não o mero tamanho).
         CHECK(eng::editor::diag::hasPreviousCrashReport());
-        // P3.3: o handler agora identifica o MÓDULO do pc (e do alvo do
+        // O handler agora identifica o MÓDULO do pc (e do alvo do
         // acesso, quando houver) via /proc/self/maps — a evidência que
         // falta no Realme C33. Para um raise() dentro deste binário de
         // teste, o pc DEVE cair no próprio executável com offset hex.
         CHECK(text.find("[pc]") != std::string::npos);
         CHECK(text.find("module=") != std::string::npos);
-        // P3.5: formato do [pc]/[fp] ganhou base= explícito p/
+        // Formato do [pc]/[fp] ganhou base= explícito p/
         // symbolização offline (era "modulo+0xoff", agora
         // "module=M base=B off=O" — mais informação, mesmo contrato).
         CHECK(text.find("off=0x") != std::string::npos);
@@ -6401,7 +6401,7 @@ TEST_CASE("editor: P3.5 — crash fatal despeja TODAS as threads + maps cru",
 }
 
 // =============================================================================
-// P4.2 — DEVICE BUGS ROUND 2 (B-A…B-E) + MODO JOGO (T5)
+// DEVICE BUGS ROUND 2 (B-A…B-E) + MODO JOGO (T5)
 // =============================================================================
 
 // ---- B-A: round-trip de persistência à prova de device ----------------------
@@ -6420,7 +6420,7 @@ TEST_CASE("editor: P4.2 — B-A: salvar projeto persiste a CENA (reload sem load
     betaDesc.position = eng::math::Vec3{2.f, 1.f, 0.f};
     REQUIRE(doc.setTransform(beta.value(), betaDesc).ok());
 
-    // "Salvar projeto" (P4.2): projeto + cena em uma operação — a cena
+    // "Salvar projeto": projeto + cena em uma operação — a cena
     // nunca salva usa o default "main.json" (mesmo default do menu Cena).
     REQUIRE(doc.saveProject().ok());
     CHECK(doc.currentScenePath() == "main.json");
@@ -7032,7 +7032,7 @@ TEST_CASE("editor: P4.2 — ProjectZip: zip SEM project.goni.json não é um pro
 }
 
 // =============================================================================
-// P4.3 — BLOCO 0: N1 (preview áudio), N3 (rotação sem escala, anel px),
+// BLOCO 0: N1 (preview áudio), N3 (rotação sem escala, anel px),
 // N4 (helper canónico px↔clip). Ver docs/p4-editor-ux.md (adenda P4.3).
 // =============================================================================
 
@@ -7173,7 +7173,7 @@ TEST_CASE("editor: P4.3/N3 — anel de rotação é CÍRCULO em px no portrait",
     CHECK(maxDist == Catch::Approx(radiusPx).margin(0.05f));
 }
 
-/// P4.3 (N3): rodar 90/180/360° NUNCA mexe no vetor de escala (regra
+/// Rodar 90/180/360° NUNCA mexe no vetor de escala (regra
 /// "rotação escreve apenas orientação") — nem no transform, nem no quad
 /// desenhado (que alimenta o hit-test).
 TEST_CASE("editor: P4.3/N3 — rotação preserva a escala em 90/180/360",
@@ -7249,7 +7249,7 @@ TEST_CASE("editor: P4.3/N3 — rotação preserva a escala em 90/180/360",
     }
 }
 
-/// P4.3 (N3): rotação com PAI rotacionado+escalado (uniforme) — o delta de
+/// Rotação com PAI rotacionado+escalado (uniforme) — o delta de
 /// mundo do dedo vira delta de ESCALA nunca; escala local intacta.
 TEST_CASE("editor: P4.3/N3 — rotação de filho com pai escalado não deforma",
           "[editor][p43]")
@@ -7309,7 +7309,7 @@ TEST_CASE("editor: P4.3/N3 — rotação de filho com pai escalado não deforma"
           Catch::Approx(45.f).margin(0.5f));
 }
 
-/// P4.3 (N1): preview de áudio com TOGGLE/STOP — a voice morre no 2º toque,
+/// Preview de áudio com TOGGLE/STOP — a voice morre no 2º toque,
 /// no stop explícito, ao entrar em Play; uma única voice de preview existe.
 TEST_CASE("editor: P4.3/N1 — preview de áudio: toggle, stop e isolamento",
           "[editor][p43]")
@@ -7395,7 +7395,7 @@ TEST_CASE("editor: P4.3/N1 — preview de áudio: toggle, stop e isolamento",
 }
 
 // =============================================================================
-// P4.3 — BLOCO 1: hierarquia completa — round-trip de TOPOLOGIA (save/load
+// BLOCO 1: hierarquia completa — round-trip de TOPOLOGIA (save/load
 // preserva pais/filhos/ordem) + duplicação de subárvore. A UI por toque
 // (criar/renomear/duplicar/apagar/parentear/menu de contexto) já existe na
 // Activity; aqui está a prova de que o DOCUMENTO preserva o que a UI cria.
@@ -7493,8 +7493,8 @@ TEST_CASE("editor: P4.3/Bloco 1 — duplicar preserva a SUBÁRVORE por toque",
 }
 
 // =============================================================================
-// P4.3 — BLOCO 2: Ticks/Camadas — timeScale por camada, participação
-// (update/física/render) e timestep fixo da física autoráveis (ADR-051).
+// BLOCO 2: Ticks/Camadas — timeScale por camada, participação
+// (update/física/render) e timestep fixo da física autoráveis.
 // =============================================================================
 
 TEST_CASE("editor: P4.3/Bloco 2 — camadas: listar, criar, timeScale e participação",
@@ -7612,7 +7612,7 @@ TEST_CASE("editor: P4.3/Bloco 2 — timestep da física: validar, aplicar e pers
 }
 
 // =============================================================================
-// P4.3 — BLOCO 3: Materiais & Luzes — o authoring de .mat (criar/editar/
+// BLOCO 3: Materiais & Luzes — o authoring de .mat (criar/editar/
 // atribuir, lit/unlit + tint) existe desde o P3 com readback; aqui fica o
 // contrato de DADOS do novo PREVIEW visual da luz no viewport (anel px).
 // =============================================================================
@@ -7663,7 +7663,7 @@ TEST_CASE("editor: P4.3/Bloco 3 — preview de Light2D: dados do marker",
 }
 
 // =============================================================================
-// P4.5 — undo/redo por snapshots, snap do gizmo, fit do viewport
+// Undo/redo por snapshots, snap do gizmo, fit do viewport
 // =============================================================================
 
 TEST_CASE("p45: undo/redo de transform (move/rotate/scale) restaura TRS",
@@ -8030,7 +8030,7 @@ TEST_CASE("JNI: cada external fun de NativeBridge.kt resolve por dlsym",
 }
 
 // =============================================================================
-// P4.6 (Bloco 1): colisão v2 — camadas nomeadas, migração, repro kinematic
+// Colisão v2 — camadas nomeadas, migração, repro kinematic
 // =============================================================================
 
 TEST_CASE("p46: camadas de colisão nomeadas — tabela, rename, add, "
@@ -8210,7 +8210,7 @@ TEST_CASE("p46: REPRO do utilizador — script move_and_slide contra estático "
     INFO("player.y = " << posY.value());
     CHECK(y > 1.5); // deslizou tangencialmente (2 u esperadas)
 
-    // STOP: a edição NUNCA foi tocada (ADR-044).
+    // STOP: a edição NUNCA foi tocada.
     f.doc->stop();
     auto editX = eng::editor::Inspector::getField(
         *f.doc->sceneInFocus(), player.value(), "eng::math::Transform",
@@ -8220,7 +8220,7 @@ TEST_CASE("p46: REPRO do utilizador — script move_and_slide contra estático "
 }
 
 // =============================================================================
-// P4.6 (Bloco 2): Light2D — defaults coerentes + filtro por camada
+// Light2D — defaults coerentes + filtro por camada
 // =============================================================================
 
 TEST_CASE("p46: luz nova casa com a camada dos sprites lit (defaults "
@@ -8359,7 +8359,7 @@ TEST_CASE("p46: migração/round-trip — cena com colisão v2 preserva bits e "
 }
 
 // =============================================================================
-// P4.6 (Bloco 4): Animação v1 — keys TRS (timeline), round-trip e playback
+// Animação v1 — keys TRS (timeline), round-trip e playback
 // =============================================================================
 
 TEST_CASE("p46: keys TRS — grava, lista, substitui no mesmo tempo, edita "
@@ -8478,7 +8478,7 @@ TEST_CASE("p46: timeline TRS reproduz no PLAY (AnimationTick real) — "
     auto e = f.doc->createEntity("Ator", eng::scene::kNoEntity);
     REQUIRE(e.ok());
     REQUIRE(f.doc->animationAssign(e.value(), "pulo.anim.json").ok());
-    // P4.6: o playback no Play segue o contrato P2 — o AUTOR liga
+    // O playback no Play segue o contrato P2 — o AUTOR liga
     // `playing` no Inspector (assign não vira autoplay: zero mudança de
     // comportamento para flipbooks existentes).
     REQUIRE(f.doc

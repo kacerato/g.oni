@@ -1,5 +1,5 @@
 # =============================================================================
-# editor/ — núcleo C++ do Native Mobile Editor (FASE 8, missão §5)
+# editor/ — núcleo C++ do Native Mobile Editor
 #
 # CONSUMIDOR de engine/ (nunca o contrário — regra 00-overview.md):
 #   - no LINUX (raiz, ENG_BUILD_TESTS): biblioteca + suite Catch2 com
@@ -38,7 +38,7 @@ target_compile_features(eng_editor PUBLIC cxx_std_20)
 eng_apply_warnings(eng_editor)
 eng_apply_sanitizers(eng_editor)
 eng_apply_lto(eng_editor)
-# Mesmo contrato das libs do motor: sem exceções/RTTI (ADR-004/005).
+# Mesmo contrato das libs do motor: sem exceções/RTTI.
 target_compile_options(eng_editor PRIVATE ${ENG_RUNTIME_FLAGS})
 
 target_link_libraries(eng_editor PUBLIC
@@ -66,7 +66,7 @@ if(NOT ENG_BUILD_TESTS)
     return()
 endif()
 
-# P4.5.2: contrato de vinculação JNI — o TU Android EditorJni.cpp compila
+# Contrato de vinculação JNI — o TU Android EditorJni.cpp compila
 # AQUI no Linux contra o shim hermético tests/jni_shim (jni.h +
 # ANativeWindow mínimos, SEM JDK) e EditorTests.cpp prova por
 # dlsym(RTLD_DEFAULT, …) que cada `external fun` de EditorJni.kt tem um

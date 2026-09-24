@@ -1,4 +1,4 @@
-/// Testes de eng::animation (FASE 10, missão §7.14).
+/// Testes de eng::animation.
 
 #include <catch2/catch_test_macros.hpp>
 

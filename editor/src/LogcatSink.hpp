@@ -1,6 +1,6 @@
 #pragma once
 
-/// LogcatSink — integra o eng::log ao logcat Android (FASE 7, missão §XVIII).
+/// LogcatSink — integra o eng::log ao logcat Android.
 ///
 /// Sink de LOG do NDK (android/log.h — NÃO é JNI): as mensagens chegam já
 /// formatadas pelo Logger com categoria do engine; o prefixo [G.ONI] é

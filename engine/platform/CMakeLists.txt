@@ -1,4 +1,4 @@
-# eng::platform — fatos do sistema hospedeiro (FASE 3, missão §2.2; ADR-026)
+# eng::platform — fatos do sistema hospedeiro
 eng_add_module(platform
     src/Environment.cpp
     src/PlatformInfo.cpp

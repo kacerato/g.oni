@@ -1,8 +1,8 @@
 #pragma once
 
-/// eng::ni — modelo de valores do NI-Script (FASE 11).
+/// eng::ni — modelo de valores do NI-Script.
 ///
-/// NI-Script é a linguagem de script PRÓPRIA do G.oni (ADR-049): compila
+/// NI-Script é a linguagem de script PRÓPRIA do G.oni: compila
 /// UMA vez para bytecode; o VM executa bytecode (sem JIT). Este header
 /// define o modelo de VALORES — o que atravessa a fronteira VM ↔ C++.
 ///
@@ -167,8 +167,8 @@ struct NiFault {
         NilUse,        ///< nil consumido em operação tipada
         DivByZero,     ///< '/' ou '%' com divisor zero
         Range,         ///< conversão/valor fora de range (i(), f()…)
-        Timeout,       ///< orçamento de instruções esgotado (§5.4/§6.2)
-        RepeatLimit,   ///< contagem de repeat fora de [0, 65536] (§5.2)
+        Timeout,       ///< orçamento de instruções esgotado
+        RepeatLimit,   ///< contagem de repeat fora de [0, 65536]
         EmitDepth,     ///< emissão aninhada além de 32
         Stack,         ///< estouro de pilha de valores/frames
         EntityStale,   ///< entidade obsoleta em operação que exige viva
@@ -178,7 +178,7 @@ struct NiFault {
         BadArgument,   ///< argumento inválido para nativo (spawn/find/…)
         LinkLimit,     ///< mais de 64 links por instância
         NativeError,   ///< nativo de host falhou
-        BadWrite,      ///< alvo de escrita inválido (§ DYN_SET restrito)
+        BadWrite,      ///< alvo de escrita inválido
     };
     Kind kind = Kind::Type;
     std::string message;

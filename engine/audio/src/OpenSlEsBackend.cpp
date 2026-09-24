@@ -1,7 +1,7 @@
 #include "eng/audio/Audio.hpp"
 #include "eng/audio/AudioAdapt.hpp"
 
-/// OpenSlEsBackend — saída REAL alternativa no Android (P4.1, T3/D6).
+/// OpenSlEsBackend — saída REAL alternativa no Android.
 ///
 /// O AAudio do Unisoc T612 (Realme C33) recusa abrir (builder=null /
 /// openStream falha — evidência nos marcos AUDIO_* do P3.4/P3.5). O
@@ -17,8 +17,8 @@
 /// 48000 Hz pedida; o caminho Legacy honra o formato pedido (é quem
 /// alimenta o AudioTrack do framework).
 ///
-/// Mesma disciplina do AAudioBackend (P3.4):
-///  - dlopen("libOpenSLES.so") + dlsym — sem link edit (ADR-037/038);
+/// Mesma disciplina do AAudioBackend:
+///  - dlopen("libOpenSLES.so") + dlsym — sem link edit;
 ///  - marcos granulares (opensl_stage::*) via hook do host;
 ///  - CallbackGate: nenhum callback toca o mixer após o stop() do dono;
 ///  - stop(): parada pedida → drenagem do callback → destruição dos
@@ -98,7 +98,7 @@ struct OpenSlApi {
 /// false = dlopen falhou (libOpenSLES.so ausente — impossível em API
 /// ≥ 9) ou símbolo ausente (HAL quebrado — erro preciso no marco).
 ///
-/// P4.1.1 (CI Android #45): os SL_IID_* são VARIÁVEIS globais do tipo
+/// Os SL_IID_* são VARIÁVEIS globais do tipo
 /// `const SLInterfaceID` (= `const SLInterfaceID_ *const` — PONTEIRO
 /// const para o struct do IID de 16 bytes). O dlsym devolve O ENDEREÇO
 /// da variável; o VALOR (o IID em si) vem da desreferência — o código
@@ -199,7 +199,7 @@ public:
 
         // ---- AUDIO_OSLE_MIX ---------------------------------------------
         reportBackendStage(opensl_stage::OutputMixCreate, "begin", "");
-        // P4.1.1 (CI Android #45): SLEngineItf é DUPLO ponteiro
+        // SLEngineItf é DUPLO ponteiro
         // (const SLEngineItf_ *const *) — a chamada segue o MESMO
         // idioma dos objetos: (*itf)->Função(itf, ...).
         if (engine == nullptr ||
@@ -362,7 +362,7 @@ public:
     }
 
 private:
-    /// P4.1.1 (CI Android #45): o contrato de start() é Result<void> —
+    /// O contrato de start() é Result<void> —
     /// o erro devolve-se via makeUnexpected (Result NÃO converte Error
     /// implicitamente; o clang do NDK recusou a conversão com -Werror).
     [[nodiscard]] eng::core::Result<void> refuse(SLresult r,

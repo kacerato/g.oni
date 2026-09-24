@@ -2,7 +2,7 @@
 
 #include "eng/editor/Diagnostics.hpp"
 
-/// ViewportRenderer — pipeline pos+cor, VBO dinâmico CPU→clip (FASE 8, D3).
+/// ViewportRenderer — pipeline pos+cor, VBO dinâmico CPU→clip.
 
 #include <algorithm>
 #include <cmath>
@@ -33,7 +33,7 @@ ENG_LOG_CATEGORY("editor");
     return Error{code, "ViewportRenderer: " + std::move(message)};
 }
 
-/// P4.6 (L2): default da grade quando o host não passa config (caminho
+/// Default da grade quando o host não passa config (caminho
 /// legado de testes) — o MESMO default do project.goni.json.
 const eng::project::GridConfig kDefaultGridConfig{};
 
@@ -63,7 +63,7 @@ void pushQuadPx(std::vector<ViewportRenderer::Vertex>& out,
     out.insert(out.end(), std::begin(quad), std::end(quad));
 }
 
-/// P4.6 (L4): quadrado CHAMFERADO (octógono — "handle arredondado" sobre
+/// Quadrado CHAMFERADO (octógono — "handle arredondado" sobre
 /// um pipeline de quads): fill + 4 cortes de canto a 45°. A face do corte
 /// é EXATA: h = c/√2 com c = 0.4*half — zero bleed além da face (a face
 /// do quadrado rotacionado É a corda P1P2 do octógono).
@@ -118,7 +118,7 @@ void hsvToRgb(std::uint32_t hue, float& r, float& g,
     b = hueToRgb(p, q, h - 1.f / 3.f);
 }
 
-// P4.3 (N3/N4 — REGRA ÚNICA DO OVERLAY): TODO quad/segmento do editor
+// TODO quad/segmento do editor
 // nasce em PX DE TELA (centro, meia-extensões, rotação, espessura) e só
 // vira clip no ÚLTIMO passo, por eixo (OverlayMapper). A rotação acontece
 // EM PX (isotrópica): quadrados são quadrados e círculos são círculos em
@@ -148,7 +148,7 @@ void pushSegmentPx(std::vector<ViewportRenderer::Vertex>& out,
     out.insert(out.end(), std::begin(quad), std::end(quad));
 }
 
-/// P4.7.0 Bloco 2: TRIÂNGULO preenchido em PX — setas REAIS do gizmo
+/// TRIÂNGULO preenchido em PX — setas REAIS do gizmo
 /// (aponta para o +X local da rotação; halfLenPx = centro→ápice,
 /// halfBasePx = meia-base). Halo de 1dp SOB o triângulo (mesma forma
 /// escalada em bg) quando `rim` > 0 — contraste sobre qualquer sprite.
@@ -186,7 +186,7 @@ void pushTrianglePx(std::vector<ViewportRenderer::Vertex>& out,
 
 /// Um quad de sprite LIT (2 triângulos, pos+cor+uv+MUNDO — P3 §5): o
 /// fragment ilumina por DISTÂNCIA MUNDIAL (luzes do bloco PerFrame).
-/// P4.3 (N3/N4): cantos em PX (rotação em px); o mundo per-vertex é
+/// Cantos em PX (rotação em px); o mundo per-vertex é
 /// emitido em unidades MUNDIAIS à parte (mesma orientação).
 void pushLitSpriteQuadPx(std::vector<ViewportRenderer::LitSpriteVertex>& out,
                          const OverlayMapper& mapper, float cxPx, float cyPx,
@@ -204,7 +204,7 @@ void pushLitSpriteQuadPx(std::vector<ViewportRenderer::LitSpriteVertex>& out,
     float vx[4];
     float vy[4];
     for (int i = 0; i < 4; ++i) {
-        // P4.3 (N3/N4): offset rotacionado EM MUNDO projetado (y negado —
+        // Offset rotacionado EM MUNDO projetado (y negado —
         // a mesma projeção de w2sX/w2sY por ponto). Cantos px corretos
         // (sem cisalhamento) e ordem canónica preservada (UV v0 = topo).
         vx[i] = cxPx + lx[i] * cosR - ly[i] * sinR;
@@ -232,7 +232,7 @@ void pushLitSpriteQuadPx(std::vector<ViewportRenderer::LitSpriteVertex>& out,
 }
 
 /// Um quad de sprite (2 triângulos, pos+cor+uv) em PX DE TELA.
-/// P4.3 (N3/N4): rotação em px — sprite rodado mantém proporção px.
+/// Rotação em px — sprite rodado mantém proporção px.
 void pushSpriteQuadPx(std::vector<ViewportRenderer::SpriteVertex>& out,
                       const OverlayMapper& mapper, float cxPx, float cyPx,
                       float halfWPx, float halfHPx, float rotation, float u0,
@@ -249,7 +249,7 @@ void pushSpriteQuadPx(std::vector<ViewportRenderer::SpriteVertex>& out,
     float vx[4];
     float vy[4];
     for (int i = 0; i < 4; ++i) {
-        // P4.3 (N3/N4): projeção do offset rotacionado (y negado — mesmo
+        // Projeção do offset rotacionado (y negado — mesmo
         // flip de w2sY); ordem canónica preservada (UV v0 = topo).
         vx[i] = cxPx + lx[i] * cosR - ly[i] * sinR;
         vy[i] = cyPx - (lx[i] * sinR + ly[i] * cosR);
@@ -318,7 +318,7 @@ ViewportRenderer& ViewportRenderer::operator=(ViewportRenderer&& other) noexcept
 
 void ViewportRenderer::destroyResources() noexcept
 {
-    // Renderer vivo destrói os handles via backend (ADR-035: RAII central).
+    // Renderer vivo destrói os handles via backend.
     // ShaderLibrary PRIMEIRO (handles de shader/pipeline são dela — P3 §2).
     if (renderer_.has_value()) {
         if (litSpriteBuffer_.isValid()) {
@@ -339,7 +339,7 @@ Result<ViewportRenderer> ViewportRenderer::create(
     const eng::rhi::SurfaceDesc& surface, eng::rhi::BackendType backend)
 {
     // As FÁBRICAS são registradas pelo host (EditorHost::create) — aqui
-    // apenas a seleção (ADR-036).
+    // apenas a seleção.
     eng::rhi::RendererConfig config;
     config.backend = backend;
     config.enableValidation = true;
@@ -496,9 +496,9 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
 {
     frameVertices_.clear();
     spriteVertices_.clear();
-    litSpriteVertices_.clear();     // P3: lote lit do frame
-    frameUniformsSent_.clear();    // P3: blocos PerFrame enviados
-    gizmoVertices_.clear();  // P1: acessores de teste não vazam frame velho
+    litSpriteVertices_.clear();     // lote lit do frame
+    frameUniformsSent_.clear();    // blocos PerFrame enviados
+    gizmoVertices_.clear();  // acessores de teste não vazam frame velho
     lastFrameTexturedSprites_ = 0;
     lastFrameDrawCalls_ = 0;  // P4.7.0 B6: métrica do frame
 
@@ -554,13 +554,13 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         drawList.lights.push_back(std::move(light));
     }
 
-    // --- grade (P4.6 Bloco 5/L2 — Grid v2, padrão Godot/Unity/3ds Max) ------
+    // --- grade ------
     // Passo em UNIDADES DE MUNDO (config do projeto), linhas minor/major
     // ("Primary Line Every" a cada N — major mais clara e GROSSA), LOD
     // adaptativo ao zoom (anti-moiré: minors fazem fade e somem; subdivisão
     // emerge ao aproximar — majors viram minors do nível seguinte) e EIXOS
     // DA ORIGEM coloridos (X vermelho / Y verde — coerentes com o gizmo).
-    // P4.3 (N4): conversão canônica ÚNICA — px→clip pelo OverlayMapper.
+    // Conversão canônica ÚNICA — px→clip pelo OverlayMapper.
     const float w = viewport.screenWidth();
     const float h = viewport.screenHeight();
     const OverlayMapper mapper{w, h};
@@ -667,7 +667,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
     // Ordem: play-indicator → seleção (borda) → quad. Sem blending: desenho
     // por sobreposição (ordem estável — quads em depth-first).
     const float zoom = viewport.effectiveCamera().zoom;  // P0-5
-    // P4.3 (N4): marcadores em px — bordas +4px (play) / +2px (seleção) POR
+    // Marcadores em px — bordas +4px (play) / +2px (seleção) POR
     // LADO, na rotação px da entidade (mesmo visual, agora honesto).
     auto pushEntityMarkers = [&](const EntityQuad& quad, float halfWPx,
                                  float halfHPx) {
@@ -695,7 +695,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
 
         pushEntityMarkers(quad, halfWPx, halfHPx);
 
-        // P1.10 — PLACEHOLDER de sprite: SpriteData SEM textura vira
+        // PLACEHOLDER de sprite: SpriteData SEM textura vira
         // xadrez magenta/escuro (convenção clássica "sem textura"),
         // CLARAMENTE identificado — não é sprite renderizado nem o hue
         // de entidade crua. Entidades sem SpriteData seguem hue.
@@ -769,7 +769,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         constexpr int kSphereSides = 8;
         const float kSolidR = 0.16f, kSolidG = 0.90f, kSolidB = 0.85f;
         const float kTriggerR = 0.98f, kTriggerG = 0.78f, kTriggerB = 0.20f;
-        // P4.3 (N4): inflação +1px e espessura 1.2px em PX — constantes em
+        // Inflação +1px e espessura 1.2px em PX — constantes em
         // qualquer aspect/direção (antes variavam com w/h e com a direção).
         const float kInflatePx = 1.f;
         const float kHalfThickPx = 0.6f;  // contorno de 1.2 px
@@ -839,7 +839,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
     {
         const float kCamR = 0.42f, kCamG = 0.66f, kCamB = 0.98f;
         const float kOffR = 0.30f, kOffG = 0.32f, kOffB = 0.36f;
-        const float kHalfThickPx = 0.6f;  // P4.3 (N4): 1.2 px constantes
+        const float kHalfThickPx = 0.6f;  // 1.2 px constantes
         for (const EntityQuad& quad : quads) {
             if (!quad.hasCamera) {
                 continue;
@@ -900,7 +900,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         }
     }
 
-    // --- LUZ 2D (P4.3/Bloco 3 — preview no viewport): o autor VÊ onde a
+    // --- LUZ 2D: o autor VÊ onde a
     // luz está e QUANTO alcança — anel de raio light*zoom px (círculo
     // PERFEITO em px pela OverlayMath — a família do N3) + dot central.
     // A iluminação REAL continua no fragment dos sprites lit (mesma fonte
@@ -943,7 +943,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
     // frame do nó). Pools vivas continuam sendo quads no Play.
     if (!playMode) {  // em Play o que vale é a SIMULAÇÃO (partículas)
         const float kEmR = 0.72f, kEmG = 0.44f, kEmB = 0.98f;
-        const float kHalfThickPx = 0.5f;  // P4.3 (N4): 1 px constantes
+        const float kHalfThickPx = 0.5f;  // 1 px constantes
         for (const EntityQuad* quadPtr : untexturedQuads) {
             const EntityQuad& quad = *quadPtr;
             if (!quad.hasEmitter) {
@@ -952,7 +952,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
             const auto [emX, emY] = w2sPair(quad.worldX, quad.worldY);
             const float cx = emX;
             const float cy = emY;
-            // P4.3 (N4): marcador inteiro em PX (meia-aresta = size*zoom px).
+            // Marcador inteiro em PX (meia-aresta = size*zoom px).
             const float halfPx = quad.emitterSize * zoom;
             // Quad-marcador na rotação do nó (composta com a vista — B4).
             pushQuadPx(frameVertices_, mapper, cx, cy, halfPx, halfPx,
@@ -1019,7 +1019,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         const float worldH = std::max(quad.sizeY * regionPy / quad.spritePpu,
                                       Viewport::kMinQuadPixels / zoom);
         // Borda de seleção/play no pipeline de cor (embaixo do sprite).
-        // P4.3 (N4): em PX — half = world*zoom/2 px.
+        // Em PX — half = world*zoom/2 px.
         pushEntityMarkers(quad, worldW * zoom * 0.5f, worldH * zoom * 0.5f);
 
         // Pivot: centro do quad desloca ((pivot - 0.5) * tamanho) nos eixos
@@ -1228,7 +1228,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         }
     }
 
-    // Lote 3 (P1): GIZMO — quads preenchidos + segmentos + TRIÂNGULOS
+    // Lote 3: GIZMO — quads preenchidos + segmentos + TRIÂNGULOS
     // (setas reais, P4.7.0 B2) NO PIPELINE DE COR, POR CIMA de tudo (a
     // entidade selecionada precisa dos handles visíveis sobre a própria
     // arte). Ordem dentro do lote: quads → segmentos → triângulos — as
@@ -1238,12 +1238,12 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         (!gizmo->quads.empty() || !gizmo->segments.empty()
          || !gizmo->triangles.empty())) {
         gizmoVertices_.clear();
-        // P4.6 (L4): OUTLINE subtil (rim escuro da cor do fundo) sob cada
+        // OUTLINE subtil (rim escuro da cor do fundo) sob cada
         // handle — contraste garantido sobre sprites claros — e handles
         // CHAMFERADOS (octógono, "arredondados" no pipeline de quads).
         const float rim = TransformGizmo::haloPx(viewport.uiScale());
         for (const GizmoQuad& quad : gizmo->quads) {
-            // P4.3 (N3/N4): half (mundo) × zoom = px; rotação em px —
+            // Half (mundo) × zoom = px; rotação em px —
             // handles quadrados em QUALQUER aspect (eram paralelogramos).
             const float cxPx = w2sX(quad.worldX);
             const float cyPx = w2sY(quad.worldY);

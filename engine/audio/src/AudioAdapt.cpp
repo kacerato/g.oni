@@ -127,7 +127,7 @@ bool LinearResampler::configure(std::uint32_t inRate,
     base_ = 0;
     capacity_ = maxPushFrames(maxOutFrames) + kMaxRateRatio;
     // Alocação única na thread do HOST (regra do callback: zero alocação
-    // no caminho quente). Sob -fno-exceptions (ADR-004) uma falha aqui
+    // no caminho quente). Sob -fno-exceptions uma falha aqui
     // termina o processo — o mesmo contrato de qualquer container do
     // engine; o tamanho é modesto (~dezenas de KB).
     buf_.assign(static_cast<std::size_t>(capacity_) * channels, 0.f);

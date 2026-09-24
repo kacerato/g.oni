@@ -1,5 +1,5 @@
 /// Backend Vulkan — recursos: buffers (staging REAL), shaders SPIR-V
-/// validados, pipelines com render pass clássico (FASE 5, missão §24–§27).
+/// validados, pipelines com render pass clássico.
 
 #include <algorithm>
 #include <cstring>
@@ -36,7 +36,7 @@ using eng::rhi::BufferUsage;
     if ((usage & BufferUsage::Storage) != BufferUsage::None) {
         flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
-    // Todo buffer do backend recebe uploads por staging (ADR-037): destino
+    // Todo buffer do backend recebe uploads por staging: destino
     // de transferência + origem para a cópia staging→device.
     flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     return flags;
@@ -334,7 +334,7 @@ Result<void> VulkanBackend::destroyBuffer(BufferHandle handle) {
         return eng::core::makeUnexpected(
             makeError(StatusCode::InvalidArgument, "rhi.vulkan.buffer: handle nulo/stale/double"));
     }
-    library_.functions().vkDeviceWaitIdle(device_);  // simples e correto nesta escala (ADR-037)
+    library_.functions().vkDeviceWaitIdle(device_);  // simples e correto nesta escala
     library_.functions().vkDestroyBuffer(device_, entry.buffer, nullptr);
     library_.functions().vkFreeMemory(device_, entry.memory, nullptr);
     return {};
@@ -464,7 +464,7 @@ Result<GraphicsPipelineHandle> VulkanBackend::createGraphicsPipeline(
     entry.colorFormat = fromVkFormat(resolvedFormat);
 
     // Render pass do pipeline: com surface → o clássico compartilhado
-    // (ADR-037); DEVICE-ONLY → pass de COMPATIBILIDADE por formato (cache
+    //; DEVICE-ONLY → pass de COMPATIBILIDADE por formato (cache
     // por backend). Pipelines sem surface são legítimos (CI/testes criam
     // a biblioteca inteira device-only); renderPass NULL + dynamicRendering
     // desabilitada é uso INVÁLIDO da API — a validation layer rejeitava o

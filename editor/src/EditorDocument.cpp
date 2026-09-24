@@ -41,7 +41,7 @@ using eng::core::Result;
 using eng::core::StatusCode;
 using eng::core::makeUnexpected;
 
-// P4.5 — histórico/snap (constantes do documento)
+// Histórico/snap (constantes do documento)
 constexpr std::size_t kHistoryMax = 40;            ///< passos guardados
 constexpr float kHistoryCoalesceSec = 1.2f;        ///< janela de 1 gesto
 constexpr float kSnapTranslateStep = 0.5f;         ///< grade (mundo)
@@ -54,9 +54,9 @@ ENG_LOG_CATEGORY("editor");
     return Error{code, "EditorDocument: " + std::move(message)};
 }
 
-// --- marcadores de persistência (P3/P4.2 — usados por open/save/scene) ------
+// --- marcadores de persistência ------
 
-/// Nome do projeto default criado numa instalação limpa (§8.1).
+/// Nome do projeto default criado numa instalação limpa.
 constexpr std::string_view kDefaultProjectName{"MeuJogo"};
 /// Registro do último projeto usado (raiz do workspace — oculto).
 constexpr std::string_view kLastProjectFile{".goni_last_project"};
@@ -116,7 +116,7 @@ constexpr std::string_view kLastSceneFile{".goni_last_scene"};
                            roll * kRadToDeg};
 }
 
-/// Path RELATIVO seguro (§8.1/§D7): não absoluto e SEM componente ".." —
+/// Path RELATIVO seguro: não absoluto e SEM componente ".." —
 /// anti-traversal que funciona tanto com workspace relativo (testes)
 /// quanto absoluto (Android filesDir — o root é ESCOLHA do host; o que
 /// não pode é escapar DE DENTRO do projeto).
@@ -203,7 +203,7 @@ constexpr std::string_view kLastSceneFile{".goni_last_scene"};
 Result<std::unique_ptr<EditorDocument>> EditorDocument::create(
     eng::fs::FileSystem& fs, const eng::fs::Path& workspaceRoot)
 {
-    ensureEditorComponentsRegistered(); // FASE 10: catálogo de gameplay
+    ensureEditorComponentsRegistered(); // catálogo de gameplay
     auto document = std::unique_ptr<EditorDocument>(new EditorDocument{});
     document->fs_ = &fs;
     document->workspaceRoot_ = workspaceRoot;
@@ -213,7 +213,7 @@ Result<std::unique_ptr<EditorDocument>> EditorDocument::create(
     // pré-projeto, mascarado pelo ensureProjectOnFirstRun da Activity).
     document->scene_.emplace();  // Scene não é movível — ADR-025
     document->niRuntime_ = std::make_unique<NiRuntime>(); // FASE 11
-    // P4.3 (N1): bus de PREVIEW isolado do master — a voice do preview
+    // Bus de PREVIEW isolado do master — a voice do preview
     // nunca se mistura com as vozes de jogo (stop por handle + bus próprio).
     document->previewBus_ = document->audioMixer_.createBus("preview", 1.f);
     return document;
@@ -222,7 +222,7 @@ Result<std::unique_ptr<EditorDocument>> EditorDocument::create(
 EditorDocument::~EditorDocument() = default;
 
 // =============================================================================
-// Projeto (§8.1)
+// Projeto
 // =============================================================================
 
 Result<void> EditorDocument::newProject(std::string_view name)
@@ -271,7 +271,7 @@ Result<void> EditorDocument::newProject(std::string_view name)
     file.config.engineVersion = eng::core::Version{0, 1, 0};
     file.config.assetRegistryPath = eng::fs::Path{"assets/asset_registry.json"};
     file.config.sceneRoots = {eng::fs::Path{"scenes"}};
-    // P4.6 (Bloco 1): projetos novos já nascem com a tabela de camadas
+    // Projetos novos já nascem com a tabela de camadas
     // de colisão nomeada ("default" bit 1).
     file.config.collisionLayers = eng::project::defaultCollisionLayers();
     file.filePath = root / eng::fs::Path{"project.goni.json"};
@@ -330,7 +330,7 @@ Result<void> EditorDocument::openProject(const eng::fs::Path& projectRoot)
         return makeUnexpected(loaded.error());
     }
 
-    // P4.2 (B-A — CAUSA RAIZ do "save/reload perde a cena"): o projeto
+    // O projeto
     // abria e a cena ficava VAZIA (newScene) — o marker de última cena
     // não existia e a Activity nem loadScene chamava. O restore é AQUI,
     // no documento, testável no Linux: o marker (.goni_last_scene, na
@@ -522,7 +522,7 @@ Result<void> EditorDocument::saveProject()
     if (written.isError()) {
         return makeUnexpected(written.error());
     }
-    // P4.2 (B-A): "Salvar projeto" é salvamento COMPLETO — a cena ATUAL
+    // "Salvar projeto" é salvamento COMPLETO — a cena ATUAL
     // vai junto (device round 1: o autor salvava, recarregava e a cena
     // sumia — só o project.goni.json era escrito). Cena nunca salva →
     // default "main.json" (sem diálogo extra; mesmo default do menu Cena).
@@ -565,7 +565,7 @@ Result<void> EditorDocument::setProjectName(std::string_view name)
     return {};
 }
 
-// --- P4.6 (Bloco 1): camadas de colisão nomeadas (project settings) -------
+// --- P4.6: camadas de colisão nomeadas (project settings) -------
 
 std::vector<EditorDocument::CollisionLayerInfo>
 EditorDocument::collisionLayers() const
@@ -714,7 +714,7 @@ eng::fs::Path EditorDocument::projectRoot() const
 }
 
 // =============================================================================
-// Import de assets com validação (P4.2/B-E) + zip do projeto (P4.2/B-A)
+// Import de assets com validação + zip do projeto
 // =============================================================================
 
 Result<std::string> EditorDocument::importAsset(std::string_view tempRelPath,
@@ -730,7 +730,7 @@ Result<std::string> EditorDocument::importAsset(std::string_view tempRelPath,
     if (imported.isError()) {
         return makeUnexpected(imported.error());
     }
-    // P4.2 (B-E): VALIDAÇÃO DE CONTEÚDO NO IMPORT — antes vivia no JNI
+    // VALIDAÇÃO DE CONTEÚDO NO IMPORT — antes vivia no JNI
     // e SÓ para texturas: áudio aceitava qualquer bytes e o erro estourava
     // DEPOIS, no preview ("wav: não é RIFF/WAVE"), sem orientar. Agora o
     // contrato vive no documento (testável no Linux; o JNI só delega).
@@ -774,7 +774,7 @@ Result<void> EditorDocument::exportProjectZip(std::string_view zipRelPath)
             StatusCode::InvalidArgument,
             "path do zip deve ser relativo ao workspace (sem ..)"));
     }
-    // P4.2 (B-A): o wrapper do zip é o NOME DA PASTA real no disco —
+    // O wrapper do zip é o NOME DA PASTA real no disco —
     // settings renomeia config.name sem renomear a pasta; usar config
     // apontava export para pasta inexistente ("Pasta do projeto não
     // encontrada") e import derivava lixo da última entrada.
@@ -803,7 +803,7 @@ Result<std::string> EditorDocument::importProjectZip(
 }
 
 // =============================================================================
-// Cena (§8.2)
+// Cena
 // =============================================================================
 
 Result<void> EditorDocument::newScene()
@@ -812,13 +812,13 @@ Result<void> EditorDocument::newScene()
         return makeUnexpected(documentError(
             StatusCode::InvalidState, "cena é somente-leitura em Play"));
     }
-    clearHistory();  // P4.5: nova cena = novo documento de undo
+    clearHistory();  // nova cena = novo documento de undo
     scene_.emplace(); // constrói in place (Scene não é movível — ADR-025)
     selection_.reset();
     sceneDirty_ = false;
-    // P4.3 (Bloco 2): cena nova = config de ticks de fábrica (timestep 1/60).
+    // Cena nova = config de ticks de fábrica (timestep 1/60).
     physicsAccumulator_.setFixedDt(1.f / 60.f);
-    // P4.2 (B-A): cena nova = nada a restaurar no próximo open — o path
+    // Cena nova = nada a restaurar no próximo open — o path
     // corrente e o marker morrem JUNTOS (best-effort no marker).
     currentScenePath_.clear();
     if (hasProject()) {
@@ -848,7 +848,7 @@ Result<void> EditorDocument::saveScene(std::string_view scenePath)
     if (text.isError()) {
         return makeUnexpected(text.error());
     }
-    // P4.3 (Bloco 2): timestep da física viaja na CENA (chave aditiva do
+    // Timestep da física viaja na CENA (chave aditiva do
     // documento — o serializer ignora chaves desconhecidas, arquivos antigos
     // carregam com 1/60). Parse do próprio output: falhar aqui é bug grave
     // (serializer emitiu JSON inválido) — erro explícito, sem silêncio.
@@ -878,7 +878,7 @@ Result<void> EditorDocument::saveScene(std::string_view scenePath)
     if (written.isError()) {
         return makeUnexpected(written.error());
     }
-    // P4.2 (B-A): path corrente + marker de última cena (o openProject
+    // Path corrente + marker de última cena (o openProject
     // restaura de cá). Marker na raiz do PROJETO: viaja no zip (import →
     // open devolve a cena de onde o autor parou).
     currentScenePath_ = std::string(scenePath);
@@ -928,7 +928,7 @@ namespace {
     return false;
 }
 
-// P4.7.0 Bloco 4 — migration aditiva da câmera: campos novos
+// Migration aditiva da câmera: campos novos
 // (rotationDeg/followName/deadzone*/smoothingTime/limits*/limit*) INJETADOS
 // com os defaults pré-P4.7 quando ausentes. O decodeStruct é ESTRITO
 // (campo refletido ausente = ParseError) — cenas salvas por versões
@@ -939,7 +939,7 @@ namespace {
 {
     using eng::serial::JsonValue;
     if (type == "eng::editor::NiScriptComponent") {
-        // P4.7.0 Bloco 6: opt-out do logic LOD (additive — ausente =
+        // Opt-out do logic LOD (additive — ausente =
         // false: o script PARTICIPA do LOD quando o setting liga).
         bool changed = false;
         if (!data.find("lodOptOut").has_value()) {
@@ -1065,7 +1065,7 @@ Result<void> EditorDocument::loadScene(std::string_view scenePath)
     if (fresh.isError()) {
         return makeUnexpected(fresh.error());
     }
-    // P4.3 (Bloco 2): extrai o timestep da física ANTES do load (chave
+    // Extrai o timestep da física ANTES do load (chave
     // aditiva do documento; arquivo antigo/ausente = default 1/60). Valor
     // inválido presente no arquivo é IGNORADO (config default) — o load da
     // cena nunca falha por config de ticks.
@@ -1094,9 +1094,9 @@ Result<void> EditorDocument::loadScene(std::string_view scenePath)
                 lod.has_value() && lod->isBool()) {
                 logicLodEnabled_ = lod->asBool();
             }
-            // P4.6 (Blocos 1/2): MIGRAÇÃO ADITIVA — campos refletidos
+            // MIGRAÇÃO ADITIVA — campos refletidos
             // novos não existem em cenas pré-P4.6 e o decode é ESTRITO
-            // com campo ausente (ADR-031). Injeta defaults ANTES do load
+            // com campo ausente. Injeta defaults ANTES do load
             // (mesmo padrão do physicsFixedDt); cenas novas já trazem os
             // campos (encode escreve tudo) e a migração é idempotente.
             if (migrateSceneJsonAdditiveP46(parsed.value())) {
@@ -1108,7 +1108,7 @@ Result<void> EditorDocument::loadScene(std::string_view scenePath)
     if (loaded.isError()) {
         return makeUnexpected(loaded.error());
     }
-    // P4.2 (B-A): mesma política do saveScene — path corrente + marker.
+    // Mesma política do saveScene — path corrente + marker.
     currentScenePath_ = std::string(scenePath);
     auto marker = fs_->writeAllText(
         project_->paths().projectDir() / eng::fs::Path{kLastSceneFile},
@@ -1122,7 +1122,7 @@ Result<void> EditorDocument::loadScene(std::string_view scenePath)
 }
 
 // =============================================================================
-// Entidades (§8.2/§8.3)
+// Entidades
 // =============================================================================
 
 Result<void> EditorDocument::requireEditMode() const
@@ -1179,7 +1179,7 @@ Result<void> EditorDocument::deleteEntity(eng::ecs::Entity entity)
     }
     if (selection_.has_value() && *selection_ == entity) {
         selection_.reset();
-        ++selectionRevision_;  // seleção morreu com a entidade (P1.8)
+        ++selectionRevision_;  // seleção morreu com a entidade
     }
     sceneDirty_ = true;
     return {};
@@ -1290,7 +1290,7 @@ Result<eng::ecs::Entity> EditorDocument::duplicateEntity(
     }
 
     sceneDirty_ = true;
-    ++selectionRevision_;  // clone entrou na cena → hierarquia/inspector (P1.7)
+    ++selectionRevision_;  // clone entrou na cena → hierarquia/inspector
     return remap.at(entity);
 }
 
@@ -1359,7 +1359,7 @@ Result<void> EditorDocument::setTransform(eng::ecs::Entity entity,
     local->rotation = quatFromDegrees(desc.rotationDegrees);
     local->scale = desc.scale;
     sceneDirty_ = true;
-    ++selectionRevision_;  // Inspector → viewport: mudou transform (P1.9)
+    ++selectionRevision_;  // Inspector → viewport: mudou transform
     return {};
 }
 
@@ -1378,19 +1378,19 @@ Result<void> EditorDocument::select(eng::ecs::Entity entity)
         ++selectionRevision_;
         return {};
     }
-    // P4.1 (T1/D1 — re-armo determinístico): mudança de seleção MATA o
+    // Mudança de seleção MATA o
     // drag em voo. Nenhum estado de drag sobrevive — o gizmo é
     // reconstruído do (seleção, ferramenta, câmera) a cada frame e o
     // beginDrag é a ÚNICA forma de armá-lo.
     gizmoDragEnd();
     selection_ = entity;
-    ++selectionRevision_;  // hierarquia selecionou → UI sincroniza (P1.9)
+    ++selectionRevision_;  // hierarquia selecionou → UI sincroniza
     return {};
 }
 
 void EditorDocument::deselect() noexcept
 {
-    gizmoDragEnd();  // P4.1 (T1/D1): re-armo — drag não sobrevive
+    gizmoDragEnd();  // re-armo — drag não sobrevive
     selection_.reset();
     ++selectionRevision_;
 }
@@ -1401,7 +1401,7 @@ bool EditorDocument::isSelected(eng::ecs::Entity entity) const noexcept
 }
 
 // =============================================================================
-// Ferramentas + gizmo (P1.3–P1.6) + sprite (P1.10)
+// Ferramentas + gizmo + sprite
 // =============================================================================
 
 GizmoBounds EditorDocument::selectionBounds(TextureCache* textures) const
@@ -1419,7 +1419,7 @@ GizmoBounds EditorDocument::selectionBounds(TextureCache* textures) const
         if (quad.entity != *selection_) {
             continue;
         }
-        // P1.2: tamanho DESENHADO = escala × (região em px / ppu) para
+        // Tamanho DESENHADO = escala × (região em px / ppu) para
         // sprites texturizados — o MESMO número do renderer/hit-test.
         float worldHalfW = quad.sizeX * 0.5f;
         float worldHalfH = quad.sizeY * 0.5f;
@@ -1445,7 +1445,7 @@ GizmoBounds EditorDocument::selectionBounds(TextureCache* textures) const
         const float sinR = std::sin(quad.rotation);
         bounds.worldX = quad.worldX + pivotOffX * cosR - pivotOffY * sinR;
         bounds.worldY = quad.worldY + pivotOffX * sinR + pivotOffY * cosR;
-        // P2 (bug §5): origem do NÓ separada do centro visual — o MOVE
+        // Origem do NÓ separada do centro visual — o MOVE
         // opera sobre a ORIGEM (o que o Transform guarda); rotate/scale
         // continuam no centro visual (pivot).
         bounds.originX = quad.worldX;
@@ -1470,7 +1470,7 @@ GizmoHandle EditorDocument::gizmoDragBegin(float screenX, float screenY,
                                             TextureCache* textures)
 {
     if (mode_ != Mode::Edit) {
-        return GizmoHandle::None;  // edição é rejeitada em Play (§8.7)
+        return GizmoHandle::None;  // edição é rejeitada em Play
     }
     const GizmoBounds bounds = selectionBounds(textures);
     if (!bounds.valid) {
@@ -1487,7 +1487,7 @@ GizmoHandle EditorDocument::gizmoDragBegin(float screenX, float screenY,
         return GizmoHandle::None;  // seleção stale no meio da operação
     }
     GizmoTransform start{};
-    // P2 (bug §5, R2): o gizmo opera em MUNDO — a origem do nó vem dos
+    // O gizmo opera em MUNDO — a origem do nó vem dos
     // bounds ATUAIS (não do transform local, que só coincide na raiz).
     start.posX = bounds.originX;
     start.posY = bounds.originY;
@@ -1528,7 +1528,7 @@ Result<void> EditorDocument::gizmoDragTo(float screenX, float screenY)
             documentError(StatusCode::NotFound, "entidade obsoleta"));
     }
     GizmoTransform target = gizmo_.dragTo(viewport_, bounds, screenX, screenY);
-    // P4.5 (chips de snap da tool sheet): translação → grade de 0.5
+    // Translação → grade de 0.5
     // unidades; rotação → múltiplos de 15°. Aplica ao ALVO EM MUNDO
     // (raiz: posição local == mundo; filho: snap é aproximação — a
     // inversa do pai preserva o resto do gesto).
@@ -1567,14 +1567,14 @@ Result<void> EditorDocument::gizmoDragTo(float screenX, float screenY)
         gizmoDragEnd();
         return applied;
     }
-    ++selectionRevision_;  // Inspector atualiza ao vivo (P1.9)
+    ++selectionRevision_;  // Inspector atualiza ao vivo
     return {};
 }
 
 void EditorDocument::gizmoDragEnd() noexcept
 {
     gizmo_.endDrag();
-    dragTextures_ = nullptr;     // contexto do drag morre com o drag (§5)
+    dragTextures_ = nullptr;     // contexto do drag morre com o drag
     dragParentInv_ = {1.f, 0.f, 0.f, 1.f};
     if (gizmoUndoArmed_) {
         gizmoUndoArmed_ = false;
@@ -1626,7 +1626,7 @@ GizmoDrawData EditorDocument::gizmoDraw(TextureCache* textures) const
     draw.quads = gizmo_.layoutQuads(viewport_, tool_, bounds);
     draw.triangles = gizmo_.layoutTriangles(viewport_, tool_, bounds);
     draw.segments = gizmo_.layoutSegments(viewport_, tool_, bounds);
-    // P4.6 (L4): transição entre tools — POP de 120ms nos handles (a
+    // Transição entre tools — POP de 120ms nos handles (a
     // hit-test NÃO muda: alvo de toque constante, só o visual escala).
     const float pop = gizmoHandlePop();
     if (pop < 1.f) {
@@ -1688,7 +1688,7 @@ Result<eng::ecs::Entity> EditorDocument::createSprite(std::string_view name)
 }
 
 // =============================================================================
-// Componentes (§8.4)
+// Componentes
 // =============================================================================
 
 std::vector<Inspector::Field> EditorDocument::inspectorFields(
@@ -1719,7 +1719,7 @@ Result<void> EditorDocument::setInspectorField(eng::ecs::Entity entity,
     if (guard.isError()) {
         return makeUnexpected(guard.error());
     }
-    // P1.9 (BUG REAL): Transform é TRS com rotação em QUAT — escrever
+    // Transform é TRS com rotação em QUAT — escrever
     // "rotation.z=30" direto no campo produzia um quat inválido que
     // decomponha para ~178° (graus viravam componente de quat). TODA
     // escrita de Transform pela UI passa pela API TRS (graus ↔ quat na
@@ -1834,7 +1834,7 @@ Result<void> EditorDocument::addComponent(eng::ecs::Entity entity,
         return makeUnexpected(guard.error());
     }
     pushHistory("component");
-    // P4.7.0 Bloco 1: contrato validado DENTRO do Inspector (requires/
+    // Contrato validado DENTRO do Inspector (requires/
     // conflicts/single com erro preciso); efeitos colaterais NATIVOS da
     // luz/física/materiais vivem em onAttach (registro em
     // ComponentRegistration.cpp) — o caso especial da Light2D migrou
@@ -1845,7 +1845,7 @@ Result<void> EditorDocument::addComponent(eng::ecs::Entity entity,
         return makeUnexpected(added.error());
     }
     sceneDirty_ = true;
-    ++selectionRevision_;  // Inspector reflete o componente novo (P2)
+    ++selectionRevision_;  // Inspector reflete o componente novo
     return {};
 }
 
@@ -1869,7 +1869,7 @@ Result<void> EditorDocument::removeComponent(eng::ecs::Entity entity,
         return makeUnexpected(guard.error());
     }
     pushHistory("remove");
-    // P4.7.0 Bloco 1: recusa quando outro componente presente EXIGE o
+    // Recusa quando outro componente presente EXIGE o
     // removido (erro com o nome do dependente); onDetach roda pós-remoção.
     auto removed = Inspector::removeComponent(*scene_, entity, component,
                                               /*detachUser=*/this);
@@ -1892,7 +1892,7 @@ namespace {
 /// dependência. O formato é texto livre para a UI exibir como está.
 [[nodiscard]] std::string dependencyHintFor(std::string_view component)
 {
-    // P4.7.0 Bloco 1: hint de CONTRATO primeiro (fonte única — o mesmo
+    // Hint de CONTRATO primeiro (fonte única — o mesmo
     // registro que valida o add); legacy depois (dicas não-expressíveis
     // como requires — assets ausentes, painel recomendado).
     const auto* contract = eng::editor::Inspector::contractOf(component);
@@ -1993,7 +1993,7 @@ EditorDocument::addComponentWithDependencies(eng::ecs::Entity entity,
 }
 
 // =============================================================================
-// Play/Stop (§8.7, ADR-044) + Tick architecture (P0-5, ADR-051)
+// Play/Stop + Tick architecture
 // =============================================================================
 
 namespace {
@@ -2102,7 +2102,7 @@ Result<void> EditorDocument::play()
                 }
             });
     }
-    // P4.7.0 Bloco 1: validação de contratos ANTES de entrar em Play —
+    // Validação de contratos ANTES de entrar em Play —
     // componente inválido (ex.: Collider.radius negativo introduzido por
     // caminho externo ao Inspector) NÃO entra em jogo: erro preciso com
     // tipo + nó. Custo O(nós × componentes) uma vez por Play — editor.
@@ -2135,10 +2135,10 @@ Result<void> EditorDocument::play()
             return makeUnexpected(*contractError);
         }
     }
-    // P4.3 (N1): entrar em Play PARA o preview (isolamento de vozes — a
+    // Entrar em Play PARA o preview (isolamento de vozes — a
     // voice de preview não atravessa a fronteira Edit→Play).
     audioPreviewStop();
-    // P4.1 (T1/D1 — re-armo): entrar em Play mata o drag do gizmo (o
+    // Entrar em Play mata o drag do gizmo (o
     // clone é outra cena — nenhum estado de edição vaza para o runtime).
     gizmoDragEnd();
     // Clone por serialização: o round-trip é teste da FASE 3; a edição
@@ -2154,7 +2154,7 @@ Result<void> EditorDocument::play()
         runtimeScene_.reset();
         return makeUnexpected(loaded.error());
     }
-    // FASE 11: scripts do clone compilam/instanciam AGORA (ADR-044 — a
+    // Scripts do clone compilam/instanciam AGORA (ADR-044 — a
     // edição nunca é tocada); @init roda na criação, `up start` a seguir.
     niRuntime_->setActionQuery(
         [](std::string_view action, int phase, void* user) {
@@ -2176,7 +2176,7 @@ Result<void> EditorDocument::play()
     niRuntime_->fireStart();
 
     // BUG DO CLONE ALEATÓRIO (pego pelo teste §10 — flaky ~40%): o save
-    // ordena entidades por SceneEntityId (ADR-033, byte-estável) e o
+    // ordena entidades por SceneEntityId e o
     // load recria nessa ordem — UUID é aleatório, então os ÍNDICES do
     // clone NÃO correspondem aos da edição. Handles de edição usados
     // contra o clone endereçavam a entidade ERRADA (inspector/move em
@@ -2203,7 +2203,7 @@ Result<void> EditorDocument::play()
             });
     }
     if (selection_.has_value()) {
-        // P4.2 (T5 — "Stop volta com a seleção intacta"): o handle da
+        // O handle da
         // EDIÇÃO é capturado ANTES do remapeamento (a cópia remapeada
         // morre com o clone no stop(); esta é restaurada).
         selectionBeforePlay_ = selection_;
@@ -2214,7 +2214,7 @@ Result<void> EditorDocument::play()
     }
     paused_ = false;  // Play novo começa rodando (pause é estado do gesto)
 
-    // Evolução P0-5 (ADR-051): o frame do jogo é o TICK SCHEDULER —
+    // Evolução P0-5: o frame do jogo é o TICK SCHEDULER —
     // sistemas ordenados por (fase, ordem, inserção). Mesma ordem de
     // execução de antes (física → animação → partículas → scripts →
     // áudio → câmera), agora DECLARADA, testável e extensível.
@@ -2238,7 +2238,7 @@ Result<void> EditorDocument::play()
     // Câmera de jogo resolvida SEM rodar o frame: `up update` (e qualquer
     // sistema com efeito) só roda em tick() explícito do host — contrato
     // FASE 11 (play() não avança o mundo). O CameraTick ainda não tem
-    // cache (nenhum frame rodou): resolução direta (ADR-051).
+    // cache (nenhum frame rodou): resolução direta.
     syncGameCamera(eng::tick::resolveActiveCamera(*runtimeScene_));
     {
         std::string ticks;
@@ -2255,16 +2255,16 @@ void EditorDocument::stop() noexcept
 {
     if (mode_ == Mode::Play) {
         mode_ = Mode::Edit;
-        gizmoDragEnd();  // P4.1 (T1/D1): re-armo no retorno à edição
+        gizmoDragEnd();  // re-armo no retorno à edição
         cameraTick_ = nullptr;  // P4.7.0 B4: morre com o scheduler
-        scheduler_.reset();  // ticks morrem com o clone (ADR-051)
+        scheduler_.reset();  // ticks morrem com o clone
         gameCameraActive_ = false;
         viewport_.setGameCamera(nullptr);  // câmera do editor volta
         niRuntime_->shutdown(); // `up destroy` + descarte (bindings morrem
                                 // JUNTOS com o clone — ADR-044)
         audioMixer_.stopAll();  // P2 §12: vozes do Play morrem com o clone
         runtimeScene_.reset();
-        // P4.2 (T5 — contrato REVISTO, era a7fd366 "stop reseta"): o
+        // O
         // Modo Jogo exige voltar COM a seleção intacta — o handle da
         // EDIÇÃO capturado no play() é restaurado (o remapeado ao clone
         // é órfão aqui). Handle morto na edição → reset honesto.
@@ -2276,7 +2276,7 @@ void EditorDocument::stop() noexcept
         }
         selectionBeforePlay_.reset();
         paused_ = false;
-        ++selectionRevision_;  // UI percebe o retorno (P1.9)
+        ++selectionRevision_;  // UI percebe o retorno
         editToRuntime_.clear();
         ENG_INFO("STOP: runtime descartado — edição intacta");
     }
@@ -2292,17 +2292,17 @@ void EditorDocument::tick(float deltaSeconds) noexcept
         previewTick(deltaSeconds);
         return;
     }
-    // P4.2 (T5 — PAUSE do Modo Jogo): runtime CONGELADO — nenhum sistema
+    // Runtime CONGELADO — nenhum sistema
     // avança (física/scripts/animação/áudio); a câmera de jogo fica no
     // último estado e o host continua RENDERIZANDO (frame vivo, mundo
     // parado — sem tela morta).
     if (paused_) {
         return;
     }
-    // FASE 9 (§6.1): input com janela de um update por frame.
+    // Input com janela de um update por frame.
     runtimeInput_.update();
 
-    // Evolução P0-5 (ADR-051): frame completo pelo TickScheduler —
+    // Evolução P0-5: frame completo pelo TickScheduler —
     // física (timestep fixo), animação, partículas, scripts, áudio e
     // câmera nas fases/ordens declaradas no play(). Determinismo: a ordem é
     // fixa e cada sistema vê o estado deixado pelos anteriores.
@@ -2319,7 +2319,7 @@ void EditorDocument::tick(float deltaSeconds) noexcept
     // que conhece SpriteData — editor). O MESMO código do preview.
     applyAnimatorFrames(*runtimeScene_);
 
-    // Câmera de jogo (P0-5): o CameraTick cacheou a ativa no frame; o
+    // Câmera de jogo: o CameraTick cacheou a ativa no frame; o
     // viewport passa a ver POR ELA (render/hit-test/arraste seguem).
     const auto* cameraSystem = static_cast<const eng::tick::CameraTickSystem*>(
         scheduler_->find("CameraTick"));
@@ -2329,7 +2329,7 @@ void EditorDocument::tick(float deltaSeconds) noexcept
             : eng::tick::resolveActiveCamera(*runtimeScene_));
 }
 
-// P4.7.0 Bloco 6: thunk do logic LOD (ponteiro de função não captura —
+// Thunk do logic LOD (ponteiro de função não captura —
 // o user é o documento). false = pulo o `up update` deste frame.
 bool EditorDocument::lodFilterThunk(void* user, eng::ecs::Entity self)
 {
@@ -2413,7 +2413,7 @@ void EditorDocument::setGameViewportSize(float width, float height) noexcept
 }
 
 // =============================================================================
-// Viewport (§8.6)
+// Viewport
 // =============================================================================
 
 std::optional<eng::ecs::Entity> EditorDocument::viewportPick(
@@ -2489,7 +2489,7 @@ Result<void> EditorDocument::moveEntityScreen(eng::ecs::Entity entity,
         return makeUnexpected(documentError(StatusCode::NotFound,
                                            "entidade obsoleta"));
     }
-    // Câmera EM FOCO (P1): em Play sob câmera de jogo o arraste-debug
+    // Câmera EM FOCO: em Play sob câmera de jogo o arraste-debug
     // precisa do zoom que o usuário está VENDO, não o do editor.
     const float zoom = viewport_.effectiveCamera().zoom;
     const float worldDx = screenDx / zoom;
@@ -2500,7 +2500,7 @@ Result<void> EditorDocument::moveEntityScreen(eng::ecs::Entity entity,
         return makeUnexpected(documentError(StatusCode::Internal,
                                            "sem Transform"));
     }
-    // P2 (bug §5 R2): mesmo fixo do gizmo — delta de MUNDO convertido
+    // Mesmo fixo do gizmo — delta de MUNDO convertido
     // para o espaço LOCAL do pai (filho de pai girado/escalado segue o
     // eixo de TELA, não o eixo local do pai).
     if (mode_ == Mode::Edit) {
@@ -2511,7 +2511,7 @@ Result<void> EditorDocument::moveEntityScreen(eng::ecs::Entity entity,
     local->position.y += inv[2] * worldDx + inv[3] * worldDy;
     if (mode_ == Mode::Edit) {
         sceneDirty_ = true;
-        ++selectionRevision_;  // viewport → Inspector: drag move (P1.9)
+        ++selectionRevision_;  // viewport → Inspector: drag move
     }
     return {};
 }
@@ -2530,7 +2530,7 @@ eng::ecs::Entity EditorDocument::toFocus(eng::ecs::Entity entity) const noexcept
 }
 
 // =============================================================================
-// Hierarquia (§8.3)
+// Hierarquia
 // =============================================================================
 
 std::vector<EditorDocument::HierarchyNode>
@@ -3016,7 +3016,7 @@ Result<void> EditorDocument::animationWrite(std::string_view name,
         return makeUnexpected(documentError(StatusCode::InvalidState,
                                             "nenhum projeto aberto"));
     }
-    // Valida ANTES de gravar: lixo não entra no projeto (§15).
+    // Valida ANTES de gravar: lixo não entra no projeto.
     std::vector<AnimDiag> diags;
     auto decoded = animationDecode(json, &diags);
     if (decoded.isError()) {
@@ -3167,7 +3167,7 @@ Result<void> EditorDocument::materialWrite(std::string_view name,
         return makeUnexpected(documentError(StatusCode::InvalidState,
                                             "nenhum projeto aberto"));
     }
-    // Valida ANTES de gravar: lixo não entra no projeto (§15).
+    // Valida ANTES de gravar: lixo não entra no projeto.
     auto decoded = eng::render::materialDecode(json);
     if (decoded.isError()) {
         return makeUnexpected(documentError(
@@ -3460,7 +3460,7 @@ Result<void> EditorDocument::animationSetMeta(std::string_view name,
     return animationWrite(fileName, encoded.value());
 }
 
-// --- P4.6 (Bloco 4): autoraria de keys TRS (timeline v1) --------------------
+// --- P4.6: autoraria de keys TRS (timeline v1) --------------------
 
 namespace {
 
@@ -3899,7 +3899,7 @@ Result<void> EditorDocument::audioPreview(std::string_view assetName)
         return makeUnexpected(documentError(StatusCode::InvalidState,
                                             "nenhum projeto aberto"));
     }
-    // P4.3 (N1 — TOGGLE): 2º toque no MESMO asset = STOP (a voice vivia
+    // 2º toque no MESMO asset = STOP (a voice vivia
     // "para sempre" — sem handle de stop, o som só morria reiniciando a
     // engine). Voice de outro asset: para a anterior e toca o novo.
     if (previewVoice_.isValid() && audioMixer_.isPlaying(previewVoice_) &&
@@ -3927,8 +3927,8 @@ Result<void> EditorDocument::audioPreview(std::string_view assetName)
 
 void EditorDocument::audioPreviewStop() noexcept
 {
-    // P4.3 (N1): stop POR HANDLE — idempotente; handle obsoleto é no-op
-    // seguro do mixer (§6.10). Nenhum outro caminho mata a voice.
+    // Stop POR HANDLE — idempotente; handle obsoleto é no-op
+    // seguro do mixer. Nenhum outro caminho mata a voice.
     if (previewVoice_.isValid()) {
         audioMixer_.stop(previewVoice_);
         previewVoice_ = eng::audio::VoiceHandle{};
@@ -3942,7 +3942,7 @@ bool EditorDocument::audioPreviewPlaying() const noexcept
 }
 
 // =============================================================================
-// Ticks/Camadas (P4.3 — Bloco 2; ADR-051)
+// Ticks/Camadas
 // =============================================================================
 
 Result<std::vector<EditorDocument::LayerInfo>> EditorDocument::layerList()
@@ -4033,7 +4033,7 @@ Result<void> EditorDocument::setPhysicsFixedDt(float fixedDt)
 
 
 // =============================================================================
-// P4.5 — undo/redo por SNAPSHOTS de cena + fit do viewport
+// Undo/redo por SNAPSHOTS de cena + fit do viewport
 // =============================================================================
 
 // NOT const: SceneSerializer::save recebe Scene& (canonicaliza IDs —

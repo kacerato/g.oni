@@ -1,4 +1,4 @@
-# eng::reflect — metadados de tipos (FASE 2, missão §B.1; ADR-021)
+# eng::reflect — metadados de tipos
 eng_add_module(reflect
     src/Reflect.cpp
 )

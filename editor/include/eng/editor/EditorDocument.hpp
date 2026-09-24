@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::editor::EditorDocument — estado e comandos do editor
-/// (FASE 8, missão §8.7–§8.9).
+///.
 ///
 /// Modelo de estado (missão §8.9) — SEM globals:
 ///   ProjectState  = ProjectFile + dirty
@@ -9,7 +9,7 @@
 ///   SelectionState= entidade selecionada (ou nada)
 ///   ViewportState = Viewport (câmera 2D)
 ///   InspectorState= leitura pura via Inspector (sem estado próprio)
-///   RUNTIME       = Scene clone existindo APENAS em Play (§8.7)
+///   RUNTIME       = Scene clone existindo APENAS em Play
 ///
 /// SEPARAÇÃO EDITOR × RUNTIME (missão §8.7, ADR-044): o estado do editor é
 /// a cena editada; o runtime é um CLONE por serialização (round-trip já
@@ -86,7 +86,7 @@ public:
     EditorDocument(const EditorDocument&) = delete;
     EditorDocument& operator=(const EditorDocument&) = delete;
 
-    // --- projeto (§8.1) ------------------------------------------------------
+    // --- projeto ------------------------------------------------------
 
     /// Cria <workspaceRoot>/<name> com project.goni.json, assets/<cats>/ e
     /// scenes/ e o ABRE. Erro se já existe.
@@ -101,7 +101,7 @@ public:
 
     [[nodiscard]] bool hasProject() const noexcept { return project_.has_value(); }
     [[nodiscard]] std::string projectName() const;
-    /// Project Settings (§8.1): renomeia (config + disco + dirty).
+    /// Project Settings: renomeia (config + disco + dirty).
     [[nodiscard]] eng::core::Result<void> setProjectName(std::string_view name);
     [[nodiscard]] eng::fs::Path projectRoot() const;
 
@@ -141,7 +141,7 @@ public:
     /// projeto, caminho, estado do documento — logcat [GONI]).
     [[nodiscard]] eng::core::Result<std::string> ensureStartupProject();
 
-    // --- cena (§8.2) ----------------------------------------------------------
+    // --- cena ----------------------------------------------------------
 
     /// Cena nova (a atual é descartada — sem perda silenciosa: chamador
     /// decide salvar antes; sceneDirty reflete).
@@ -198,7 +198,7 @@ public:
     /// zoom default). Erro nunca (cena vazia é caso válido).
     void viewportFit(class TextureCache* textures);
 
-    // --- Ticks/Camadas (P4.3 — Bloco 2; ADR-051 exposto ao autor) ------------
+    // --- Ticks/Camadas ------------
     // A engine JÁ tem LayerRegistry (timeScale + participação update/física/
     // render por camada) e TimestepAccumulator (física de passo fixo) — nada
     // disso era AUTORÁVEL. A sheet de Ticks toca este estado REAL.
@@ -229,7 +229,7 @@ public:
     /// Erro se não finito, <= 0 ou > 0.25 s (honesto — sem clamp calado).
     [[nodiscard]] eng::core::Result<void> setPhysicsFixedDt(float fixedDt);
 
-    // --- P4.7.0 (Bloco 5): kinematic_sweep ----------------------------------
+    // --- P4.7.0: kinematic_sweep ----------------------------------
     /// ON (default): `move` do KINEMATIC é VARRIDO (TOI+slide — o script
     /// ingênuo COLIDE; parede para, desliza, nunca atravessa). OFF: `move`
     /// é translação crua (teletransporte — semântica pré-P4.7). Persiste
@@ -244,7 +244,7 @@ public:
         sceneDirty_ = true; // persiste no próximo save (como fixedDt)
     }
 
-    // --- P4.7.0 (Bloco 6): logic LOD -------------------------------------
+    // --- P4.7.0: logic LOD -------------------------------------
     /// OFF (default): TODOS os scripts rodam sempre (semântica pré-P4.7).
     /// ON: scripts fora da vista pulam o `up update` (opt-out por script
     /// via NiScriptComponent::lodOptOut — gameplay crítico roda sempre).
@@ -259,7 +259,7 @@ public:
         sceneDirty_ = true;
     }
 
-    // --- P4.6 (Bloco 1): camadas de COLISÃO nomeadas (project settings) ---
+    // --- P4.6: camadas de COLISÃO nomeadas (project settings) ---
     // ≠ camadas de cena/tick (LayerInfo/ADR-051): estes bitfields filtram
     // PARES de colisão — (A.mask & B.layer) && (B.mask & A.layer) — e são
     // persistidos no project.goni.json ("collisionLayers", chave aditiva).
@@ -280,7 +280,7 @@ public:
     [[nodiscard]] eng::core::Result<std::uint32_t> addCollisionLayer(
         std::string_view name);
 
-    // --- P4.6 (Bloco 5/L2): grade do viewport (project settings) -----------
+    // --- P4.6: grade do viewport (project settings) -----------
     /// Config corrente (default honesto quando sem projeto). O
     /// ViewportRenderer consome isto por frame (EditorHost repassa).
     [[nodiscard]] const eng::project::GridConfig& gridConfig() const noexcept
@@ -303,7 +303,7 @@ public:
         return currentScenePath_;
     }
 
-    // --- entidades (§8.2/§8.3) — REJEITADOS em Play ---------------------------
+    // --- entidades — REJEITADOS em Play ---------------------------
 
     [[nodiscard]] eng::core::Result<eng::ecs::Entity> createEntity(
         std::string_view name, eng::ecs::Entity parent);
@@ -341,24 +341,24 @@ public:
         return selectionRevision_;
     }
 
-    // --- ferramentas + gizmo (P1.3–P1.6) ----------------------------------------
+    // --- ferramentas + gizmo ----------------------------------------
 
     [[nodiscard]] EditorTool tool() const noexcept { return tool_; }
-    /// P4.1 (T1/D1): trocar de ferramenta RE-ARMA o gizmo — nenhum estado
+    /// Trocar de ferramenta RE-ARMA o gizmo — nenhum estado
     /// de drag sobrevive (o drag de A nunca vira drag de B por troca de
     /// ferramenta no meio de um gesto).
     void setTool(EditorTool tool) noexcept
     {
         if (tool_ != tool) {
             gizmoDragEnd();
-            // P4.6 (L4): transição 120ms — o pop do gizmo recomeça a cada
+            // Transição 120ms — o pop do gizmo recomeça a cada
             // troca EFETIVA de ferramenta.
             toolChangedAt_ = std::chrono::steady_clock::now();
         }
         tool_ = tool;
     }
 
-    /// P4.6 (L4): escala corrente do pop da transição (0.88..1.0) — o
+    /// Escala corrente do pop da transição (0.88..1.0) — o
     /// gizmoDraw multiplica os halfes dos handles por isto.
     [[nodiscard]] float gizmoHandlePop() const noexcept
     {
@@ -392,14 +392,14 @@ public:
     /// Vazia quando: sem seleção, tool Select, bounds inválido ou Play.
     [[nodiscard]] GizmoDrawData gizmoDraw(TextureCache* textures) const;
 
-    /// ADD → Sprite (P1.10): entidade nova com Name + SpriteData default
+    /// ADD → Sprite: entidade nova com Name + SpriteData default
     /// (sem textura — placeholder claramente identificado no viewport),
     /// selecionada e marcada dirty. O nome recebe numeração automática
     /// para manter a hierarquia legível.
     [[nodiscard]] eng::core::Result<eng::ecs::Entity> createSprite(
         std::string_view name);
 
-    // --- componentes (§8.4) — Inspector + guarda de modo ----------------------
+    // --- componentes — Inspector + guarda de modo ----------------------
 
     [[nodiscard]] std::vector<Inspector::Field> inspectorFields(
         eng::ecs::Entity entity, std::string_view component) const;
@@ -461,24 +461,24 @@ public:
     [[nodiscard]] eng::core::Result<std::string> importProjectZip(
         std::string_view zipRelPath, std::string_view preferredName);
 
-    // --- play/stop (§8.7, ADR-044) ---------------------------------------------
+    // --- play/stop ---------------------------------------------
 
     [[nodiscard]] eng::core::Result<void> play();
     void stop() noexcept;
     [[nodiscard]] bool isPlaying() const noexcept { return mode_ == Mode::Play; }
-    /// P4.2 (T5 — Modo Jogo G1): pausa do RUNTIME — tick() não avança o
+    /// Pausa do RUNTIME — tick() não avança o
     /// mundo (física/scripts/animação/áudio congelam), render e câmera
     /// continuam. Só tem efeito em Play.
     void setPaused(bool paused) noexcept { paused_ = paused; }
     [[nodiscard]] bool isPaused() const noexcept { return paused_; }
-    /// Avanço do runtime por frame. Play: input (§6.1) + TICK SCHEDULER
+    /// Avanço do runtime por frame. Play: input + TICK SCHEDULER
     /// (evolução P0-5, ADR-051 — física com timestep fixo, animação,
     /// partículas, scripts e câmera agendados por (fase, ordem)) sobre o
     /// CLONE. Edit: parado (gestos não vazam — §6.4). Depois do frame a
-    /// câmera de jogo ativa (se houver) toma o viewport (ADR-051).
+    /// câmera de jogo ativa (se houver) toma o viewport.
     void tick(float deltaSeconds) noexcept;
 
-    /// Agendador de ticks do runtime (P0-5). Vazio em Edit; construído no
+    /// Agendador de ticks do runtime. Vazio em Edit; construído no
     /// play(). Diagnóstico/testes.
     [[nodiscard]] const eng::tick::TickScheduler* runtimeScheduler()
         const noexcept
@@ -486,8 +486,8 @@ public:
         return scheduler_.get();
     }
 
-    /// Câmera de jogo ativa do último frame (P0-5) — o viewport a usa em
-    /// Play quando a cena tem câmera ativa (ADR-051).
+    /// Câmera de jogo ativa do último frame — o viewport a usa em
+    /// Play quando a cena tem câmera ativa.
     [[nodiscard]] bool hasGameCamera() const noexcept
     {
         return gameCameraActive_;
@@ -499,7 +499,7 @@ public:
     {
         return physicsWorld_;
     }
-    /// Runtime de scripts NI-Script do clone (FASE 11 — vazio em Edit).
+    /// Runtime de scripts NI-Script do clone.
     [[nodiscard]] const NiRuntime& runtimeScripts() const noexcept
     {
         return *niRuntime_;
@@ -510,7 +510,7 @@ public:
         return runtimeAnimations_;
     }
 
-    /// INPUT DO JOGO (FASE 9, §6.4 — separado dos gestos do editor): os
+    /// INPUT DO JOGO: os
     /// toques do viewport em Play alimentam ESTE sistema; bindings são
     /// configuráveis por asset (input.json — ActionBindings::fromJson).
     [[nodiscard]] eng::input::InputSystem& runtimeInput() noexcept
@@ -526,7 +526,7 @@ public:
                    float y, float pressure);
     void setGameViewportSize(float width, float height) noexcept;
 
-    // --- viewport (§8.6) --------------------------------------------------------
+    // --- viewport --------------------------------------------------------
 
     [[nodiscard]] Viewport& viewport() noexcept { return viewport_; }
     [[nodiscard]] const Viewport& viewport() const noexcept { return viewport_; }
@@ -550,7 +550,7 @@ public:
     [[nodiscard]] eng::core::Result<void> moveEntityScreen(
         eng::ecs::Entity entity, float screenDx, float screenDy);
 
-    /// Snapshot da hierarquia (§8.3) — caminhada depth-first estável.
+    /// Snapshot da hierarquia — caminhada depth-first estável.
     struct HierarchyNode {
         eng::ecs::Entity entity{};
         std::string name;
@@ -562,7 +562,7 @@ public:
     [[nodiscard]] eng::scene::Scene* sceneInFocus() noexcept;
     [[nodiscard]] const eng::scene::Scene* sceneInFocus() const noexcept;
 
-    // --- assets (§8.5) -----------------------------------------------------------
+    // --- assets -----------------------------------------------------------
 
     [[nodiscard]] AssetBrowser* assets() noexcept { return assets_.get(); }
     [[nodiscard]] const AssetBrowser* assets() const noexcept
@@ -659,7 +659,7 @@ public:
     [[nodiscard]] eng::core::Result<std::string> materialRead(
         std::string_view name) const;
 
-    /// P4.7.0 Bloco 1 (hook onAttach da Light2D): o material de um sprite
+    /// O material de um sprite
     /// CONTA como lit para os defaults coerentes da luz? Semântica EXATA
     /// do P4.6 Bloco 2: asset vazio = lit; cache frio = lit (default do
     /// engine); cache quente decide pelo shader resolvido.
@@ -704,7 +704,7 @@ public:
     [[nodiscard]] eng::core::Result<void> animationSetMeta(
         std::string_view name, bool loop, float fps);
 
-    // --- P4.6 (Bloco 4): autoraria de keys TRS (timeline v1) ----------------
+    // --- P4.6: autoraria de keys TRS (timeline v1) ----------------
     // `track` ∈ {"position", "rotation", "scale"}; rotation em GRAUS
     // (convenção do autor — decode/encode .anim.json idênticos). Key no
     // MESMO tempo (ε 1e-4) SUBSTITUI o valor (gravar de novo = atualizar).
@@ -759,11 +759,11 @@ public:
     /// novo (uma única voice de preview existe — sem sobreposição).
     [[nodiscard]] eng::core::Result<void> audioPreview(
         std::string_view assetName);
-    /// P4.3 (N1): para o preview IMEDIATAMENTE (idempotente — sem voice
+    /// Para o preview IMEDIATAMENTE (idempotente — sem voice
     /// viva é no-op). Chamado ao fechar painel/mudar categoria/importar/
     /// entrar em Play — a voice de preview nunca sobrevive ao contexto.
     void audioPreviewStop() noexcept;
-    /// P4.3 (N1): há voice de preview VIVA agora? (fonte de verdade do
+    /// Há voice de preview VIVA agora? (fonte de verdade do
     /// toggle na UI — a voice pode ter terminado sozinha).
     [[nodiscard]] bool audioPreviewPlaying() const noexcept;
     /// Sound decodificado do asset (cache do documento — o AudioTick e o
@@ -866,14 +866,14 @@ private:
     void syncLinkedScripts(std::string_view name, std::string_view content);
     bool suppressHistory_ = false;
     int historyGroupDepth_ = 0;
-    /// P4.5: undo do GESTO de gizmo — armado no begin, limpo no end
+    /// Undo do GESTO de gizmo — armado no begin, limpo no end
     /// (drag sem mudança real remove a própria entrada).
     bool gizmoUndoArmed_ = false;
     std::uint64_t revisionAtDragBegin_ = 0;
     bool snapTranslate_ = false;
     bool snapRotate_ = false;
 
-    /// Escrita de campo TRS do Transform pela UI do Inspector (P1.9):
+    /// Escrita de campo TRS do Transform pela UI do Inspector:
     /// "position.x" | "rotation.y" (GRAUS) | "scale.z" → API TRS — nunca
     /// direto no quat (graus em componente de quat = lixo decomposto).
     [[nodiscard]] eng::core::Result<void> setTransformField(
@@ -908,7 +908,7 @@ private:
     std::optional<eng::project::ProjectFile> project_{};
     bool projectDirty_{false};
 
-    std::optional<eng::scene::Scene> scene_{}; ///< cena em EDIÇÃO (§8.7)
+    std::optional<eng::scene::Scene> scene_{}; ///< cena em EDIÇÃO
     bool sceneDirty_{false};
     /// Path da cena atual ("main.json") — P4.2/B-A: saveProject usa para
     /// persistir a cena junto do projeto; vazio = nunca salva/carregada.
@@ -919,24 +919,24 @@ private:
     Mode mode_{Mode::Edit};
 
     std::optional<eng::ecs::Entity> selection_{};
-    std::uint64_t selectionRevision_ = 0;  ///< bump p/ live sync (P1.9)
+    std::uint64_t selectionRevision_ = 0;  ///< bump p/ live sync
     /// Seleção da EDIÇÃO capturada no play() (P4.2/T5: "Stop volta ao
     /// editor com seleção intacta" — a seleção remapeada ao clone é
     /// descartada com ele; esta é restaurada no stop()).
     std::optional<eng::ecs::Entity> selectionBeforePlay_{};
-    /// P4.2 (T5): runtime pausado (tick não avança; render continua).
+    /// Runtime pausado (tick não avança; render continua).
     bool paused_ = false;
 
-    /// Ferramenta ativa (P1.6) + gizmo (P1.3–P1.5). O estado de drag
+    /// Ferramenta ativa + gizmo. O estado de drag
     /// vive no DOCUMENTO (não na Activity): o ECS continua a única
     /// fonte de verdade autoral; o gizmo só calcula alvos.
     EditorTool tool_{EditorTool::Select};
-    /// P4.6 (L4): instante da ÚLTIMA troca de ferramenta (pop 120ms).
+    /// Instante da ÚLTIMA troca de ferramenta (pop 120ms).
     std::chrono::steady_clock::time_point toolChangedAt_
         = std::chrono::steady_clock::now() - std::chrono::hours(24);
     TransformGizmo gizmo_{};
 
-    /// Contexto do DRAG (P2, bug §5): texturas capturadas no begin (o
+    /// Contexto do DRAG: texturas capturadas no begin (o
     /// dragTo resolve bounds com a MESMA fonte — pivot consistente) e a
     /// inversa do pai no begin (delta de mundo → local). Ambos morrem no
     /// gizmoDragEnd — o gizmo nunca opera sobre estado obsoleto.
@@ -947,7 +947,7 @@ private:
     /// enquanto o clone existir — ver toFocus()).
     std::unordered_map<eng::ecs::Entity, eng::ecs::Entity> editToRuntime_{};
 
-    /// Espelha a câmera de jogo ativa no viewport (P0-5, ADR-051): copia
+    /// Espelha a câmera de jogo ativa no viewport: copia
     /// posX/posY/zoom para `gameCamera_` e entrega ao viewport, ou devolve
     /// a câmera do editor quando a cena não tem câmera ativa.
     void syncGameCamera(const eng::tick::ActiveCamera& active) noexcept;
@@ -957,7 +957,7 @@ private:
     static bool lodFilterThunk(void* user, eng::ecs::Entity self);
     [[nodiscard]] bool lodFilter(eng::ecs::Entity self) const;
 
-    eng::input::InputSystem runtimeInput_{}; ///< input do JOGO (§6.4)
+    eng::input::InputSystem runtimeInput_{}; ///< input do JOGO
     eng::physics::PhysicsWorld physicsWorld_{};      ///< §7.1–§7.6
     eng::physics::TimestepAccumulator physicsAccumulator_{1.f / 60.f};
     /// P4.7.0 B5: varredura do kinematic (default ON — ver kinematicSweep()).
@@ -966,7 +966,7 @@ private:
     bool logicLodEnabled_ = false;
     eng::animation::AnimationBank runtimeAnimations_{}; ///< §7.7–§7.11
     eng::audio::AudioMixer audioMixer_{};      ///< P2 §12 — mixer REAL
-    /// P4.3 (N1): voice/asset do PREVIEW (uma única; bus isolado do jogo).
+    /// Voice/asset do PREVIEW (uma única; bus isolado do jogo).
     eng::audio::VoiceHandle previewVoice_{};
     std::string previewAsset_;
     std::uint32_t previewBus_{0};              ///< bus "preview" (criado no create)
@@ -978,7 +978,7 @@ private:
     /// recebe o tamanho da vista por frame (clamp pós-zoom dos limites).
     /// Nulo fora de Play; resetado no stop() junto com o scheduler.
     eng::tick::CameraTickSystem* cameraTick_ = nullptr;
-    Viewport::Camera2D gameCamera_{};      ///< cache da câmera ativa (P0-5)
+    Viewport::Camera2D gameCamera_{};      ///< cache da câmera ativa
     bool gameCameraActive_ = false;        ///< último refresh achou câmera?
     Viewport viewport_{};
     std::unique_ptr<AssetBrowser> assets_{};

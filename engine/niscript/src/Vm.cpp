@@ -1,9 +1,9 @@
-/// VM do NI-Script — execução de bytecode (FASE 11, design §6).
+/// VM do NI-Script — execução de bytecode.
 ///
 /// Modelo: stack machine com ORÇAMENTO GLOBAL de instruções (§6.2 —
-/// determinístico, sem threads/alarme); regiões repair/timeout (§5.3/§5.4)
+/// determinístico, sem threads/alarme); regiões repair/timeout
 /// numa pilha de REGIÕES por execução; Faults nunca viram exceções
-/// (ADR-004) — desmontam até a região `repair` mais interna ou abortam o
+/// — desmontam até a região `repair` mais interna ou abortam o
 /// EVENTO (isolamento — o script não morre, design §5.3.5).
 ///
 /// Frames carregam o PROGRAMA dono (emit cruza instâncias — §4), a
@@ -220,7 +220,7 @@ struct NiExecOps final {
 
     /// Empilha frame de chamada (args já na pilha; checa params tipados).
     /// `fromEmit`: frame criado por propagação/handler local de emit — conta
-    /// na profundidade de emissão (§4, limite kMaxEmitDepth).
+    /// na profundidade de emissão.
     [[nodiscard]] static bool doCall(NiExecContext& x,
                                      const NiProgram* program,
                                      const NiFunc* func,
@@ -297,7 +297,7 @@ struct NiExecOps final {
     }
 
     /// Retorno (GIVE): valor → caller; região do frame é desfeita. Frames
-    /// criados por `emit` decretam a profundidade de emissão (§4).
+    /// criados por `emit` decretam a profundidade de emissão.
     static void doReturn(NiExecContext& x, NiValue value)
     {
         const NiExecContext::Frame frame = x.frames_.back();
@@ -313,7 +313,7 @@ struct NiExecOps final {
         push(x, std::move(value));
     }
 
-    /// emit (§4): handler local + BFS por links; chamadas empilhadas em
+    /// emit: handler local + BFS por links; chamadas empilhadas em
     /// ordem INVERSA (frames LIFO ⇒ execução na ordem coletada).
     [[nodiscard]] static bool doEmit(NiExecContext& x, const std::string& event)
     {
@@ -793,7 +793,7 @@ std::optional<NiFault> NiVm::run(NiScriptState& state,
         x.frames_.back().pc = pc + 1;
         const NiProgram* frameProgram = x.frames_.back().program;
 
-        // orçamento global (§6.2) — ANTES da execução de cada instrução
+        // orçamento global — ANTES da execução de cada instrução
         ++x.count_;
         if (x.count_ > x.deadline_) {
             NiExecOps::fail(x, NiFault::Kind::Timeout,
@@ -803,12 +803,12 @@ std::optional<NiFault> NiVm::run(NiScriptState& state,
                 state.lastFault_ = x.fault_;
                 return x.fault_;
             }
-            // capturado por repair (§5.3.2d): registrado e segue
+            // capturado por repair: registrado e segue
             state.lastFault_ = x.fault_;
             x.fault_.reset();
             continue;
         }
-        // hook de trace (§6.5) — visão const, nunca muta
+        // hook de trace — visão const, nunca muta
         if (traceStride_ != 0 && traceHook_ && (x.count_ % traceStride_) == 0) {
             NiExecContext::TraceInfo info;
             info.pc = pc;
@@ -1319,7 +1319,7 @@ std::optional<NiFault> NiVm::run(NiScriptState& state,
                 state.lastFault_ = x.fault_;
                 return x.fault_;
             }
-            // fault CAPTURADO por repair (§5.3.2d): registrado na
+            // fault CAPTURADO por repair: registrado na
             // instância — consultável do C++, não introspectável do script.
             state.lastFault_ = x.fault_;
             x.fault_.reset();

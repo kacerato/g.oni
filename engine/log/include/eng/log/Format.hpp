@@ -18,7 +18,7 @@ namespace eng::log {
 /// - Argumentos excedentes (sem "{}" restante) são ignorados.
 /// - const char* nulo vira "(null)".
 ///
-/// FASE 2: substituída por fmt/spdlog quando ADR permitir nova dependência.
+/// Substituída por fmt/spdlog quando ADR permitir nova dependência.
 template <typename... Args>
 [[nodiscard]] std::string format(std::string_view pattern, const Args&... args);
 

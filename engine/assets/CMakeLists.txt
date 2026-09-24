@@ -16,7 +16,7 @@ eng_add_module(assets
 #   consumidor de cena; mantida para a camada).
 # - events PRIVATE DECLARADA sem consumo: a missão §5.1 fixa a aresta, o
 #   consumo entra na FASE 4 com loadAsync (ADR-029 registra a intenção).
-#   Precedente: ecs → reflect (FASE 2, §B.4).
+#   Precedente: ecs → reflect.
 # - jobs PROIBIDA nesta fase (missão §2.10/R14) — nenhum async existe.
 target_link_libraries(eng_assets
     PUBLIC eng::core eng::fs eng::serial eng::reflect

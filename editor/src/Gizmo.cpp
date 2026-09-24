@@ -6,7 +6,7 @@
 /// as decisões (handles constantes em TELA escalados pela densidade;
 /// drag devolve estado ALVO; bounds = tamanho desenhado da entidade).
 ///
-/// P4.1 (D1–D4): alvos de toque em dp (≥48dp de diâmetro), anel de
+/// Alvos de toque em dp (≥48dp de diâmetro), anel de
 /// rotação com raio mínimo de 64 px, MOVE com 4 setas + quadrado
 /// central, ROTATE com handle visível + ponta de seta no anel, SCALE
 /// com 4 cantos + 4 marcas de aresta (escala de UM eixo).
@@ -112,7 +112,7 @@ struct EdgePoints {
 }
 
 /// Snap de rotação: múltiplos de kRotateSnapStepDeg com ímã de
-/// kRotateSnapPullDeg (P1.4 — previsível, desligável por distância).
+/// kRotateSnapPullDeg.
 [[nodiscard]] float snappedDegrees(float degrees) noexcept
 {
     const float step = TransformGizmo::kRotateSnapStepDeg;
@@ -121,7 +121,7 @@ struct EdgePoints {
     return (std::abs(degrees - nearest) <= pull) ? nearest : degrees;
 }
 
-/// Clamp de escala — impedir valores inválidos (P1.5).
+/// Clamp de escala — impedir valores inválidos.
 [[nodiscard]] float clampScale(float value) noexcept
 {
     if (!std::isfinite(value)) {
@@ -157,7 +157,7 @@ GizmoHandle TransformGizmo::hitTest(const Viewport& viewport, EditorTool tool,
     if (!bounds.valid || dragging()) {
         return GizmoHandle::None;
     }
-    // P4.1 (D2 — BUG DE UNIDADE DO P1 CORRIGIDO): screenDistanceTo
+    // ScreenDistanceTo
     // devolve PX DE TELA; o raio de acerto é comparado EM PX (hitPx ×
     // densidade) — constante no zoom. O código antigo convertia o raio
     // px→mundo (pxToWorld) e comparava 12px ≤ 0.5unidades: em zoom baixo
@@ -168,7 +168,7 @@ GizmoHandle TransformGizmo::hitTest(const Viewport& viewport, EditorTool tool,
     const float hitScreenPx = hitPx(scale);
 
     if (tool == EditorTool::Move) {
-        // P4.2 (B-D — precedência CORRIGIDA): o CENTRO é avaliado PRIMEIRO.
+        // O CENTRO é avaliado PRIMEIRO.
         // Com alvos em dp (48px de raio na densidade 2) a ponta interna da
         // haste fica a 24px do centro — eixos primeiro faziam o raio de
         // acerto da haste COBRIR o centro: agarrar o corpo da entidade
@@ -179,9 +179,9 @@ GizmoHandle TransformGizmo::hitTest(const Viewport& viewport, EditorTool tool,
                              screenX, screenY) <= hitScreenPx) {
             return GizmoHandle::MoveCenter;
         }
-        // P4.1 (D1/D2): alvos em DUAS direções por eixo (±X, ±Y) — a
+        // Alvos em DUAS direções por eixo (±X, ±Y) — a
         // seta existe nos dois lados e o toque nela arrasta o EIXO.
-        // P4.2 (B-D): HASTE também acerta — o alvo deixou de ser só a
+        // HASTE também acerta — o alvo deixou de ser só a
         // pontinha (head dot); no device o toque na haste caía no
         // fallback do onScroll (mover RELATIVO com slop) e a entidade
         // "não seguia o dedo".
@@ -228,9 +228,9 @@ GizmoHandle TransformGizmo::hitTest(const Viewport& viewport, EditorTool tool,
     }
 
     if (tool == EditorTool::Rotate) {
-        // P4.1 (D3): raio do anel com MÍNIMO de 64 px em tela — em zoom
+        // Raio do anel com MÍNIMO de 64 px em tela — em zoom
         // baixo ou entidade pequena o anel continua agarrável.
-        // P4.2 (B-C): o anel INTEIRO é alvo — banda |dist − raio| ≤ hit
+        // O anel INTEIRO é alvo — banda |dist − raio| ≤ hit
         // — em vez de só o dot do handle. No device, tocar no anel a
         // 90° do dot devolvia None e o gesto virava PAN da câmera
         // ("rotação inoperante por toque"); o dot continua coberto
@@ -249,7 +249,7 @@ GizmoHandle TransformGizmo::hitTest(const Viewport& viewport, EditorTool tool,
     }
 
     if (tool == EditorTool::Scale) {
-        // P4.7.0 Bloco 2: MESMAS posições CLAMPADAS do desenho — o toque
+        // MESMAS posições CLAMPADAS do desenho — o toque
         // sempre coincide com o handle desenhado (anti-sobreposição).
         // Cantos primeiro (escala XY), depois arestas (um eixo) — P4.1.
         const HandlePoints points = scaleHandlePoints(viewport, bounds);
@@ -316,7 +316,7 @@ void TransformGizmo::beginDrag(GizmoHandle handle,
     if (handle == GizmoHandle::RotateRing) {
         startAngleRad_ = std::atan2(worldY - bounds.worldY,
                                     worldX - bounds.worldX);
-        // P4.2 (B-C): acumulador por EVENTO — o primeiro delta é zero.
+        // Acumulador por EVENTO — o primeiro delta é zero.
         lastAngleRad_ = startAngleRad_;
         accumulatedRotationDeg_ = 0.f;
     } else if (isCornerHandle(handle) || isEdgeHandle(handle)) {
@@ -351,13 +351,13 @@ GizmoTransform TransformGizmo::dragTo(const Viewport& viewport,
         result.posY = start_.posY + dyWorld;
         break;
     case GizmoHandle::MoveAxisX:
-        result.posX = start_.posX + dxWorld;  // Y travado (P1.3)
+        result.posX = start_.posX + dxWorld;  // Y travado
         break;
     case GizmoHandle::MoveAxisY:
         result.posY = start_.posY + dyWorld;  // X travado
         break;
     case GizmoHandle::RotateRing: {
-        // P4.2 (B-C — causa raiz da "rotação inoperante"): o código
+        // O código
         // antigo normalizava o ÂNGULO TOTAL contra o ponto de agarre
         // fixo; dedo além de 180° flipava o sinal (ex.: +200° virava
         // −160°) e a entidade girava PARA TRÁS. Agora cada evento
@@ -397,7 +397,7 @@ GizmoTransform TransformGizmo::dragTo(const Viewport& viewport,
     }
     case GizmoHandle::ScaleEdgeE:
     case GizmoHandle::ScaleEdgeW: {
-        // P4.1 (D4): aresta E/W — escala SÓ no eixo X (o Y fica intacto,
+        // Aresta E/W — escala SÓ no eixo X (o Y fica intacto,
         // distorção controlada pelo autor).
         const float c = std::cos(-bounds.rotation);
         const float s = std::sin(-bounds.rotation);
@@ -412,7 +412,7 @@ GizmoTransform TransformGizmo::dragTo(const Viewport& viewport,
     }
     case GizmoHandle::ScaleEdgeN:
     case GizmoHandle::ScaleEdgeS: {
-        // P4.1 (D4): aresta N/S — escala SÓ no eixo Y.
+        // Aresta N/S — escala SÓ no eixo Y.
         const float c = std::cos(-bounds.rotation);
         const float s = std::sin(-bounds.rotation);
         const float dx = worldX - bounds.worldX;
@@ -463,7 +463,7 @@ std::vector<GizmoQuad> TransformGizmo::layoutQuads(const Viewport& viewport,
         return quads;
     }
 
-    // Scale (P4.1/D4 + P4.7.0 B2): 4 CANTOS (quadrados — escala XY) + 4
+    // Scale: 4 CANTOS (quadrados — escala XY) + 4
     // marcas de aresta nas posições CLAMPADAS (anti-sobreposição).
     const HandlePoints points = scaleHandlePoints(viewport, bounds);
     quads.push_back({points.ne.first, points.ne.second, handleHalf,
@@ -489,7 +489,7 @@ std::vector<GizmoQuad> TransformGizmo::layoutQuads(const Viewport& viewport,
 TransformGizmo::HandlePoints TransformGizmo::scaleHandlePoints(
     const Viewport& viewport, const GizmoBounds& bounds) const
 {
-    // P4.7.0 Bloco 2: CLAMP anti-sobreposição. Um bounds pequeno (px)
+    // CLAMP anti-sobreposição. Um bounds pequeno (px)
     // colapsaria cantos/arestas num só blob sobre o centro — cada handle
     // é empurrado PARA FORA ao longo da sua direção local até a
     // distância mínima do centro (em PX de tela, constante no zoom).
@@ -624,7 +624,7 @@ std::vector<GizmoSegment> TransformGizmo::layoutSegments(
     const float scale = viewport.uiScale();
 
     if (tool == EditorTool::Move) {
-        // P4.1: hastes das 4 setas (partem da borda do bounds — não
+        // Hastes das 4 setas (partem da borda do bounds — não
         // cobrem a arte da entidade). P4.7.0 B2: terminam na BASE do
         // triângulo (a seta é o triângulo — nunca haste através dele).
         const float axisLen = pxToWorld(viewport, axisPx(scale));
@@ -648,7 +648,7 @@ std::vector<GizmoSegment> TransformGizmo::layoutSegments(
     }
 
     if (tool == EditorTool::Rotate) {
-        // P4.1 (D3): anel 32 lados + SPOKE do centro ao handle. P4.7.0
+        // Anel 32 lados + SPOKE do centro ao handle. P4.7.0
         // B2: a ponta de seta é o HANDLE TRIANGULAR (layoutTriangles).
         // O autor VÊ de onde girar.
         const float radiusPx =
@@ -679,7 +679,7 @@ std::vector<GizmoSegment> TransformGizmo::layoutSegments(
         return segments;
     }
 
-    // Scale (P4.1/D4): diagonais do centro aos CANTOS (guia) + arestas
+    // Scale: diagonais do centro aos CANTOS (guia) + arestas
     // do retângulo (o quad que o autor está escalando — os handles de
     // aresta ganham sentido visual).
     const CornerPoints corners = cornersOf(bounds);

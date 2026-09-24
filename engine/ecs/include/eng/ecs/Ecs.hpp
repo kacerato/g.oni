@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::ecs — world de entidades com sparse-sets e handles geracionais
-/// (FASE 2, missão §B.4).
+///.
 ///
 /// Modelo (decisões completas em ADR-024):
 ///   - `Entity = { index, generation }`. Índices são reciclados via free-list;
@@ -23,7 +23,7 @@
 ///     entidades novas (estas não aparecem na rodada corrente). Nenhuma
 ///     entidade é visitada duas vezes (detalhes e custo em ADR-024).
 ///   - Sem dependência de `eng::reflect` no código (missão §B.4): a aresta
-///     do grafo (§B.0) é declarada no CMake para integrações futuras.
+///     do grafo é declarada no CMake para integrações futuras.
 
 #include <cstddef>
 #include <cstdint>

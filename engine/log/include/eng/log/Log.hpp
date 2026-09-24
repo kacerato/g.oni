@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::log — logging com níveis, sinks e formatação "{}" (§4.3).
+/// eng::log — logging com níveis, sinks e formatação "{}".
 #include "eng/log/ConsoleSink.hpp"
 #include "eng/log/Format.hpp"
 #include "eng/log/LogLevel.hpp"

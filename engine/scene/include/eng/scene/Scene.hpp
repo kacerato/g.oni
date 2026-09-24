@@ -206,9 +206,9 @@ public:
     /// timeScale da camada de `node` (GAME default = 1.f).
     [[nodiscard]] float timeScaleOf(eng::ecs::Entity node) const noexcept;
 
-    /// Barramento de eventos da cena (P4.7.0 Bloco 1) — gameplay tipado
+    /// Barramento de eventos da cena — gameplay tipado
     /// (SceneEvents.hpp: HitEvent, TriggerEvent, VisibilityEvent). Não é
-    /// thread-safe (ADR-022): publish/subscribe na thread do jogo. Vive
+    /// thread-safe: publish/subscribe na thread do jogo. Vive
     /// NA cena — morre com ela (inscrições são RAII e devem ser
     /// canceladas antes; ADR-022: Subscription não sobrevive ao bus).
     [[nodiscard]] eng::events::EventBus& events() noexcept { return events_; }
@@ -230,8 +230,8 @@ private:
     [[nodiscard]] std::vector<eng::ecs::Entity> collectSubtree(eng::ecs::Entity node) const;
 
     eng::ecs::World world_;
-    LinkRegistry links_{};    ///< links tipados (P0-5, ADR-051)
-    LayerRegistry layers_{};  ///< GAME/SUBGAME/nomeadas (P0-5, ADR-051)
+    LinkRegistry links_{};    ///< links tipados
+    LayerRegistry layers_{};  ///< GAME/SUBGAME/nomeadas
     eng::events::EventBus events_{}; ///< barramento de gameplay (P4.7.0 B1)
 };
 

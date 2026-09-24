@@ -1,8 +1,8 @@
 # =============================================================================
 # eng:: — Dependências externas (FetchContent, versões pinadas — PARTE 3)
 #
-# FASE 1: Catch2 v3.5.2 (testes).
-# FASE 3 (ADR-030): nlohmann/json v3.11.3 — serial é dependência de BUILD
+# Catch2 v3.5.2 (testes).
+# Nlohmann/json v3.11.3 — serial é dependência de BUILD
 # (não só de teste), logo a busca é incondicional.
 # Regra: toda dependência nova exige atualização da especificação antes do
 # commit (PARTE 3) e ADR quando trocar uma fixada (guardrail §15.8).
@@ -29,7 +29,7 @@ function(eng_fetchcontent_restore_build_testing)
     endif()
 endfunction()
 
-# --- nlohmann/json (FASE 3, ADR-030) -----------------------------------------
+# --- nlohmann/json -----------------------------------------
 # MIT, header-only, amplamente testada. Pina por tag exata (URL_HASH será
 # acrescentado junto com o pipeline de re-pinning, como em Catch2).
 # JSON_ImplicitConversions=OFF: conversões implícitas json→T são armadilha;
@@ -50,7 +50,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 eng_fetchcontent_restore_build_testing()
 
 # Headers de dependência são SYSTEM para os consumidores: os warnings do
-# projeto (ADR-020) aplicam-se ao NOSSO código — dependências compilam com
+# projeto aplicam-se ao NOSSO código — dependências compilam com
 # seus flags nativos (política já registrada em EngineWarnings.cmake).
 get_target_property(ENG_NLOHMANN_INC nlohmann_json
     INTERFACE_INCLUDE_DIRECTORIES)
@@ -73,7 +73,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(stb_image)
 
 # Alvo INTERFACE: consumidores linkam stb_image e incluem <stb_image.h>;
-# include SYSTEM para os warnings de terceiro não vazarem (ADR-020). O
+# include SYSTEM para os warnings de terceiro não vazarem. O
 # tarball do codeload desempacota em stb-<commit>/ — a raiz do repo tem o
 # header (FetchContent aponta o SOURCE_DIR lá).
 if(NOT TARGET stb_image)

@@ -1,16 +1,16 @@
 #pragma once
 
-/// eng::physics — física mínima correta sobre o ECS (FASE 10, missão §7).
+/// eng::physics — física mínima correta sobre o ECS.
 ///
-/// Primitivas: esfera + AABB (§D1 — rotação de box é extensão futura).
+/// Primitivas: esfera + AABB.
 /// Integração semi-implícita de Euler; mass == 0 → corpo ESTÁTICO;
 /// resolução por projeção posicional + impulso escalar (sem rotação de
 /// corpo — sem inércia angular nesta fase, documentado).
 ///
-/// TIMESTEP (§7.6): `step(scene, fixedDt)` com dt FIXO — o chamador
+/// TIMESTEP: `step(scene, fixedDt)` com dt FIXO — o chamador
 /// acumula o dt do frame e dá N passos (ver TimestepAccumulator).
 ///
-/// Nada aqui conhece RHI/Android (§7 intro).
+/// Nada aqui conhece RHI/Android.
 
 #include <cstdint>
 #include <unordered_map>
@@ -27,10 +27,10 @@
 namespace eng::physics {
 
 // =============================================================================
-// Componentes (§7.1–§7.3/§7.5) — refletidos p/ inspector/serialização
+// Componentes — refletidos p/ inspector/serialização
 // =============================================================================
 
-/// Tipo de corpo (P4.6 Bloco 1). Enum de NAMESPACE (ADR-021 — nested
+/// Tipo de corpo. Enum de NAMESPACE (ADR-021 — nested
 /// quebra o traço canônico do reflect, ver ColliderShape).
 ///   Static      — NUNCA integra (mesmo com mass > 0 autorado);
 ///                 massa inversa efetiva 0 na resolução.
@@ -52,7 +52,7 @@ struct RigidBody {
     eng::math::Vec3 gravity{0.f, -9.81f, 0.f};
     bool useGravity{true};
     float linearDamping{0.f};     ///< 0..1 por segundo
-    /// P4.6 (Bloco 1 — padrões Godot/Unity). ÚLTIMO campo: agregados
+    /// P4.6. ÚLTIMO campo: agregados
     /// posicionais existentes (testes/fixtures) continuam compilando.
     BodyType bodyType{BodyType::DynamicLite};
 };
@@ -67,10 +67,10 @@ struct Collider {
     eng::math::Vec3 halfExtents{0.5f, 0.5f, 0.5f}; ///< Box (AABB local)
     std::uint32_t layer{1};             ///< bit(s) próprio(s)
     std::uint32_t mask{0xFFFFFFFFu};    ///< com quem colide
-    bool isTrigger{false};              ///< contato SEM resolução (§7.2)
+    bool isTrigger{false};              ///< contato SEM resolução
 };
 
-/// Controle de personagem mobile (§7.5): esfera que MOVE E DESLIZA
+/// Controle de personagem mobile: esfera que MOVE E DESLIZA
 /// contra estáticos — física de gameplay, não simulação completa.
 struct CharacterBody {
     eng::math::Vec3 velocity{0.f, 0.f, 0.f};
@@ -89,7 +89,7 @@ ENG_REFLECT_BEGIN(eng::physics::RigidBody)
     ENG_REFLECT_FIELD_AS(bodyType, "eng::physics::BodyType")
 ENG_REFLECT_END()
 
-// P4.6 (Bloco 1): tipo de corpo refletido (Inspector = enum dropdown).
+// Tipo de corpo refletido (Inspector = enum dropdown).
 ENG_REFLECT_ENUM_BEGIN(eng::physics::BodyType)
     ENG_REFLECT_ENUM_VALUE(Static)
     ENG_REFLECT_ENUM_VALUE(Kinematic)
@@ -121,7 +121,7 @@ ENG_REFLECT_BEGIN(eng::physics::CharacterBody)
 ENG_REFLECT_END()
 
 // =============================================================================
-// Contatos (§7.2)
+// Contatos
 // =============================================================================
 
 struct ContactEvent {
@@ -134,7 +134,7 @@ struct ContactEvent {
 };
 
 // =============================================================================
-// Raycast (§7.4)
+// Raycast
 // =============================================================================
 
 struct RaycastHit {
@@ -151,7 +151,7 @@ struct RaycastHit {
 
 class PhysicsWorld final {
 public:
-    /// Um passo FIXO (§7.6): integra → detecta → resolve (não-re triggers).
+    /// Um passo FIXO: integra → detecta → resolve (não-re triggers).
     /// `fixedDt` deve ser constante entre chamadas (ex.: 1/60).
     void step(eng::scene::Scene& scene, float fixedDt);
 
@@ -170,7 +170,7 @@ public:
         const eng::scene::Scene& scene, eng::ecs::Entity body,
         eng::math::Vec3 motion);
 
-    /// P4.7.0 Bloco 5: varredura de KINEMATIC por COLLIDER (sem
+    /// Varredura de KINEMATIC por COLLIDER (sem
     /// CharacterBody). Mesma matemática de substeps anti-túnel do
     /// moveAndSlide (chunk ≤ meio raio, teto 64), raio da esfera do
     /// Collider do próprio corpo (Sphere = radius; Box = círculo
@@ -182,7 +182,7 @@ public:
         const eng::scene::Scene& scene, eng::ecs::Entity body,
         eng::math::Vec3 motion);
 
-    /// P4.7.0 Bloco 5: variante com ORIGEM explícita — varre de `from`
+    /// Variante com ORIGEM explícita — varre de `from`
     /// (posição de mundo ANTES da escrita) por `motion`. Necessária para
     /// a escrita de `position` (o write já moveu o corpo; a varredura
     /// tem de voltar à origem — nunca varrer DO destino).
@@ -204,13 +204,13 @@ public:
 private:
     std::vector<ContactEvent> contacts_;
 
-    /// P4.7.0 Bloco 1: pares de trigger sobrepostos NO ÚLTIMO passo
+    /// Pares de trigger sobrepostos NO ÚLTIMO passo
     /// (canônicos menor-índice primeiro) — diff publica on_enter/on_exit
     /// (TriggerEvent) no barramento da cena. Vazio = nenhum par antes.
     std::vector<std::pair<eng::ecs::Entity, eng::ecs::Entity>>
         triggerPairsPrev_;
 
-    /// P4.7.0 Bloco 6: broad phase SPATIAL HASH — células (chave = cx<<32
+    /// Broad phase SPATIAL HASH — células (chave = cx<<32
     /// | cy) → índices de collidable. Reconstruído por passo (buckets
     /// reusam capacidade do map — pooling); pares candidatos ordenados na
     /// ordem canônica do laço O(n²) antigo (determinismo 1:1).
@@ -219,7 +219,7 @@ private:
     std::vector<std::pair<std::uint32_t, std::uint32_t>> candidatePairs_;
 };
 
-/// Acumulador de timestep fixo (§7.6 — frame dt variável → passos fixos).
+/// Acumulador de timestep fixo.
 class TimestepAccumulator final {
 public:
     explicit TimestepAccumulator(float fixedDt = 1.f / 60.f) noexcept

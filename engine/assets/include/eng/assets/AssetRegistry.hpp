@@ -10,7 +10,7 @@
 /// - Formato (asset_registry.json):
 ///     {"formatVersion":1,"assets":[
 ///        {"id":"…","type":"Scene","sourcePath":"scenes/a.json"}, … ]}
-/// - Thread-safety (ADR-034): single-threaded — acesso concorrente à
+/// - Thread-safety: single-threaded — acesso concorrente à
 ///   MESMA instância requer sincronização externa.
 #include <cstddef>
 #include <string>

@@ -1,5 +1,5 @@
 # =============================================================================
-# eng:: — Sanitizers (§13: linux-debug roda com sanitizers ON)
+# eng:: — Sanitizers
 # UBSan configurado como não-recuperável: qualquer UB aborta o processo e
 # falha o ctest (nada de "avisar e passar" — guardrail §15.3/§15.6).
 # =============================================================================

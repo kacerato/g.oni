@@ -1,6 +1,6 @@
 #include "eng/editor/ProjectZip.hpp"
 
-/// ProjectZip — implementação (P4.2, bug B-A). Ver header para o
+/// ProjectZip — implementação. Ver header para o
 /// porquê (export/import do projeto testável no Linux; wrapper único;
 /// anti-traversal; erro explícito em vez de projeto vazio silencioso).
 ///
@@ -31,7 +31,7 @@ using eng::core::StatusCode;
 [[nodiscard]] eng::core::Error zipError(StatusCode code,
                                         std::string message)
 {
-    // Error agregado de 2 campos (ADR-004): {code, message}. O prefixo
+    // Error agregado de 2 campos: {code, message}. O prefixo
     // "zip: " identifica a origem na mensagem exibida ao usuário.
     return eng::core::Error{code, "zip: " + std::move(message)};
 }

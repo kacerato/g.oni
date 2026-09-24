@@ -1,21 +1,21 @@
 #pragma once
 
 /// eng::audio — vozes, buses, mixer software e backend abstraído
-/// (FASE 9, missão §6.8–§6.10).
+///.
 ///
-/// Conceitos (§6.8): Sound (buffer decodificado — SFX), Music (leitura
+/// Conceitos: Sound (buffer decodificado — SFX), Music (leitura
 /// progressiva do arquivo — streaming real), Voice (instância tocando),
 /// AudioBus (ganho de grupo), fonte = Sound|Music.
 ///
-/// Lifetime (§6.10): handles de voz são VALORES geracionais (obsoletos =
+/// Lifetime: handles de voz são VALORES geracionais (obsoletos =
 /// no-op seguro); vozes terminadas são coletadas no tick() do jogo; o
 /// mixer NÃO retém o Sound (shared_ptr do chamador); Music fecha o cursor
 /// no fim/stop.
 ///
-/// Threads (§D7): mix() roda na THREAD DE ÁUDIO (callback do backend);
+/// Threads: mix() roda na THREAD DE ÁUDIO (callback do backend);
 /// todo o resto roda na thread do jogo. Um único mutex protege a lista de
 /// vozes — janelas curtas (mix por frame, sem alocação no caminho quente
-/// após a voz existir). Padrão pull (ADR-047).
+/// após a voz existir). Padrão pull.
 
 #include <cstdint>
 #include <memory>
@@ -34,7 +34,7 @@
 namespace eng::audio {
 
 // =============================================================================
-// Bus (§6.8)
+// Bus
 // =============================================================================
 
 struct AudioBus {
@@ -89,7 +89,7 @@ public:
     AudioMixer(const AudioMixer&) = delete;
     AudioMixer& operator=(const AudioMixer&) = delete;
 
-    // --- buses (§6.8) ----------------------------------------------------------
+    // --- buses ----------------------------------------------------------
 
     std::uint32_t createBus(std::string_view name, float gain);
     void setBusGain(std::uint32_t busId, float gain);
@@ -116,7 +116,7 @@ public:
     [[nodiscard]] bool isPlaying(VoiceHandle handle) const;
     [[nodiscard]] bool isPaused(VoiceHandle handle) const;
 
-    /// Lifecycle do app (§6.10): pausa/retoma TUDO (onPause/onResume).
+    /// Lifecycle do app: pausa/retoma TUDO (onPause/onResume).
     void pauseAll() noexcept;
     void resumeAll() noexcept;
     void stopAll() noexcept;
@@ -191,10 +191,10 @@ private:
 };
 
 // =============================================================================
-// Backend (§6.9) — pull
+// Backend — pull
 // =============================================================================
 
-/// P3.4 — nomes dos estágios granulares da inicialização do backend de
+/// Nomes dos estágios granulares da inicialização do backend de
 /// áudio. Contrato com o host: o hook de progresso recebe EXATAMENTE
 /// estas strings e o diagnóstico as persiste 1:1 (ver
 /// docs/p34-aaudio-fix.md). A sequência canônica da inicialização AAudio
@@ -218,14 +218,14 @@ public:
     virtual void stop() = 0;
     [[nodiscard]] virtual bool isRunning() const noexcept = 0;
     [[nodiscard]] virtual std::string_view name() const noexcept = 0;
-    /// P3.3 — descrição estável do device/stream EFETIVAMENTE aberto para
+    /// Descrição estável do device/stream EFETIVAMENTE aberto para
     /// diagnóstico persistido (marcos STARTUP_AUDIO do host). Vazio quando
     /// não aplicável. Não usar em contexto de sinal.
     [[nodiscard]] virtual std::string describeDevice() const
     {
         return {};
     }
-    /// P3.4 — true quando o callback do backend entregou ao menos um
+    /// True quando o callback do backend entregou ao menos um
     /// bloco ao device (o AAudio marca isso na própria thread de áudio;
     /// o host observa da thread dele e persiste o marco
     /// backend_stage::CallbackFirstFrame). Default: false.
@@ -252,7 +252,7 @@ private:
     bool running_{false};
 };
 
-/// P4.1 (T3/D6) — estágios granulares do backend OpenSL ES (fallback
+/// Estágios granulares do backend OpenSL ES (fallback
 /// do Unisoc). Mesmo contrato do hook (backend_stage acima).
 namespace opensl_stage {
 inline constexpr char Dlopen[] = "AUDIO_OSLE_DLOPEN";
@@ -264,7 +264,7 @@ inline constexpr char PlayerRealize[] = "AUDIO_OSLE_REALIZE";
 inline constexpr char CallbackFirstFrame[] = "AUDIO_OSLE_FIRST_FRAME";
 }  // namespace opensl_stage
 
-/// P4.1 (T3/D6): backend REAL alternativo — OpenSL ES (NDK, API 9+,
+/// Backend REAL alternativo — OpenSL ES (NDK, API 9+,
 /// dlopen de libOpenSLES.so — mesmo padrão ADR-037/038). É o caminho
 /// Legacy do framework: quando o AAudio do HAL recusa (builder null no
 /// Unisoc T612 do Realme C33), o OpenSL ES abre. Saída i16 (formato
@@ -272,7 +272,7 @@ inline constexpr char CallbackFirstFrame[] = "AUDIO_OSLE_FIRST_FRAME";
 /// Android apenas (Linux/testes: fábrica não compilada — guard).
 [[nodiscard]] std::unique_ptr<IAudioBackend> createOpenSlEsBackend();
 
-/// P3.4: backend AAudio real (dlopen libaaudio.so — API 26+, mesma
+/// Backend AAudio real (dlopen libaaudio.so — API 26+, mesma
 /// disciplina ADR-037/038). Android apenas (Linux/testes: TU vazio —
 /// guard __ANDROID__). Declaração pública porque o Auto backend
 /// (cadeia P4.1) consulta a fábrica ANTES do OpenSL ES; nenhum outro
@@ -280,7 +280,7 @@ inline constexpr char CallbackFirstFrame[] = "AUDIO_OSLE_FIRST_FRAME";
 /// cadeia Auto nem chega a ela (guard do AutoBackend.cpp).
 [[nodiscard]] std::unique_ptr<IAudioBackend> createAAudioBackend();
 
-/// P4.1 (T3/D6): CADEIA de seleção automática — tenta AAudio; recusado,
+/// CADEIA de seleção automática — tenta AAudio; recusado,
 /// tenta OpenSL ES; o backend vencedor é logado (marco
 /// AUDIO_BACKEND_SELECTED) e exposto ao autor (HUD do editor). Nunca
 /// fallback silencioso: a escolha fica registrada em estágio + status.
@@ -310,7 +310,7 @@ private:
 [[nodiscard]] std::unique_ptr<IAudioBackend> createDefaultBackend();
 
 // =============================================================================
-// Hook de progresso da inicialização do backend (P3.4)
+// Hook de progresso da inicialização do backend
 // =============================================================================
 
 /// Callback de progresso instalado pelo HOST antes de

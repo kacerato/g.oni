@@ -1,4 +1,4 @@
-# eng::fs — abstração de caminhos e I/O de arquivos (FASE 3, missão §2.1; ADR-027)
+# eng::fs — abstração de caminhos e I/O de arquivos
 eng_add_module(fs
     src/Path.cpp
     src/File.cpp

@@ -1,5 +1,5 @@
 /// Backend Vulkan — frame lifecycle: swapchain, acquire, gravação, submit,
-/// present, resize/recriação (FASE 5, missão §12/§22/§23/§28).
+/// present, resize/recriação.
 
 #include <cstring>
 #include <utility>
@@ -217,7 +217,7 @@ Result<void> VulkanBackend::createSwapchain(std::uint32_t width, std::uint32_t h
         }
     }
 
-    // Render pass clássico compartilhado (ADR-037): color-only, loadOp CLEAR
+    // Render pass clássico compartilhado: color-only, loadOp CLEAR
     // (cor padrão preta — Frame::clear aplica a cor exata via
     // vkCmdClearAttachments, ver TU do frame).
     if (renderPass_ != VK_NULL_HANDLE) {
@@ -342,7 +342,7 @@ Result<BeginFrameResult> VulkanBackend::beginFrame() {
         return BeginFrameResult{eng::rhi::FrameAcquireStatus::Minimized, 0};
     }
 
-    // Adquire imagem REAL; OUT_OF_DATE → recria e TENTA UMA vez (§23).
+    // Adquire imagem REAL; OUT_OF_DATE → recria e TENTA UMA vez.
     std::uint32_t imageIndex = 0;
     result = fn.vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX, slot->imageAvailable,
                                       VK_NULL_HANDLE, &imageIndex);
@@ -368,7 +368,7 @@ Result<BeginFrameResult> VulkanBackend::beginFrame() {
             vkErr(StatusCode::Unknown, "rhi.vulkan: vkAcquireNextImageKHR", result));
     }
     if (result == VK_SUBOPTIMAL_KHR) {
-        swapchainSuboptimal_ = true;  // recria no próximo begin (§23)
+        swapchainSuboptimal_ = true;  // recria no próximo begin
     }
 
     // Gravação: reset + begin + render pass (framebuffer = imagem adquirida).
@@ -386,7 +386,7 @@ Result<BeginFrameResult> VulkanBackend::beginFrame() {
     }
 
     VkClearValue clearValue{};
-    clearValue.color = {{0.f, 0.f, 0.f, 1.f}};  // default preto (ADR-037)
+    clearValue.color = {{0.f, 0.f, 0.f, 1.f}};  // default preto
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass_;
@@ -679,7 +679,7 @@ Result<void> VulkanBackend::frameDrawIndexed(std::uint64_t frameId, std::uint32_
 }
 
 // =============================================================================
-// endFrame (submissão REAL — missão §22/§28) e present (§23)
+// endFrame (submissão REAL — missão §22/§28) e present
 // =============================================================================
 
 Result<void> VulkanBackend::endFrame(std::uint64_t frameId) {
@@ -757,7 +757,7 @@ Result<void> VulkanBackend::present() {
             continue;
         }
         if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
-            // Frame consumido; recria antes do próximo begin (§23).
+            // Frame consumido; recria antes do próximo begin.
             swapchainSuboptimal_ = true;
             ++stats_.presentsOk;  // apresentado (suboptimal) ou reconfigurado
             continue;

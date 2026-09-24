@@ -8,7 +8,7 @@
 ///   contra as duas sem mudar de comportamento.
 /// - Armazenamento: std::map ordenado por path genérico normalizado —
 ///   listagem determinística (crescente) sem ordenar por rodada.
-/// - Thread-safety (ADR-034): NÃO é thread-safe para acesso concorrente à
+/// - Thread-safety: NÃO é thread-safe para acesso concorrente à
 ///   mesma instância (sem locks; uso tipicamente single-threaded em testes).
 #include <map>
 #include <set>

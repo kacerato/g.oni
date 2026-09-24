@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::serial — envelope binário mínimo (FASE 3, missão §2.4; ADR-030).
+/// eng::serial — envelope binário mínimo.
 ///
 /// Layout (tudo big-endian):
 ///   [magic 'G','O','N','I' 4B]

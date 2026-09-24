@@ -8,7 +8,7 @@
 ///   - editor (pos+cor): triangle_gles.{vert,frag} (GLSL ES 300,
 ///     inter-stage por NOME — lição FASE 6) + triangle_vk_{vert,frag}
 ///     (glslangValidator 15.1 --target-env vulkan1.1 -V + spirv-val);
-///   - sprite unlit (P0-3): sprite_gles.{vert,frag} +
+///   - sprite unlit: sprite_gles.{vert,frag} +
 ///     sprite_vk_{vert,frag} (glslangValidator 16.6.0);
 ///   - sprite LIT (P3 §5): sprite_lit_gles.{vert,frag} +
 ///     sprite_lit_vk.{vert,frag} (glslangValidator 15.2.0 --target-env

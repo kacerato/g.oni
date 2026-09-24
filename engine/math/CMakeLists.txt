@@ -1,4 +1,4 @@
-# eng::math — Vec2/3/4, Mat4, Quat, Transform (§17.1 item 13)
+# eng::math — Vec2/3/4, Mat4, Quat, Transform
 eng_add_module(math
     src/Vec.cpp
     src/Mat4.cpp

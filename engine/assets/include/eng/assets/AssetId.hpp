@@ -4,7 +4,7 @@
 ///
 /// Tipo FORTE sobre core::Uuid128 — não conversível implicitamente para
 /// SceneEntityId/ProjectId (missão §2.3: "distinto por tipo forte").
-/// Decisão de identidade (ADR-028): UUIDv4 de 128 bits; NÃO path-hash
+/// Decisão de identidade: UUIDv4 de 128 bits; NÃO path-hash
 /// (renomear quebraria tudo), NÃO content-hash (mudar 1 pixel quebraria
 /// tudo), NÃO hash truncado (colisão silenciosa é inaceitável).
 #include <array>

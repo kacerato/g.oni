@@ -1,10 +1,10 @@
 #pragma once
 
-/// eng::rhi — contrato que backends reais implementam (FASE 4).
+/// eng::rhi — contrato que backends reais implementam.
 ///
 /// Interface pequena e coesa (missão §7): ciclo de vida (probe/initialize),
 /// recursos (buffer/shader/pipeline) e frame (beginFrame → operações →
-/// endFrame → present). Vulkan (FASE 5), OpenGL ES (FASE 6) e o
+/// endFrame → present). Vulkan, OpenGL ES e o
 /// FakeBackend (SOMENTE testes — missão §11) implementam-na integralmente.
 ///
 /// Regras do contrato:
@@ -16,7 +16,7 @@
 ///   NUNCA undefined behavior;
 /// - UMA sessão de gravação por vez: `beginFrame` enquanto um frame não
 ///   terminou é erro `InvalidArgument`;
-/// - thread: single-threaded no lado do chamador (ADR-035); o backend pode
+/// - thread: single-threaded no lado do chamador; o backend pode
 ///   criar threads internas próprias, mas a interface não é thread-safe.
 
 #include <cstddef>

@@ -1,6 +1,6 @@
 #include "eng/render/ShaderLibrary.hpp"
 
-/// ShaderLibrary — implementação (P3, §2). Shaders e layouts são os
+/// ShaderLibrary — implementação. Shaders e layouts são os
 /// MESMOS fixtures canônicos do repositório (RenderShaders.hpp —
 /// proveniência das FASES 5/6/P0-3 + par LIT novo gerado com
 /// glslangValidator 15.2.0 --spirv-val).

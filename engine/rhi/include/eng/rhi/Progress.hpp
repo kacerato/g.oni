@@ -9,7 +9,7 @@
 /// morria entre STARTUP_RESUME ok e STARTUP_SURFACE — cada sub-passo da
 /// criação do renderer agora deixa rastro persistido.
 ///
-/// Mesmo padrão do eng::audio (ADR-047): a camada de RHI não conhece o
+/// Mesmo padrão do eng::audio: a camada de RHI não conhece o
 /// diagnóstico (grafo acíclico) — o HOST instala o hook antes de
 /// Renderer::create e remove depois. Header separado do Renderer.hpp
 /// porque os BACKENDES também emitem estágios de DENTRO do initialize()

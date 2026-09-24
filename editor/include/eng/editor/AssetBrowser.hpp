@@ -1,11 +1,11 @@
 #pragma once
 
 /// eng::editor::AssetBrowser — descoberta/importação/operações de assets
-/// (FASE 8, missão §8.5).
+///.
 ///
 /// COMPOSIÇÃO (auditoria G7): eng::assets fornece identidade/registry;
 /// eng::fs fornece bytes; este módulo compõe os dois sob as regras de
-/// projeto (ADR-032: paths relativos dentro do root).
+/// projeto.
 ///
 /// Categorias (missão §8.5) mapeiam para `eng::assets::AssetType`:
 ///   scenes→Scene, prefabs→Prefab, json→Json, textures→Texture,

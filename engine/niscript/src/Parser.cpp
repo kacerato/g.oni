@@ -1,11 +1,11 @@
-/// Parser do NI-Script — recursivo descendente (FASE 11, design §2).
+/// Parser do NI-Script — recursivo descendente.
 ///
 /// Blocos terminam por `stop` (casamento ESTRUTURAL, sem semântica de
 /// indentação — design §2). Fronteira de statement: tokens de início de
 /// statement (`var/if/repeat/...`) não podem continuar expressão, então a
 /// gramática é não-ambígua com parse guloso de expressões.
 ///
-/// Puro; erros como NiDiag com linha/coluna; nunca throw (ADR-004).
+/// Puro; erros como NiDiag com linha/coluna; nunca throw.
 /// Recuperação: erro estrutural REPORTA e o parser segue do próximo token
 /// (diagnósticos múltiplos por passada) — com avanço garantido.
 
@@ -389,7 +389,7 @@ private:
         if (e == nullptr) {
             return false;
         }
-        // P4.1 (D5): `=` e os compostos += -= *= /= (desugar no parse).
+        // `=` e os compostos += -= *= /= (desugar no parse).
         const bool isAssign = check(TokKind::Assign) ||
                               check(TokKind::PlusAssign) ||
                               check(TokKind::MinusAssign) ||

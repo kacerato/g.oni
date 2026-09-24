@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-# VERSION é a fonte única da verdade do semver do projeto (§8: formatVersion).
+# VERSION é a fonte única da verdade do semver do projeto.
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" ENG_VERSION_TEXT)
 string(STRIP "${ENG_VERSION_TEXT}" ENG_VERSION_TEXT)
 if(NOT ENG_VERSION_TEXT MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
@@ -24,7 +24,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # que adotar módulos de fato (decisão registrada no relatório §17.4).
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-# Módulos de apoio do build vivem em cmake/ (§2 — PARTE 2).
+# Módulos de apoio do build vivem em cmake/.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(EngineOptions)        # opções globais + eng_add_module()
@@ -35,9 +35,9 @@ include(EngineDependencies)   # FASE 1: Catch2 v3.5.2 · FASE 3: nlohmann/json v
 include(CTest)
 
 add_subdirectory(engine)
-# FASE 3 (missão §2.8): integração e2e — pode compor scene+assets+project.
+# Integração e2e — pode compor scene+assets+project.
 add_subdirectory(tests)
-# FASE 8: núcleo C++ do editor (CONSUMIDOR de engine/) — biblioteca
+# Núcleo C++ do editor (CONSUMIDOR de engine/) — biblioteca
 # eng::editor + suite no Linux; o APK reusa ESTA biblioteca via
 # add_subdirectory (android/app/src/main/cpp), sem duplicar fontes.
 if(ENG_BUILD_TESTS)

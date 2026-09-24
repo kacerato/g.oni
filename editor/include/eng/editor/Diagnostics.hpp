@@ -32,7 +32,7 @@
 ///     threads (tid+comm+pilhas [fp] e [scan]), maps CRU verbatim e
 ///     si_signo/si_code/si_pid/gettid.
 ///
-/// Contrato de thread (P3.5): mark/init/setMirrorCallback podem ser
+/// Contrato de thread: mark/init/setMirrorCallback podem ser
 /// chamados de QUALQUER thread (mutexes internos); o callback de espelho
 /// é invocado EXCLUSIVAMENTE na thread de despacho interna; o crash
 /// handler e os handlers de SIGUSR1/SIGUSR2 usam apenas
@@ -59,7 +59,7 @@ void init(const char* dir);
 void mark(const char* stage, const char* status = "ok",
           const char* detail = nullptr);
 
-/// P3.5 — espelho assíncrono: o callback é registrado como antes (antes
+/// Espelho assíncrono: o callback é registrado como antes (antes
 /// do init), mas passa a ser invocado por UMA thread de despacho interna
 /// (uma notificação por mark, ordem FIFO, sem coalescing neste nível —
 /// o coalescing pesado é do detentor, no Android).
@@ -103,13 +103,13 @@ const char* startupLogPath() noexcept;
 /// Caminho EFETIVO do log de crash ("-" quando não inicializado).
 const char* crashLogPath() noexcept;
 
-/// P3.3 — descreve um endereço do PRÓPRIO processo como
+/// Descreve um endereço do PRÓPRIO processo como
 /// "<modulo>+0x<offset>" (lê /proc/self/maps NA HORA). NÃO usar dentro
 /// de signal handler (o handler tem a própria via, async-signal-safe).
 bool describeAddress(std::uintptr_t address, char* out, std::size_t cap);
 
 // =============================================================================
-// P3.5 — Watchdog de hang da main thread (auto-ANR do G.ONI)
+// Watchdog de hang da main thread (auto-ANR do G.ONI)
 // =============================================================================
 
 /// Hang sem ADB é invisível: /data/anr e /data/tombstones exigem root. O

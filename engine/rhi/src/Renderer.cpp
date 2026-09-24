@@ -62,7 +62,7 @@ BackendRegistry& backendRegistry() {
 }
 
 // =============================================================================
-// P3.5 — hook de progresso (micro-marks RHI_*). Escrita na thread do host
+// Hook de progresso (micro-marks RHI_*). Escrita na thread do host
 // (antes de Renderer::create), leitura na MESMA thread durante a criação
 // (contrato: sem concorrência — o hook é install/remove apenas ali).
 // =============================================================================
@@ -98,7 +98,7 @@ namespace {
             makeError(eng::core::StatusCode::Unknown, outReason));
     }
 
-    // P3.5 (T2): o sub-passo mais opaco da janela resume→surface fica
+    // O sub-passo mais opaco da janela resume→surface fica
     // cercado — o log exportado nomeia EXATAMENTE o backend/estágio que
     // nunca completa no Realme C33.
     reportProgress(rhi_stage::BackendSelect, "begin",
@@ -201,7 +201,7 @@ eng::core::Result<Renderer> Renderer::create(const RendererConfig& config) {
                       "um backend e chame Renderer::registerBackend)"));
     }
     if (config.backend != BackendType::Auto) {
-        // Explícito: validação completa, SEM fallback silencioso (§10).
+        // Explícito: validação completa, SEM fallback silencioso.
         const Renderer::BackendFactory factory = lookupFactory(config.backend);
         if (factory == nullptr) {
             return eng::core::makeUnexpected(
@@ -221,7 +221,7 @@ eng::core::Result<Renderer> Renderer::create(const RendererConfig& config) {
             return eng::core::makeUnexpected(attempted.error());
         }
         // Fallback EXPLÍCITO (allowFallback): prossegue na ordem de
-        // preferência, logando cada passo — nunca silencioso (§10).
+        // preferência, logando cada passo — nunca silencioso.
         ENG_WARN("rhi: backend {} falhou ({}); allowFallback=true — tentando "
                  "os demais",
                  backendTypeName(config.backend), attempted.error().message);

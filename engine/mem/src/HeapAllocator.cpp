@@ -28,7 +28,7 @@ HeapAllocator::HeapAllocator(const char* name) noexcept : name_(name) {}
 
 HeapAllocator::~HeapAllocator() {
     if (hasLeaks()) {
-        // Relatório de vazamento no shutdown (§4.2). eng::mem não depende de
+        // Relatório de vazamento no shutdown. eng::mem não depende de
         // eng::log nesta fase (justificativa em docs/architecture/00-overview.md).
         std::fprintf(stderr,
                      "[eng][mem][HeapAllocator] %zu alocacoes vazaram (%zu bytes) — '%s'\n",

@@ -1,6 +1,6 @@
 #include "eng/input/Input.hpp"
 
-/// eng::input — implementação (FASE 9). Estado puro, sem plataforma.
+/// eng::input — implementação. Estado puro, sem plataforma.
 
 #include <algorithm>
 #include <cstring>
@@ -22,7 +22,7 @@ using eng::core::makeUnexpected;
 }  // namespace
 
 // =============================================================================
-// TouchState (§6.4)
+// TouchState
 // =============================================================================
 
 void TouchState::onTouch(std::uint32_t id, TouchPhase phase, float x, float y,
@@ -175,7 +175,7 @@ std::string_view keyName(Key key)
 }
 
 // =============================================================================
-// ActionBindings (§6.3)
+// ActionBindings
 // =============================================================================
 
 void ActionBindings::bind(std::string_view action, const ActionSource& source)
@@ -352,7 +352,7 @@ void InputSystem::applyEvent(const InputEvent& event)
     }
     case DeviceKind::Mouse:
     case DeviceKind::Gamepad:
-        // Pipeline declarado (§6.2): coleta quando a plataforma tiver.
+        // Pipeline declarado: coleta quando a plataforma tiver.
         break;
     }
 }
@@ -398,7 +398,7 @@ void InputSystem::update()
             case ActionSource::Kind::TouchZone: {
                 anySource = true;
                 for (const auto& point : touch_.active()) {
-                    // Zonas são FRAÇÕES da tela (§6.6) — normaliza pixels.
+                    // Zonas são FRAÇÕES da tela — normaliza pixels.
                     const float nx = screenW_ > 0.f
                                          ? point.position.x / screenW_
                                          : 0.f;
@@ -431,7 +431,7 @@ void InputSystem::update()
                 break;
             }
             case ActionSource::Kind::GamepadButton:
-                anySource = true; // coleta futura (§6.2)
+                anySource = true; // coleta futura
                 break;
             }
         }

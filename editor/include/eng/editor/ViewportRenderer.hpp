@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::editor::ViewportRenderer — desenho do viewport via eng::rhi
-/// (FASE 8, missão §8.6; auditoria D3).
+///.
 ///
 /// DECISÃO (revisada no P3 §2 — o gatilho da ADR-042 aconteceu): o RHI
 /// ganhou o caminho de uniforms do frame (Frame::setUniformData — UBO
@@ -43,7 +43,7 @@ public:
     ViewportRenderer& operator=(const ViewportRenderer&) = delete;
 
     /// Cria o Renderer RHI (registro de fábricas é do HOST — EditorHost).
-    /// Falha → erro preciso (ADR-036).
+    /// Falha → erro preciso.
     [[nodiscard]] static eng::core::Result<ViewportRenderer> create(
         const eng::rhi::SurfaceDesc& surface,
         eng::rhi::BackendType backend);
@@ -55,7 +55,7 @@ public:
     /// (texturas reais via TextureCache — evolução P0-3) + GIZMO (P1: lote
     /// de cor POR CIMA dos sprites). `assets` nulo (sem projeto) = sprites
     /// caem no caminho de cor. `gizmo` nulo/vazio = sem gizmo. `grid` nulo
-    /// = default (P4.6/L2). false = não desenhou (minimizado/out-of-date
+    /// = default. false = não desenhou (minimizado/out-of-date
     /// persistente) — NUNCA lança.
     bool renderFrame(const Viewport& viewport,
                      const std::vector<EntityQuad>& quads,
@@ -151,7 +151,7 @@ public:
     {
         return lastFrameTexturedSprites_;
     }
-    /// P4.7.0 Bloco 6: quantos frame.draw() o último frame emitiu
+    /// Quantos frame.draw() o último frame emitiu
     /// (métrica do overlay — o batching por (shader+textura+layer) já
     /// existe desde a P3; isto MEDe o efeito dele).
     [[nodiscard]] std::size_t lastFrameDrawCalls() const noexcept
@@ -198,7 +198,7 @@ private:
     /// Arena de vértices do frame (reusada — zero alocação por frame após
     /// estabilizar; missão §10 mobile).
     std::vector<Vertex> frameVertices_{};
-    /// Arena do lote de gizmo (P1) — separada para NÃO misturar com o
+    /// Arena do lote de gizmo — separada para NÃO misturar com o
     /// lote 1 (o gizmo desenha DEPOIS dos sprites, por cima).
     std::vector<Vertex> gizmoVertices_{};
 

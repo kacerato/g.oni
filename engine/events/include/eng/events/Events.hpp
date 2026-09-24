@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::events — barramento de eventos com lifetime RAII (FASE 2, missão §B.2).
+/// eng::events — barramento de eventos com lifetime RAII.
 ///
 /// Semânticas garantidas (testadas, ver ADR-022):
 ///   - `publish` executa handlers NA ORDEM de inscrição (determinístico).
@@ -22,7 +22,7 @@
 ///     serializadas externamente. Reentrância NA MESMA thread é suportada.
 ///   - handlers NÃO recebem eventos por valor mutável (sempre `const E&`).
 ///
-/// Hot path (ADR-022): publish = lookup O(1) no mapa de slots + travessia da
+/// Hot path: publish = lookup O(1) no mapa de slots + travessia da
 /// lista de handlers + chamada por ponteiro de função. SEM std::function —
 /// type-erasure com small-buffer (48 bytes) + ponteiros de função; handlers
 /// maiores que o buffer ou com alinhamento excedente vão para o heap.
@@ -222,7 +222,7 @@ public:
 
 // =============================================================================
 // Subscription — RAII move-only. Destruição (ou unsubscribe()) cancela a
-// inscrição. Pré-condição documentada (ADR-022): NÃO sobreviver ao EventBus
+// inscrição. Pré-condição documentada: NÃO sobreviver ao EventBus
 // que a criou.
 // =============================================================================
 

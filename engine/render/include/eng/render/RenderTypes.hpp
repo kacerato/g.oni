@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::render::RenderTypes — draw data 2D GENÉRICA (P3, §4).
+/// eng::render::RenderTypes — draw data 2D GENÉRICA.
 ///
 /// A "render world" do frame: uma lista de dados de desenho que NÃO
 /// depende do EditorDocument — o editor a PREENCHE a partir dos seus

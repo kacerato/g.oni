@@ -1,6 +1,6 @@
 #include "eng/editor/Inspector.hpp"
 
-/// Inspector — campos por offset+typeName via reflect (FASE 8, §8.4).
+/// Inspector — campos por offset+typeName via reflect.
 ///
 /// Zero conhecimento de componentes específicos: Transform/Name são lidos
 /// como QUALQUER struct refletida. Valores trafegam como string (boundary
@@ -40,7 +40,7 @@ ENG_LOG_CATEGORY("editor");
     return Error{code, "Inspector: " + std::move(message)};
 }
 
-/// Ordem FIXA de categorias do painel Add/Inspector (P4.7.0 Bloco 1).
+/// Ordem FIXA de categorias do painel Add/Inspector.
 /// Categorias desconhecidas/vazias caem no fim ("Outros").
 [[nodiscard]] std::size_t categoryOrder(std::string_view category)
 {
@@ -532,7 +532,7 @@ const eng::scene::detail::ComponentContract* Inspector::contractOf(
 
 namespace {
 
-/// P4.7.0 Bloco 1: onValidate APÓS escrita (Inspector::setField).
+/// OnValidate APÓS escrita (Inspector::setField).
 /// Contrato violado → ROLLBACK pelo valor anterior (capturado ANTES da
 /// escrita — round-trip string neutro por tipo) e erro preciso. O
 /// rollback usa Inspector::setField com `allowRollback=false` (sem
@@ -778,7 +778,7 @@ Result<std::string> Inspector::getField(const eng::scene::Scene& scene,
         return makeUnexpected(inspectorError(StatusCode::Internal,
                                              "componente sumiu entre has/get"));
     }
-    // Grupo de cor (P0-6): path comma-junto lido como hex único.
+    // Grupo de cor: path comma-junto lido como hex único.
     if (fieldPath.find(',') != std::string_view::npos) {
         const auto parts = splitCommaPath(fieldPath);
         if (parts.size() != 3 && parts.size() != 4) {
@@ -849,7 +849,7 @@ Result<void> Inspector::setField(eng::scene::Scene& scene,
             previousValue = std::move(previous.value());
         }
     }
-    // Grupo de cor (P0-6): valida TUDO antes de escrever qualquer canal.
+    // Grupo de cor: valida TUDO antes de escrever qualquer canal.
     if (fieldPath.find(',') != std::string_view::npos) {
         const auto parts = splitCommaPath(fieldPath);
         if (parts.size() != 3 && parts.size() != 4) {

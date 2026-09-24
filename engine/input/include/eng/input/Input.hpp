@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::input — estado de entrada canônico + ações de gameplay
-/// (FASE 9, missão §6.1–§6.4).
+///.
 ///
 /// Camadas (missão §6.1): Android Input → Platform Input → eng::input →
 /// Game. Os códigos de dispositivo NUNCA chegam ao gameplay: a fronteira
@@ -9,7 +9,7 @@
 /// (Key, TouchPhase); gameplay consulta AÇÕES ("jump") ou estado puro
 /// (touch/teclas canônicas).
 ///
-/// Dispositivos (§6.2): Touch é o foco; Keyboard está completo no modelo
+/// Dispositivos: Touch é o foco; Keyboard está completo no modelo
 /// (eventos/estado); Mouse/Gamepad são DeviceKind declarados com o mesmo
 /// pipeline de eventos — a coleta entra quando as plataformas a tiverem.
 ///
@@ -29,7 +29,7 @@
 namespace eng::input {
 
 // =============================================================================
-// Dispositivos (§6.2)
+// Dispositivos
 // =============================================================================
 
 enum class DeviceKind : std::uint8_t {
@@ -39,7 +39,7 @@ enum class DeviceKind : std::uint8_t {
     Gamepad,
 };
 
-/// Fases do toque (§6.4).
+/// Fases do toque.
 enum class TouchPhase : std::uint8_t {
     Down,     ///< dedo pousou
     Move,     ///< dedo moveu
@@ -47,7 +47,7 @@ enum class TouchPhase : std::uint8_t {
     Cancelled ///< sistema cancelou (ex.: roubo do foco)
 };
 
-/// Um ponto de toque VIVO (§6.4: id/posição/delta/pressão).
+/// Um ponto de toque VIVO.
 struct TouchPoint {
     std::uint32_t id{0};       ///< pointer ID estável (multitouch)
     eng::math::Vec2 position{0.f, 0.f};  ///< pixels, origem topo-esquerda
@@ -85,7 +85,7 @@ private:
 };
 
 // =============================================================================
-// Teclado canônico (§6.1 — KeyCodes Android ficam no TU JNI)
+// Teclado canônico
 // =============================================================================
 
 enum class Key : std::uint16_t {
@@ -114,7 +114,7 @@ struct InputEvent {
 };
 
 // =============================================================================
-// Ações (§6.3 — gameplay não conhece dispositivo físico)
+// Ações
 // =============================================================================
 
 /// Fonte de uma ação: tecla, botão de toque em zona da tela, eixo futuro.
@@ -141,7 +141,7 @@ public:
     void clear();
     [[nodiscard]] std::vector<std::string> actions() const;
 
-    /// Config por asset JSON (§D6): {"actions":[{"name":"jump",
+    /// Config por asset JSON: {"actions":[{"name":"jump",
     ///   "sources":[{"key":"Space"},{"touchZone":[0,0,.5,.5]}]}]}
     [[nodiscard]] static eng::core::Result<ActionBindings> fromJson(
         const eng::serial::JsonValue& value);
@@ -159,7 +159,7 @@ private:
 [[nodiscard]] std::string_view keyName(Key key);
 
 // =============================================================================
-// InputSystem — fila canônica + estado + ações (§6.1/§6.3)
+// InputSystem — fila canônica + estado + ações
 // =============================================================================
 
 class InputSystem final {

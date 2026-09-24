@@ -3,7 +3,7 @@
 /// eng::scene::SceneSerializer — persistência determinística do grafo de
 /// nós (FASE 3, missão §2.7; ADR-033 — desvio D3: vive DENTRO de scene).
 ///
-/// P4.7.0 Bloco 1 — ComponentContract: cada componente do catálogo pode
+/// ComponentContract: cada componente do catálogo pode
 /// declarar `requires`/`conflicts`/`single`/`category`/`scriptAlias` e
 /// hooks de ciclo de vida (`onAttach`/`onDetach`/`onValidate`). Contratos
 /// são APLICAÇÃO DE AUTORIA (add/remove do Inspector — erros precisos);
@@ -22,7 +22,7 @@
 ///   ]
 /// }
 ///
-/// Decisões (ADR-033):
+/// Decisões:
 ///   - Entidades ordenadas por SceneEntityId; componentes por nome de tipo
 ///     (determinismo byte-a-byte: serialize(deserialize(x)) == x).
 ///   - Dados de componentes via reflect (nome estável + PropertyInfo por
@@ -42,7 +42,7 @@
 ///     (runtime/editor/tests) — documentado em ADR-033/D4.
 ///   - load ADICIONA nós aos existentes; ids duplicados → ParseError.
 ///
-/// Thread-safety (ADR-034): save/load não são concorrentes sobre a mesma
+/// Thread-safety: save/load não são concorrentes sobre a mesma
 /// Scene; o registro de componentes é single-threaded (init), leitura
 /// concorrente após registro é segura.
 #include <cstdint>
@@ -59,10 +59,10 @@
 namespace eng::scene {
 
 // Declarações ANTECIPADAS do detail — o contrato/hooks são parte da
-// assinatura pública de registerComponentType (P4.7.0 Bloco 1) e o
+// assinatura pública de registerComponentType e o
 // arquivo define o detail DEPOIS da classe.
 namespace detail {
-/// Contrato de autoria de um componente (P4.7.0 Bloco 1). Tudo OPCIONAL
+/// Contrato de autoria de um componente. Tudo OPCIONAL
 /// exceto `category` (vazio = grupo "Outros" do Inspector).
 struct ComponentContract {
     /// Tipos (nome canônico) que PRECISAM estar presentes na entidade
@@ -100,7 +100,7 @@ public:
     /// NOME ESTÁVEL registrado no reflect (o mesmo do ENG_REFLECT_BEGIN).
     /// O tipo precisa estar registrado no reflect ANTES (senão erro).
     /// Built-ins registrados no próprio módulo: eng::math::Transform.
-    /// P4.7.0 Bloco 1: contrato + hooks opcionais (registrar no MESMO
+    /// Contrato + hooks opcionais (registrar no MESMO
     /// chamada — o contrato é parte da entrada do catálogo).
     template<typename T>
     [[nodiscard]] static eng::core::Result<void> registerComponentType(

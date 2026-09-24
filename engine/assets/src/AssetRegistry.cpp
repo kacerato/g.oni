@@ -77,7 +77,7 @@ eng::core::Result<eng::serial::JsonValue> AssetRegistry::toJson() const
             entry.set("size", JsonValue::uinteger(*meta.size));
         }
         // contentHash: declarado no struct, NUNCA calculado na FASE 3 —
-        // ausente do JSON até existir dedup real (ADR-028/029).
+        // ausente do JSON até existir dedup real.
         assets.append(std::move(entry));
     }
 

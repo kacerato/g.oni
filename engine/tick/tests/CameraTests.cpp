@@ -147,7 +147,7 @@ TEST_CASE("camera: CameraData defaults — origem, zoom 48, ativa", "[tick][came
 }
 
 // =============================================================================
-// P4.7.0 Bloco 4 — follow / deadzone / smoothing / limites
+// Follow / deadzone / smoothing / limites
 // =============================================================================
 
 TEST_CASE("p47: camera follow — snap no alvo (smoothing 0)", "[tick][camera][p47]")

@@ -85,7 +85,7 @@ const TickSystem* TickScheduler::find(const char* name) const
 
 void PhysicsTick::tick(eng::scene::Scene& scene, float dt)
 {
-    // Timestep fixo (§7.6): o dt do frame acumula; passos fixos rodam.
+    // Timestep fixo: o dt do frame acumula; passos fixos rodam.
     const auto steps = accumulator_.advance(dt);
     for (std::uint32_t step = 0; step < steps; ++step) {
         world_.step(scene, accumulator_.fixedDt());

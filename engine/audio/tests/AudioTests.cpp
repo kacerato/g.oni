@@ -1,4 +1,4 @@
-/// Testes de eng::audio (FASE 9, missão §6.11): load (WAV), play/stop/
+/// Testes de eng::audio: load (WAV), play/stop/
 /// pause/resume/volume/loop, cleanup, streaming de Music, buses, pull
 /// concorrente (stress thread-safe) e NullBackend.
 
@@ -79,7 +79,7 @@ std::vector<std::byte> makeWav16(std::uint32_t sampleRate,
 }  // namespace
 
 // =============================================================================
-// WAV (§6.11: load)
+// WAV
 // =============================================================================
 
 TEST_CASE("audio: WAV PCM16 parse com valores exatos", "[audio]")
@@ -197,7 +197,7 @@ TEST_CASE("audio: stop/pause/resume e handle obsoleto é no-op", "[audio]")
     mixer.stop(voice.value());
     CHECK_FALSE(mixer.isPlaying(voice.value()));
 
-    // Handle obsoleto: todas as ops são no-op seguras (§6.10).
+    // Handle obsoleto: todas as ops são no-op seguras.
     mixer.stop(voice.value());
     mixer.pause(voice.value());
     mixer.setVolume(voice.value(), 2.f);
@@ -374,7 +374,7 @@ TEST_CASE("audio: pull concorrente com play/stop (thread-safety)", "[audio]")
 }
 
 // =============================================================================
-// NullBackend (§6.9 — contadores)
+// NullBackend
 // =============================================================================
 
 TEST_CASE("audio: NullBackend conta start/stop", "[audio]")
@@ -412,7 +412,7 @@ TEST_CASE("audio: bits não suportados produzem mensagem válida (C-10)", "[audi
 }
 
 // =============================================================================
-// P3.4 — camada de adaptação mixer→device (Realme C33 SIGSEGV)
+// Camada de adaptação mixer→device (Realme C33 SIGSEGV)
 // =============================================================================
 
 #include "eng/audio/AudioAdapt.hpp"
@@ -607,7 +607,7 @@ TEST_CASE("audio P3.4: LinearResampler razão densa (1/6) exata em lotes "
           "de 1 — regressão do seam", "[audio]")
 {
     // Regressão do bug de design encontrado no desenvolvimento do
-    // P3.4: razões densas com lotes mínimos precisavam de lookback
+    // Razões densas com lotes mínimos precisavam de lookback
     // mais fundo que um único frame de tail — o modelo push/pull com
     // histórico interno corrige. Saída k == k/6 exatamente.
     const auto out = resampleRamp(48000, 288000, 40, 1, nullptr);

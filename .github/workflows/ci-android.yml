@@ -43,8 +43,7 @@ jobs:
       - name: Gradle assembleDebug
         working-directory: android
         env:
-          # P4.6 Bloco 0: hash de commit vira BuildConfig.GONI_COMMIT
-          # (linha "Versão" da sheet de Configurações: P4.6 · build 0.6.0 (60) · <hash>).
+          # Hash do commit exibido em Ajustes › Sobre.
           GONI_COMMIT: ${{ github.sha }}
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 

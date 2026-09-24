@@ -1,6 +1,6 @@
 #pragma once
 
-/// Internos compartilhados do backend Vulkan (FASE 5). NÃO é API pública —
+/// Internos compartilhados do backend Vulkan. NÃO é API pública —
 /// usado entre as unidades de tradução do backend e pelos testes unitários
 /// das funções puras (sem loader).
 
@@ -14,7 +14,7 @@
 #include "eng/core/Error.hpp"
 #include "eng/rhi/Types.hpp"
 
-// FASE 7: idem VulkanLoader.hpp — a macro precisa estar definida ANTES do
+// Idem VulkanLoader.hpp — a macro precisa estar definida ANTES do
 // PRIMEIRO include de vulkan.h em QUALQUER TU (guards tornam os demais
 // includes no-ops).
 #ifdef __ANDROID__

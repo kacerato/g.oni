@@ -69,7 +69,7 @@ bool Scene::destroyNode(eng::ecs::Entity node)
     }
 
     const std::vector<eng::ecs::Entity> subtree = collectSubtree(node);
-    // Links das entidades da subárvore morrem JUNTOS (ADR-051) — antes do
+    // Links das entidades da subárvore morrem JUNTOS — antes do
     // world_.destroy, para que consultas durante a destruição não vejam
     // pontas mortas.
     for (const eng::ecs::Entity member : subtree) {
@@ -270,7 +270,7 @@ eng::core::Result<void> Scene::removeLayer(std::string_view name)
             "Scene::removeLayer: camada '" + std::string(name) +
                 "' não existe"});
     }
-    // Remoção com entidades usando a camada é REJEITADA (ADR-051): sem
+    // Remoção com entidades usando a camada é REJEITADA: sem
     // fallback silencioso para GAME. Varredura dos LayerMember vivos.
     bool inUse = false;
     world_.each<LayerMember>(

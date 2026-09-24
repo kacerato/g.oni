@@ -79,8 +79,8 @@ struct NiRuntime::HostImpl final : eng::ni::NiHost {
         return found;
     }
 
-    // --- P4.6 (Bloco 1): movimento de gameplay -----------------------------
-    // --- P4.7.0 (Bloco 5): kinematic_sweep ---------------------------------
+    // --- P4.6: movimento de gameplay -----------------------------
+    // --- P4.7.0: kinematic_sweep ---------------------------------
     // ON (default): `move` de um KINEMATIC com collider vira varredura
     // (TOI+slide — o script ingênuo COLIDE; parede para e desliza). OFF
     // (ou sem kinematic/collider): translação crua — semântica pré-P4.7.
@@ -182,7 +182,7 @@ struct NiRuntime::HostImpl final : eng::ni::NiHost {
         return rawTranslate(self, x, y);
     }
 
-    // --- P4.7.0 (Bloco 5): wrap da ESCRITA de `position` -------------------
+    // --- P4.7.0: wrap da ESCRITA de `position` -------------------
     // O binding refletido escreve CRU; o wrap resolve a varredura por
     // cima (MESMA semântica do move: TOI+slide quando sweep ON — o
     // script que move por position TAMBÉM colide). O estado guarda o
@@ -255,7 +255,7 @@ struct NiRuntime::HostImpl final : eng::ni::NiHost {
         return true;
     }
 
-    // --- P4.7.0 (Bloco 4): câmera de jogo por script ---------------------
+    // --- P4.7.0: câmera de jogo por script ---------------------
     // PRIMEIRA câmera ativa (mesma resolução do CameraTick — determinística).
 
     [[nodiscard]] eng::tick::CameraData* activeCameraData() const
@@ -472,7 +472,7 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
     (void)eng::ni::niAddReflectionBinding(
         bindings_, "position", "eng::math::Transform", fetchT, fetchTm,
         world, "position", &worldValid);
-    // P4.7.0 Bloco 5: ESCRITA de `position` com varredura — o ÚLTIMO
+    // ESCRITA de `position` com varredura — o ÚLTIMO
     // binding "position" vence (contrato NiBindingTable) e o wrap delega
     // ao refletido guardado em prev (vivo pelo keepAlive do wrap).
     if (const auto* reflected = bindings_.find("position");
@@ -528,7 +528,7 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
         (void)eng::ni::niAddReflectionBinding(
             bindings_, typeName, typeName, &catalogFetchC, &catalogFetchM,
             fetch.get(), "", &catalogValid);
-        // P4.7.0 Bloco 1: apelido do CONTRATO (fonte única — o mesmo
+        // Apelido do CONTRATO (fonte única — o mesmo
         // registro alimenta Inspector e scripts) e o legado (última
         // parte do nome canônico em minúscula) CONTINUA valendo —
         // scripts de fases anteriores nunca quebram.
@@ -559,7 +559,7 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
         }
     }
 
-    // P4.7.0 Bloco 1: inscreve os eventos de gameplay no barramento da
+    // Inscreve os eventos de gameplay no barramento da
     // cena — on_hit (física), on_enter/on_exit (triggers) e
     // on_visible/on_invisible (culling do Bloco 6 publica). As inscrições
     // são RAII e vivem APENAS até o shutdown (nunca sobrevivem à cena).
@@ -568,7 +568,7 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
     subscribeGameEvent<eng::scene::VisibilityEvent>();
 
     // Compila + instancia scripts do CLONE (ordem determinística do each).
-    // P4.1 (T2/D5): TODOS os resultados vão para stats_ (fonte da UI —
+    // TODOS os resultados vão para stats_ (fonte da UI —
     // toast/painel do editor) E para o diagnóstico persistido (marcos
     // SCRIPT_* — a forense do device passa a mostrar porquê um script
     // "não faz nada"). O silêncio do P3.5 era o defeito D5.
@@ -637,7 +637,7 @@ void NiRuntime::tick(float deltaSeconds)
     delta_ = deltaSeconds;
     const eng::ni::NiExecContext::Params p = params();
     for (const auto& instance : set_.asVector()) {
-        // P4.7.0 Bloco 6: LOGIC LOD — filtro (opcional) decide se o
+        // LOGIC LOD — filtro (opcional) decide se o
         // script roda neste frame. O callback vê CENA e câmera (o host
         // instala); um script opt-out (lodOptOut do NiScriptComponent)
         // é responsabilidade DO FILTRO (ele tem a cena) — o runtime é
@@ -647,7 +647,7 @@ void NiRuntime::tick(float deltaSeconds)
             continue;
         }
         (void)vm_.run(*instance, "update", p);
-        // P4.1 (T2/D5): contagem VISÍVEL de ticks + faults — o editor
+        // Contagem VISÍVEL de ticks + faults — o editor
         // mostra "N scripts, T ticks" e o ÚLTIMO fault do runtime; com
         // isto o autor distingue "script compila mas não roda" de
         // "roda e falha no binding".
@@ -681,7 +681,7 @@ void NiRuntime::shutdown() noexcept
     bindings_ = eng::ni::NiBindingTable{};
     bindingState_.clear();
     natives_ = eng::ni::NiNativeTable{};
-    // P4.7.0 Bloco 1: cancela as inscrições de eventos ANTES de soltar a
+    // Cancela as inscrições de eventos ANTES de soltar a
     // cena (Subscription nunca sobrevive ao bus — ADR-022).
     eventSubscriptions_.clear();
     scene_ = nullptr;
@@ -711,7 +711,7 @@ eng::ni::NiExecContext::Params NiRuntime::params() const
 }
 
 // =============================================================================
-// P4.7.0 Bloco 1 — bridge de eventos de gameplay → NI-Script
+// Bridge de eventos de gameplay → NI-Script
 // =============================================================================
 
 void NiRuntime::runHandlerOn(eng::ecs::Entity self, std::string_view handler)

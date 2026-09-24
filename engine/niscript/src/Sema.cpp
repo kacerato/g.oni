@@ -1,4 +1,4 @@
-/// Sema do NI-Script — símbolos + tipos estáticos (FASE 11, design §3.1/§4).
+/// Sema do NI-Script — símbolos + tipos estáticos.
 ///
 /// Duas passadas: (1) coleta de topo (globais/funcs/handlers/módulos +
 /// colisões); (2) corpos com escopos léxicos, inferência e TODAS as

@@ -1,4 +1,4 @@
-/// Testes de eng::ui (FASE 9, missão §6.11) — hierarquia, layout,
+/// Testes de eng::ui — hierarquia, layout,
 /// hit-testing, eventos de botão, texto pontilhado, escala/resolução.
 
 #include <catch2/catch_test_macros.hpp>

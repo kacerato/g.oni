@@ -2,7 +2,7 @@
 #
 # Puro sobre core (Result) — nada de fs/rhi/assets aqui: bytes entram,
 # RGBA8 sai. O decodificador (stb_image) vive confinado em StbImageImpl.cpp
-# com warnings de terceiro desligados (ADR-020).
+# com warnings de terceiro desligados.
 eng_add_module(image
     src/Image.cpp
     src/StbImageImpl.cpp

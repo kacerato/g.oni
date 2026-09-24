@@ -1,6 +1,6 @@
-/// Hardware tests do backend OpenGL ES REAL (FASE 6, missão §41).
+/// Hardware tests do backend OpenGL ES REAL.
 ///
-/// Classificação honesta (§41/§47): sem libEGL/libGLESv2 → SKIP com motivo;
+/// Classificação honesta: sem libEGL/libGLESv2 → SKIP com motivo;
 /// todo PASS é execução REAL. O readback do pixel central dá validação de
 /// OUTPUT (níveis RENDERING + VALIDATED — missão §39). A paridade com o
 /// Vulkan (missão §40) usa o MESMO triangle e vertex data.
@@ -145,7 +145,7 @@ TEST_CASE("gles: probe honesto e device-only sem surface", "[rhi][rhi_gles]")
     CHECK(caps.apiVersion.find("OpenGL ES 3.") == 0);  // 3.x real detectado
     CHECK(caps.maxTextureSize > 0);
     CHECK(caps.maxVertexAttributes > 0);
-    CHECK(caps.presentation == false);  // device-only ≠ sem suporte (§13)
+    CHECK(caps.presentation == false);  // device-only ≠ sem suporte
     // OpenGL ES NÃO tem validation layers: pedida → Unavailable honesto.
     CHECK(caps.validationState == ValidationState::Unavailable);
     CHECK_FALSE(caps.wireframe);  // GLES não tem polygon mode

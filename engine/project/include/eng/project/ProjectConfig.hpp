@@ -18,8 +18,8 @@ namespace eng::project {
 
 inline constexpr std::uint32_t kProjectFormatVersion = 1;
 
-/// P4.6 (Bloco 1): camada de COLISÃO nomeada (bitfield) — ≠ camadas de
-/// cena/tick (ADR-051, scheduling). Filtragem de pares: (A.mask & B.layer)
+/// Camada de COLISÃO nomeada (bitfield) — ≠ camadas de
+/// cena/tick. Filtragem de pares: (A.mask & B.layer)
 /// && (B.mask & A.layer). Default do projeto novo: bit 1 "default".
 struct CollisionLayerName {
     std::string name;
@@ -40,11 +40,11 @@ struct ProjectConfig {
     eng::core::Version engineVersion;      ///< versão do motor que escreveu
     eng::fs::Path assetRegistryPath;       ///< relativo (ex.: "asset_registry.json")
     std::vector<eng::fs::Path> sceneRoots;  ///< relativos (ex.: "assets/scenes")
-    /// P4.6 (Bloco 1): bitfields nomeados de colisão (project settings).
+    /// Bitfields nomeados de colisão (project settings).
     /// Vazio = tabela default (defaultCollisionLayers) — o parse preenche
     /// quando a chave ausente; toJson SEMPRE escreve (aditivo, ADR-031).
     std::vector<CollisionLayerName> collisionLayers{};
-    /// P4.6 (Bloco 5/L2): grade do viewport em unidades de mundo (chave
+    /// Grade do viewport em unidades de mundo (chave
     /// aditiva "grid" — ausente = default).
     GridConfig grid{};
 

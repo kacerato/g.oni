@@ -1,4 +1,4 @@
-# eng::mem — Allocator, HeapAllocator, ArenaAllocator (§17.1 item 14)
+# eng::mem — Allocator, HeapAllocator, ArenaAllocator
 eng_add_module(mem
     src/Allocator.cpp
     src/HeapAllocator.cpp

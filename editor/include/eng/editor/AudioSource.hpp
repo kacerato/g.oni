@@ -1,6 +1,6 @@
 #pragma once
 
-/// eng::editor::AudioSource — componente de áudio authorável (P2, §12).
+/// eng::editor::AudioSource — componente de áudio authorável.
 ///
 /// Expõe o backend de áudio REAL (eng::audio::AudioMixer — FASE 9) ao
 /// authoring 2D: o componente é dados PUROS (refletidos/serializáveis
@@ -37,7 +37,7 @@ struct AudioSource {
 } // namespace eng::editor
 
 /// Reflexão (ADR-043: campos por caminho — Inspector/serializer).
-/// Hint "audio" (P2): picker de assets de ÁUDIO do projeto (a UI lista
+/// Hint "audio": picker de assets de ÁUDIO do projeto (a UI lista
 /// os WAVs de assets/audio — mesmo mecanismo do hint "texture").
 /// clang-format off
 ENG_REFLECT_BEGIN(eng::editor::AudioSource)

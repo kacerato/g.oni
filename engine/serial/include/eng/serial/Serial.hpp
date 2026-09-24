@@ -4,12 +4,12 @@
 /// persistência (JSON humano, envelope binário) + versionamento de schema
 /// (FASE 3; ADR-030/031).
 ///
-/// O que este módulo NÃO faz (ADR-030): JSON5/CBOR/MessagePack/FlatBuffers,
+/// O que este módulo NÃO faz: JSON5/CBOR/MessagePack/FlatBuffers,
 /// compressão, criptografia, I/O de arquivos (isso é eng::fs/chamador),
 /// schemas de tipos específicos da engine (assets/scene/project definem os
 /// seus usando o StructCodec).
 ///
-/// Thread-safety (ADR-034): funções puras — seguras em qualquer thread
+/// Thread-safety: funções puras — seguras em qualquer thread
 /// quando os valores de entrada não são mutados concorrentemente.
 #include "eng/serial/Binary.hpp"
 #include "eng/serial/Envelope.hpp"

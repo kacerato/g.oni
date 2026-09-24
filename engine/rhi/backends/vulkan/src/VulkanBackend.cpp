@@ -1,5 +1,5 @@
 /// Backend Vulkan — probe/initialize/instance/layers/GPU/device/swapchain
-/// (FASE 5, missão §17–§23). Recursos e frame estão nos TU irmãos.
+///. Recursos e frame estão nos TU irmãos.
 
 #include "eng/rhi/vulkan/VulkanBackend.hpp"
 
@@ -9,7 +9,7 @@
 #include "eng/log/Macros.hpp"
 #include "eng/rhi/Progress.hpp"
 
-// FASE 7: surface Android (NDK API — NÃO é JNI; missão §II.4/§IX).
+// Surface Android (NDK API — NÃO é JNI; missão §II.4/§IX).
 #ifdef __ANDROID__
 #include <android/native_window.h>
 #endif
@@ -66,7 +66,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessengerCallback(
     // Literais (não as macros de vulkan.h): estas exigiriam
     // VK_USE_PLATFORM_* e headers de plataforma — o backend não inclui
     // nenhum (missão §14/§30); a CRIAÇÃO destas surfaces fica com as
-    // fases de plataforma (FASE 7/8).
+    // fases de plataforma.
     switch (kind) {
     case K::Xcb: return "VK_KHR_xcb_surface";
     case K::Xlib: return "VK_KHR_xlib_surface";
@@ -159,7 +159,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
             }
         }
         if (!validationLayerFound) {
-            // Pedida e ausente: reporta Unavailable — NÃO mascara (§18).
+            // Pedida e ausente: reporta Unavailable — NÃO mascara.
             capabilities_.validationState = eng::rhi::ValidationState::Unavailable;
             ENG_WARN("rhi.vulkan: validation pedida mas VK_LAYER_KHRONOS_validation ausente");
         }
@@ -224,7 +224,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
     app.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     app.pEngineName = "eng";
     app.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-    app.apiVersion = VK_API_VERSION_1_1;  // mínimo honesto do backend (ADR-037)
+    app.apiVersion = VK_API_VERSION_1_1;  // mínimo honesto do backend
 
     VkInstanceCreateInfo instanceInfo{};
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -245,7 +245,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
             vkErr(StatusCode::NotSupported, "rhi.vulkan: vkCreateInstance", result));
     }
     library_.loadInstanceFunctions(instance_);
-    // P3.5 (T2): micro-mark — VkInstance criada.
+    // Micro-mark — VkInstance criada.
     eng::rhi::reportProgress(eng::rhi::rhi_stage::Instance, "ok", "VkInstance");
     ENG_INFO("rhi.vulkan: VkInstance criada (loader {})", versionString(instanceVersion));
 
@@ -263,7 +263,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
         result = library_.functions().vkCreateDebugUtilsMessengerEXT(
             instance_, &messengerInfo, nullptr, &messenger_);
         if (result != VK_SUCCESS) {
-            // Pedida, presente, mas falhou ao inicializar (§18).
+            // Pedida, presente, mas falhou ao inicializar.
             capabilities_.validationState = eng::rhi::ValidationState::FailedToInitialize;
             ENG_ERROR("rhi.vulkan: debug messenger falhou ({})", vkResultName(result));
             messenger_ = VK_NULL_HANDLE;
@@ -292,7 +292,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
         case eng::rhi::NativeWindowKind::Android: {
             // Surface REAL a partir da janela nativa entregue pela camada
             // Android (missão §IX). O handle é opaco na abstraction — aqui
-            // é o ANativeWindow* adquirido pelo runtime (ADR-040).
+            // é o ANativeWindow* adquirido pelo runtime.
             VkAndroidSurfaceCreateInfoKHR surfaceInfo{};
             surfaceInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
             surfaceInfo.window =
@@ -314,7 +314,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
                 "(Xcb/Wayland/Win32 vêm com as fases de desktop)"));
         }
         hasSurface_ = true;
-        // P3.5 (T2): micro-mark — VkSurfaceKHR pronta.
+        // Micro-mark — VkSurfaceKHR pronta.
         eng::rhi::reportProgress(eng::rhi::rhi_stage::Surface, "ok",
                                  "VkSurfaceKHR");
     }
@@ -428,7 +428,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
             deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
         }
 
-        VkPhysicalDeviceFeatures features{};  // nenhuma exigida (ADR-037)
+        VkPhysicalDeviceFeatures features{};  // nenhuma exigida
         VkDeviceCreateInfo deviceInfo{};
         deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         deviceInfo.queueCreateInfoCount = static_cast<std::uint32_t>(queueInfos.size());
@@ -450,7 +450,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
         library_.loadDeviceFunctions(device_);
         library_.functions().vkGetDeviceQueue(device_, graphicsFamily_, 0, &graphicsQueue_);
         presentQueue_ = graphicsQueue_;
-        // P3.5 (T2): micro-mark — device lógico + queues prontos.
+        // Micro-mark — device lógico + queues prontos.
         eng::rhi::reportProgress(eng::rhi::rhi_stage::Device, "ok",
                                  properties2.properties.deviceName);
         if (wantSurface && presentFamily != graphicsFamily) {
@@ -482,7 +482,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
         caps.instancing = true;   // core desde 1.0 (draw não-instanciado usa o mesmo caminho)
         caps.compute = (families[graphicsFamily].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0;
         caps.multisample = limits.framebufferColorSampleCounts > 1;
-        caps.wireframe = false;  // fillModeNonSolid não habilitada no device (ADR-037)
+        caps.wireframe = false;  // fillModeNonSolid não habilitada no device
         for (std::uint8_t formatValue = 1;
              formatValue <= static_cast<std::uint8_t>(eng::rhi::Format::D24UnormS8Uint);
              ++formatValue) {
@@ -503,7 +503,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
             }
         }
         caps.presentation = wantSurface;  // surface criada/validada acima
-        caps.validationState = capabilities_.validationState;  // honesto (§18)
+        caps.validationState = capabilities_.validationState;  // honesto
         stats_.rejectedGpuReasons = rejectionReasons;
         break;
     }
@@ -574,7 +574,7 @@ Result<void> VulkanBackend::initialize(const RendererConfig& config,
         if (!created) {
             return eng::core::makeUnexpected(created.error());
         }
-        // P3.5 (T2): micro-mark — swapchain pronta (último sub-passo da
+        // Micro-mark — swapchain pronta (último sub-passo da
         // janela resume→surface antes do primeiro frame).
         eng::rhi::reportProgress(eng::rhi::rhi_stage::Swapchain, "ok",
                                  "createSwapchain");
@@ -792,7 +792,7 @@ void VulkanBackend::destroyAll() noexcept {
             library_.functions().vkDestroyCommandPool(device_, commandPool_, nullptr);
             commandPool_ = VK_NULL_HANDLE;
         }
-        // Recursos pendentes: destruição em cascata (ADR-035) — o entry é
+        // Recursos pendentes: destruição em cascata — o entry é
         // removido da tabela e o objeto Vulkan destruído.
         for (auto entry : buffers_.drainAll()) {
             library_.functions().vkDestroyBuffer(device_, entry.buffer, nullptr);

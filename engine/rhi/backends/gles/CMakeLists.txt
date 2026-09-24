@@ -1,9 +1,9 @@
 # =============================================================================
-# eng::rhi::gles — backend OpenGL ES REAL (FASE 6, missão §32–§41; ADR-038)
+# eng::rhi::gles — backend OpenGL ES REAL
 #
 # - Headers: FetchContent Khronos EGL-Registry + OpenGL-Registry, COMMITS
 #   fixados com URL_HASH (os repos não publicam tags estáveis). Mesmo
-#   padrão hermético de Vulkan-Headers (ADR-037).
+#   padrão hermético de Vulkan-Headers.
 # - Loader: dlopen(libEGL/libGLESv2) em runtime — NENHUM link com as libs;
 #   probe reporta ausência honestamente (Unavailable) sem falhar o build.
 # =============================================================================

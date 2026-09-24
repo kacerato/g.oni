@@ -1,4 +1,4 @@
-/// P4.7.0 Bloco 6: implementação do governor (ver PerfGovernor.hpp).
+/// Implementação do governor (ver PerfGovernor.hpp).
 
 #include "eng/editor/PerfGovernor.hpp"
 

@@ -1,4 +1,4 @@
-/// Hardware tests do backend Vulkan REAL (FASE 5, missão §29).
+/// Hardware tests do backend Vulkan REAL.
 ///
 /// Classificação honesta (missão §41/§47):
 /// - loader ausente → SKIP (não é falha — ambiente sem Vulkan);
@@ -6,7 +6,7 @@
 /// - todo PASS aqui é execução REAL (lavapipe = software — reportado como
 ///   softwareRendering, nunca como suporte de hardware).
 ///
-/// Estados do modelo (§47): DETECTED (loader) → AVAILABLE (instance+device)
+/// Estados do modelo: DETECTED (loader) → AVAILABLE (instance+device)
 /// → PRESENTABLE (surface+swapchain) → RENDERING (frame submetido).
 
 #include <catch2/catch_test_macros.hpp>
@@ -160,7 +160,7 @@ TEST_CASE("vulkan: probe honesto e device-only sem surface", "[rhi][rhi_vulkan]"
     CHECK_FALSE(caps.device.name.empty());
     CHECK(caps.maxTextureSize > 0);
     CHECK(caps.maxVertexAttributes > 0);
-    CHECK(caps.presentation == false);  // device-only ≠ sem suporte (§13)
+    CHECK(caps.presentation == false);  // device-only ≠ sem suporte
 
     // Recursos reais funcionam sem surface.
     std::vector<float> vertices = triangleVertices();

@@ -4,7 +4,7 @@
 
 namespace eng::mem {
 
-/// Interface de alocadores (ADR-007). Contrato:
+/// Interface de alocadores. Contrato:
 /// - Todas as operações são `noexcept`; falha de alocação devolve nullptr
 ///   (o chamador decide como reportar via eng::core::Result).
 /// - `alignment` deve ser potência de dois; comportamento com alignment

@@ -1,5 +1,5 @@
 # eng::serial — JSON, envelope binário, migrations, StructCodec
-# (FASE 3, missão §2.4; ADR-030/031)
+#
 eng_add_module(serial
     src/Binary.cpp
     src/Envelope.cpp

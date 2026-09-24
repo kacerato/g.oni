@@ -2,7 +2,7 @@
 
 #include "eng/render/Light2D.hpp"
 
-/// Viewport — câmera 2D, conversões, quads e hit-test (FASE 8).
+/// Viewport — câmera 2D, conversões, quads e hit-test.
 ///
 /// Ver header para o modelo de coordenadas e decisões (auditoria D3).
 
@@ -199,7 +199,7 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
     // Caminhada depth-first estável (mesma ordem do hierarchySnapshot — a
     // ORDEM DE DESENHO; hit-test varre de trás para frente).
     const auto visit = [&](auto&& self, eng::ecs::Entity node, int depth) -> void {
-        // Camadas (P0-5, ADR-051): entidades em camada sem participação
+        // Camadas: entidades em camada sem participação
         // de render NÃO geram quad (filhos continuam sendo visitados — a
         // camada é por entidade, não herdada).
         if (!scene.participatesIn(node, eng::scene::LayerStage::Render)) {
@@ -215,7 +215,7 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
         // Column-major: translação vive na 4ª COLUNA — at(3, row).
         quad.worldX = world.at(3, 0);
         quad.worldY = world.at(3, 1);
-        // Escala = comprimento das colunas da base (ADR-025/TRS).
+        // Escala = comprimento das colunas da base.
         quad.sizeX = std::sqrt(world.at(0, 0) * world.at(0, 0) +
                               world.at(0, 1) * world.at(0, 1) +
                               world.at(0, 2) * world.at(0, 2));
@@ -226,7 +226,7 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
         quad.tint = hueOf(node);
         quad.selected = selection.has_value() && *selection == node;
 
-        // P4.7.0 Bloco 6: CULLING por retângulo de vista (Play) — quad
+        // CULLING por retângulo de vista (Play) — quad
         // FORA do rect (AABB do quad girado + margem) NÃO entra; os
         // FILHOS continuam sendo visitados (filho em vista desenha — a
         // hierarquia nunca poda). Contagem exporta a métrica do round 7.
@@ -247,7 +247,7 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
                 return;
             }
         }
-        // Camada da entidade (P3): agrupa o draw no conjunto de luzes
+        // Camada da entidade: agrupa o draw no conjunto de luzes
         // da camada (Light2D.layer). Sem LayerMember = GAME.
         if (const auto* member =
                 scene.world().get<eng::scene::LayerMember>(node)) {
@@ -346,7 +346,7 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
             }
             quad.emitterSize = std::max(0.35f, quad.sizeX * 0.5f);
         }
-        // Luz 2D (P3): dados para o bloco PerFrame (posicao = worldX/Y
+        // Luz 2D: dados para o bloco PerFrame (posicao = worldX/Y
         // do no - fonte unica de verdade). Desligada nao entra.
         if (const auto* light = scene.world().get<eng::render::Light2D>(node)) {
             if (light->enabled) {
@@ -396,7 +396,7 @@ std::vector<ParticleQuad> Viewport::buildParticleQuads(
     // Auditoria final (drift D6 da FASE 10): o viewport prometia desenhar
     // partículas como quads — nada lia a ParticlePool. Uma por partícula
     // VIVA (pool é runtime-only; em Play o clone tem as pools ativas).
-    // Camadas (P0-5, ADR-051): pool de camada sem render NÃO desenha.
+    // Camadas: pool de camada sem render NÃO desenha.
     std::vector<ParticleQuad> quads;
     scene.world().each<eng::particles::ParticlePool>(
         [&](eng::ecs::Entity emitter,
@@ -422,8 +422,8 @@ std::optional<eng::ecs::Entity> Viewport::hitTest(
     const std::vector<EntityQuad>& quads, float screenX, float screenY,
     float touchRadius) const noexcept
 {
-    // Top-most = último desenhado (frente). Raio generoso p/ dedo (§8.8).
-    // P0-5: usa a câmera EM FOCO (de jogo quando ativa) — o toque segue
+    // Top-most = último desenhado (frente). Raio generoso p/ dedo.
+    // Usa a câmera EM FOCO (de jogo quando ativa) — o toque segue
     // a câmera que o usuário está vendo.
     const Camera2D& camera = effectiveCamera();
     for (auto it = quads.rbegin(); it != quads.rend(); ++it) {

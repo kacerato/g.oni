@@ -1,4 +1,4 @@
-/// Loader EGL/GLES — implementação (FASE 6). Ver GlesLoader.hpp.
+/// Loader EGL/GLES — implementação. Ver GlesLoader.hpp.
 
 #include "eng/rhi/gles/GlesLoader.hpp"
 

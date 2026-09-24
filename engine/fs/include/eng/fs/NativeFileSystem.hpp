@@ -2,7 +2,7 @@
 
 /// eng::fs::NativeFileSystem — I/O real via std::filesystem + std::FILE*
 /// (FASE 3; ADR-027). Sobrecargas std::error_code em toda parte: o runtime
-/// compila sem exceções (ADR-004) — std::filesystem em modo lançante está
+/// compila sem exceções — std::filesystem em modo lançante está
 /// proibido neste módulo.
 #include "eng/fs/FileSystem.hpp"
 

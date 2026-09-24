@@ -1,7 +1,7 @@
 #pragma once
 
 /// eng::platform::PlatformInfo — fatos estáticos do sistema hospedeiro
-/// (FASE 3, missão §2.2; ADR-026).
+///.
 ///
 /// Este é o ÚNICO módulo do motor autorizado a ramificar por SO em tempo de
 /// compilação (é a razão dele existir): core/ecs/scene e os demais módulos

@@ -14,7 +14,7 @@
 /// - pixelsPerUnit: densidade da textura (N pixels por 1 unidade de
 ///   mundo — tamanho mundial = pixels da região / ppu).
 ///
-/// Registrado no catálogo ÚNICO do SceneSerializer (ADR-043): aparece no
+/// Registrado no catálogo ÚNICO do SceneSerializer: aparece no
 /// Inspector, persiste em cena e clona no Play. Campos FLAT (sem arrays —
 /// reflexão/inspector/serializer operam por caminho simples).
 
@@ -65,7 +65,7 @@ struct SpriteData {
 }  // namespace eng::editor
 
 /// Reflexão (ADR-043: campos por caminho — Inspector/serializer).
-/// Hints de edição (P0-6, ADR-052): textureAsset → picker de texturas;
+/// Hints de edição: textureAsset → picker de texturas;
 /// tintR/G/B → UM editor de cor (grupo 0) — serialização INALTERADA.
 /// clang-format off
 ENG_REFLECT_BEGIN(eng::editor::SpriteData)

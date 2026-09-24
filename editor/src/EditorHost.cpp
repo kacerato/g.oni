@@ -2,8 +2,8 @@
 
 #include "eng/editor/Diagnostics.hpp"
 
-/// EditorHost — host Android do editor (FASE 8). Espelha o AndroidRuntime
-/// (FASE 7) com o MESMO contrato de surface/lifecycle (ADR-039/040), mas
+/// EditorHost — host Android do editor. Espelha o AndroidRuntime
+/// com o MESMO contrato de surface/lifecycle, mas
 /// renderiza o viewport do EditorDocument.
 
 #include <cstdio>
@@ -82,7 +82,7 @@ constexpr std::uint64_t kWatchdogHealthyFrames = 30;
 /// Arquivo do watchdog na RAIZ do workspace (oculto, fora dos projetos).
 constexpr std::string_view kWatchdogFile{".goni_backend_watchdog"};
 
-/// P3.4 — trampoline do hook de progresso do backend de áudio: os
+/// Trampoline do hook de progresso do backend de áudio: os
 /// estágios granulares (backend_stage::*) viram marcos do diagnóstico
 /// persistido 1:1 (mesma thread de start(); o mirror P3.2 copia
 /// para Download/GONI a cada estágio — a janela de morte do C33 fica
@@ -93,7 +93,7 @@ void audioBackendProgress(void* /*userdata*/, const char* stage,
     eng::editor::diag::mark(stage, status, detail);
 }
 
-/// P3.5 — trampoline do hook de progresso do RHI (micro-marks
+/// Trampoline do hook de progresso do RHI (micro-marks
 /// RHI_BACKEND_SELECT/INSTANCE/DEVICE/SURFACE/SWAPCHAIN da janela
 /// resume→surface): o eng::rhi não conhece o diagnóstico (grafo
 /// acíclico) — quem sabe persistir é quem instalou o hook.
@@ -127,7 +127,7 @@ eng::core::Result<EditorHost*> EditorHost::create(const char* backend,
 
     EditorHost* host = new EditorHost{};
     diag::mark("STARTUP_EDITOR_HOST", "begin");
-    // P3.5 (T2): micro-marks do RHI — instalados ANTES de qualquer
+    // Micro-marks do RHI — instalados ANTES de qualquer
     // Renderer::create (a criação de surface é o próximo sub-passo
     // invisível após STARTUP_RESUME no device).
     eng::rhi::setProgressHook(&rhiBackendProgress, nullptr);
@@ -153,7 +153,7 @@ eng::core::Result<EditorHost*> EditorHost::create(const char* backend,
     diag::mark("STARTUP_EDITOR_DOCUMENT", "ok");
     host->requested_ = backendFromName(backend);
     host->document_ = std::move(document.value());
-    // P4.5.1 (R1): o begin acima era o ÚNICO mark sem par "ok" — a
+    // O begin acima era o ÚNICO mark sem par "ok" — a
     // janela entre begin e o próximo mark do Kotlin nunca fechava (a
     // morte "pós-host" era indistinguível de "morrendo a criar o
     // host"). Host + documento PRONTOS: fase de criação FECHADA.
@@ -170,7 +170,7 @@ EditorHost::~EditorHost()
 }
 
 // =============================================================================
-// Surface (ADR-040 — contrato idêntico ao AndroidRuntime)
+// Surface
 // =============================================================================
 
 void EditorHost::acquireWindow(void* window) noexcept
@@ -285,8 +285,8 @@ void EditorHost::surfaceDestroyed()
 
 void EditorHost::onPause()
 {
-    paused_ = true; // flag apenas — robusto a qualquer ordem (§VI FASE 7)
-    // P3.5 (T4): a época invalida ciclos de retry em voo (o worker
+    paused_ = true; // flag apenas — robusto a qualquer ordem
+    // A época invalida ciclos de retry em voo (o worker
     // abandona no próximo checkpoint). A MAIN THREAD nunca mais para o
     // device aqui — o stream segue puxando silêncio (vozes pausadas
     // abaixo); o teardown definitivo é do destrutor, no worker, sob
@@ -300,7 +300,7 @@ void EditorHost::onResume()
     diag::mark("STARTUP_RESUME", "begin");
     paused_ = false;
     audioMixerLifecycle("onResume"); // P2 §12: vozes retomam com o app
-    // P3.5 (T4): o áudio NUNCA mais é síncrono no onResume — o AAudio do
+    // O áudio NUNCA mais é síncrono no onResume — o AAudio do
     // Unisoc já provou hostil (builder null em janela opaca). O worker
     // dedicado tenta (backoff 1/2/4 s) e o resume RETORNA IMEDIATAMENTE.
     scheduleAudioRetry();
@@ -439,7 +439,7 @@ void EditorHost::audioRetryRunCycle()
 
 void EditorHost::cancelAudioRetry() noexcept
 {
-    // Sem try/catch: a engine compila -fno-exceptions (ADR-004). As
+    // Sem try/catch: a engine compila -fno-exceptions. As
     // operações (lock/notify/join) em falha catastrófica de std::level
     // terminariam o processo de qualquer forma — o contrato noexcept é
     // honrado pelo caminho normal; worker presa em AAudio é a limitação
@@ -456,7 +456,7 @@ void EditorHost::cancelAudioRetry() noexcept
 
 bool EditorHost::startAudio()
 {
-    // P3.5: caminho de manutenção SÍNCRONO (testes/legacy). O app usa o
+    // Caminho de manutenção SÍNCRONO (testes/legacy). O app usa o
     // worker (scheduleAudioRetry). Serializado pela posse do AAudio.
     const std::lock_guard<std::mutex> opLock{audioOpMutex_};
     return startAudioLocked();
@@ -464,7 +464,7 @@ bool EditorHost::startAudio()
 
 bool EditorHost::startAudioLocked()
 {
-    // P3.4 — granular: cercar TODO o caminho de áudio com estágios
+    // Granular: cercar TODO o caminho de áudio com estágios
     // persistidos (o open do AAudio envolve dlopen + binder + HAL do
     // dispositivo — as chamadas de sistema mais opacas da janela de
     // morte súbita do C33). O backend emite os seus próprios marcos
@@ -512,7 +512,7 @@ bool EditorHost::startAudioLocked()
         diag::mark("STARTUP_AUDIO", "started", device.c_str());
     }
     ENG_INFO("audio backend ativo");
-    // P3.4: o primeiro callback pode disparar já DENTRO do requestStart
+    // O primeiro callback pode disparar já DENTRO do requestStart
     // (o AAudio começa a puxar antes de retornar) — observa agora.
     checkAudioFirstCallbackFrame();
     return true;
@@ -520,7 +520,7 @@ bool EditorHost::startAudioLocked()
 
 void EditorHost::stopAudio() noexcept
 {
-    // P3.5 (T4): teardown completo — aborta retries, espera a worker
+    // Teardown completo — aborta retries, espera a worker
     // (join) e só então para o backend sob a posse serializada. É o
     // ÚNICO caminho que bloqueia em AAudio — destrutor apenas (risco
     // residual documentado: um binder do HAL preso seguraria o join —
@@ -555,7 +555,7 @@ bool EditorHost::audioRunning() const noexcept
 
 std::string EditorHost::audioStatusLine() const
 {
-    // P4.1 (T3/D6) — VERDADE para o autor: qual backend está no ar (ou
+    // VERDADE para o autor: qual backend está no ar (ou
     // por que não há som). O NullBackend gracioso do P3.5 deixa de ser
     // silêncio: vira "null: <último motivo do diagnóstico>".
     const std::shared_ptr<eng::audio::IAudioBackend> backend =
@@ -575,7 +575,7 @@ std::string EditorHost::audioStatusLine() const
 
 void EditorHost::checkAudioFirstCallbackFrame()
 {
-    // P3.4 — evidência de vida do pull: o callback do AAudio marca um
+    // Evidência de vida do pull: o callback do AAudio marca um
     // átomo na própria thread de áudio; persistimos o marco UMA vez,
     // da UI thread (o hook/mirror do diagnóstico nunca roda na thread
     // de áudio — reentrância proibida por contrato). P3.5: lê um
@@ -600,7 +600,7 @@ void EditorHost::audioMixerLifecycle(const char* reason) noexcept
     if (document_ == nullptr) {
         return;
     }
-    // P3.5: o lifecycle do MIXER apenas (vozes). O backend NÃO é mais
+    // O lifecycle do MIXER apenas (vozes). O backend NÃO é mais
     // parado no pause: a main thread nunca toca AAudio em lifecycle —
     // um binder do HAL preso não pode congelar o pause do app (o stream
     // segue puxando silêncio; teardown é do destrutor, no worker).
@@ -627,7 +627,7 @@ void EditorHost::setBackend(const char* backend)
             state_ = HostSurfaceState::NoSurface;
         }
     }
-    // Sem surface: aplica na próxima surfaceCreated (§XV FASE 7).
+    // Sem surface: aplica na próxima surfaceCreated.
 }
 
 // =============================================================================
@@ -688,7 +688,7 @@ void EditorHost::logSelection() const noexcept
 
 bool EditorHost::renderFrame(float deltaSeconds)
 {
-    // P3.4 — observa o primeiro callback de áudio mesmo em frames
+    // Observa o primeiro callback de áudio mesmo em frames
     // pulados (sem surface/paused): a evidência não depende do render.
     if (!audioFirstFrameMarked_) {
         checkAudioFirstCallbackFrame();
@@ -764,7 +764,7 @@ bool EditorHost::renderFrame(float deltaSeconds)
     document_->resolveMaterials(quads);
     const auto particles = document_->viewport().buildParticleQuads(*scene);
     gizmoDraw_ = document_->gizmoDraw(&textureCache_);
-    // P4.6 (L2): a grade consome a config do PROJETO (passo em unidades,
+    // A grade consome a config do PROJETO (passo em unidades,
     // primary-every, cores, show/hide — Grid v2).
     const eng::project::GridConfig& gridConfig = document_->gridConfig();
     const bool drew = viewportRenderer_->renderFrame(
@@ -774,7 +774,7 @@ bool EditorHost::renderFrame(float deltaSeconds)
     if (drew) {
         if (!stats_.startupComplete) {
             stats_.startupComplete = true;
-            // P3.5 (T2): micro-mark de primeiro frame SUBMETIDO (o
+            // Micro-mark de primeiro frame SUBMETIDO (o
             // STARTUP_COMPLETE abaixo confirma a APRESENTAÇÃO).
             diag::mark("FIRST_FRAME", "ok", "frame submetido ao viewport");
             diag::mark("STARTUP_COMPLETE", "ok", "first frame presented");

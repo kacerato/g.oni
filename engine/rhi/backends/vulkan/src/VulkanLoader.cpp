@@ -1,4 +1,4 @@
-/// Loader Vulkan — implementação (FASE 5). Ver VulkanLoader.hpp.
+/// Loader Vulkan — implementação. Ver VulkanLoader.hpp.
 
 #include "eng/rhi/vulkan/VulkanLoader.hpp"
 

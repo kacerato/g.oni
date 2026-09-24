@@ -81,7 +81,7 @@ TEST_CASE("scene-serial: cena vazia round-trip", "[scene][serial]")
 
     const auto saved = eng::scene::SceneSerializer::save(scene);
     REQUIRE(saved.ok());
-    // Evolução P0-5 (ADR-051): a seção "layers" é SEMPRE emitida (defaults
+    // Evolução P0-5: a seção "layers" é SEMPRE emitida (defaults
     // GAME/SUBGAME incluídos) — compatível nos dois sentidos (o parser da
     // PRÉ-P0-5 ignora chaves de topo desconhecidas).
     CHECK(saved.value() ==
@@ -211,7 +211,7 @@ TEST_CASE("scene-serial: componente com AssetId e SceneEntityId", "[scene][seria
     const auto target = scene.createNode();
     const auto node = scene.createNode();
 
-    // Primeiro save: atribui SceneEntityId a todos os nós (ADR-033)
+    // Primeiro save: atribui SceneEntityId a todos os nós
     const auto pre = eng::scene::SceneSerializer::save(scene);
     REQUIRE(pre.ok());
 
@@ -273,7 +273,7 @@ TEST_CASE("scene-serial: referência de asset quebrada NÃO impede o load",
     REQUIRE(eng::scene::SceneSerializer::load(clone, saved.value()).ok());
     CHECK(clone.nodeCount() == 1);
 
-    // A checagem contra o registry é da CAMADA DE COMPOSIÇÃO (ADR-033/D4):
+    // A checagem contra o registry é da CAMADA DE COMPOSIÇÃO:
     // runtime/editor que possui scene+assets reporta por eng::log.
     eng::assets::AssetRegistry emptyRegistry; // nada catalogado
 

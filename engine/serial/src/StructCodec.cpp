@@ -135,7 +135,7 @@ void writeInteger(void* member, std::size_t size, bool isSigned,
 [[nodiscard]] eng::core::Result<JsonValue> encodeMember(
     const void* member, const PropertyInfo& prop)
 {
-    // Codec de campo por NOME de tipo tem PRECEDÊNCIA (ADR-033): tipos de
+    // Codec de campo por NOME de tipo tem PRECEDÊNCIA: tipos de
     // identidade (UUID como string) são codificados por quem os conhece.
     if (const FieldTypeCodec* codec = findFieldTypeCodec(prop.typeName)) {
         return codec->encode(member);
@@ -216,7 +216,7 @@ void writeInteger(void* member, std::size_t size, bool isSigned,
                                                    void* member,
                                                    const PropertyInfo& prop)
 {
-    // Codec de campo por NOME de tipo tem PRECEDÊNCIA (ADR-033).
+    // Codec de campo por NOME de tipo tem PRECEDÊNCIA.
     if (const FieldTypeCodec* codec = findFieldTypeCodec(prop.typeName)) {
         return codec->decode(field, member);
     }

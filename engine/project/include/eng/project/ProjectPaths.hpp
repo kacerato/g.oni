@@ -24,7 +24,7 @@ public:
 
     /// Defaults de SISTEMA (fora do projeto) via eng::platform — cache de
     /// usuário compartilhado quando o projeto não é "portable". Consome a
-    /// aresta platform (§5.1) de forma real.
+    /// aresta platform de forma real.
     [[nodiscard]] static ProjectPaths systemDefaults(std::string_view appName);
 
     [[nodiscard]] const eng::fs::Path& projectDir() const noexcept
