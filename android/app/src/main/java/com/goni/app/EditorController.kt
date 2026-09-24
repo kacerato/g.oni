@@ -31,6 +31,8 @@ import com.goni.ui.model.TickLayer
 import com.goni.ui.model.TransformModel
 import com.goni.ui.model.UiActions
 import com.goni.ui.model.UiState
+import com.goni.app.export.ApkExporter
+import com.goni.app.export.KeystoreSigner
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -279,6 +281,68 @@ class EditorController(
         }
     }
 
+    /**
+     * Gera um APK instalável só com o jogo: o próprio app como modelo, o
+     * jogo dentro, pacote e nome próprios, assinado com a chave do aparelho.
+     */
+    override fun exportApk(folder: String) {
+        val name = state.projects.firstOrNull { it.folder == folder }?.name ?: folder
+        activity.createDocument("$name.apk", "application/vnd.android.package-archive") { uri ->
+            if (!check(engine.call("project.open", "folder" to folder))) return@createDocument
+            val game = File(activity.cacheDir, "export.goni")
+            game.delete()
+            // O motor escreve relativo ao workspace; o resto roda fora da thread de UI.
+            val staged = File(workspace, ".export-apk.zip")
+            if (!check(engine.call("project.exportZip", "path" to staged.name))) return@createDocument
+            staged.renameTo(game)
+            toast("Gerando o APK de \"$name\"…")
+            val template = File(activity.applicationInfo.sourceDir)
+            Thread {
+                val out = File(activity.cacheDir, "export.apk")
+                val result = runCatching {
+                    ApkExporter.export(
+                        template = template,
+                        templatePackage = activity.packageName,
+                        templateLabel = TEMPLATE_LABEL,
+                        game = game,
+                        packageName = ApkExporter.packageFor(name),
+                        label = name,
+                        signer = KeystoreSigner.signer(),
+                        out = out,
+                    )
+                    activity.contentResolver.openOutputStream(uri)?.use { dst -> out.inputStream().use { it.copyTo(dst) } }
+                        ?: error("não foi possível gravar o arquivo")
+                }
+                game.delete()
+                out.delete()
+                main.post {
+                    result.fold(
+                        onSuccess = { toast("APK pronto: abra o arquivo para instalar \"$name\"", ToastKind.Success) },
+                        onFailure = { toast("Falha ao gerar o APK: ${it.message}", ToastKind.Error) },
+                    )
+                }
+            }.start()
+        }
+    }
+
+    /**
+     * Modo jogo independente: o APK traz assets/game.goni. Importa o jogo
+     * (sempre a versão do APK) e começa jogando. Voltar fecha o app.
+     */
+    fun startStandalone(): Boolean {
+        val bytes = runCatching { activity.assets.open(GAME_ASSET).use { it.readBytes() } }.getOrNull()
+            ?: return false
+        state.standalone = true
+        workspace.listFiles()?.forEach { if (it.isDirectory) it.deleteRecursively() }
+        val tmp = File(workspace, ".game.goni")
+        tmp.writeBytes(bytes)
+        val r = engine.call("project.importZip", "path" to tmp.name, "name" to "Jogo")
+        tmp.delete()
+        if (!check(r)) return true
+        playProject(r.string.ifEmpty { "Jogo" })
+        return true
+    }
+
     override fun importProject() {
         activity.openDocument(arrayOf("application/zip", "application/octet-stream", "*/*")) { uri, displayName ->
             val tmp = File(workspace, ".import.zip")
@@ -305,6 +369,10 @@ class EditorController(
     }
 
     private fun leavePlayer() {
+        if (state.standalone) {
+            activity.finish()
+            return
+        }
         state.playerOnly = false
         goHome()
     }
@@ -944,5 +1012,8 @@ class EditorController(
 
     private companion object {
         const val ANIM_FRAME = "__anim_frame__"
+        const val GAME_ASSET = "game.goni"
+        /** Nome do app no manifesto (trocado pelo do jogo no export). */
+        const val TEMPLATE_LABEL = "G.ONI"
     }
 }

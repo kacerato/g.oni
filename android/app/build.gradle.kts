@@ -73,4 +73,8 @@ android {
 dependencies {
     implementation(project(":ui"))
     implementation("androidx.activity:activity-compose:1.9.0")
+    // Assina o APK de um jogo exportado no próprio aparelho (a mesma
+    // biblioteca que o apksigner do SDK usa).
+    implementation("com.android.tools.build:apksig:8.5.2")
+    testImplementation("junit:junit:4.13.2")
 }

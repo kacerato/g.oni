@@ -165,6 +165,11 @@ TEST_CASE("captura: exemplos em edição e em jogo", "[.capture]")
         INFO(cap.proto->call(req));
         REQUIRE(doc.hasProject());
         doc.setGameViewportSize(static_cast<float>(c.w), static_cast<float>(c.h));
+        // O projeto exportado (.goni) serve de amostra para o export de APK.
+        const std::string goni = std::string(c.id) + ".goni";
+        INFO(cap.proto->call(R"({"op":"project.exportZip","path":")" + goni + R"("})"));
+        std::filesystem::copy_file(ws + "/" + goni, std::string(dir) + "/" + goni,
+                                   std::filesystem::copy_options::overwrite_existing);
         (void)cap.proto->call(R"({"op":"viewport.fit"})");
         cap.frames(2);
         CHECK(cap.snap(std::string(c.id) + "-edicao"));

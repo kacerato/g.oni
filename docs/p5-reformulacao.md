@@ -305,8 +305,10 @@ Feito:
   de desfazer (um modelo = um passo) e controles padrão do jogo.
 - **Etapa 2**: módulo `:ui` em Compose com design system próprio e testes de
   screenshot; `:app` com `MainActivity` + `EditorController`.
-- **Etapa 3 (parte)**: exportar `.goni`, importar (cria cópia se o jogo já
-  existe) e **Jogar** direto da tela inicial, sem o editor.
+- **Etapa 3**: exportar `.goni`, importar (cria cópia se o jogo já
+  existe), **Jogar** direto da tela inicial e **Exportar APK**: o próprio
+  app vira o modelo, com o jogo dentro, pacote e nome próprios, assinado
+  no aparelho (ver docs/build-android.md).
 
 - **Exemplos e jogo de toque**: catálogo `project.templates` com Plataforma
   2D, **Voo** (estilo Flappy: pássaro, canos gerados de um molde, placar,
@@ -348,7 +350,6 @@ Pendente:
 
 - Validar o roteiro da seção 7 no Realme C33. A interface foi verificada por
   screenshots e o motor por testes, mas nada rodou no aparelho ainda.
-- APK independente a partir do `.goni`.
 - Dividir `EditorDocument` em serviços e `EditorTests.cpp` por área. O
   protocolo já é a porta única da UI, então a divisão interna não bloqueia
   nada.

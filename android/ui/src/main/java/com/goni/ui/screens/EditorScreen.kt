@@ -314,8 +314,11 @@ private fun PlayOverlay(state: UiState, actions: UiActions) {
                 .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconAction(OniIcons.Stop, onClick = actions::stop, kind = ButtonKind.Danger, size = 40.dp, iconSize = 16.dp)
-            Spacer(Modifier.width(4.dp))
+            // No APK de um jogo não há editor: só pausar.
+            if (!state.standalone) {
+                IconAction(OniIcons.Stop, onClick = actions::stop, kind = ButtonKind.Danger, size = 40.dp, iconSize = 16.dp)
+                Spacer(Modifier.width(4.dp))
+            }
             IconAction(
                 if (snap.paused) OniIcons.Play else OniIcons.Pause,
                 onClick = { actions.setPaused(!snap.paused) },
@@ -323,9 +326,11 @@ private fun PlayOverlay(state: UiState, actions: UiActions) {
                 size = 40.dp,
                 iconSize = 16.dp,
             )
-            Spacer(Modifier.width(10.dp))
-            Text("${state.hud.fps} fps", style = Oni.type.mono, color = c.textMuted)
-            Spacer(Modifier.width(12.dp))
+            if (!state.standalone) {
+                Spacer(Modifier.width(10.dp))
+                Text("${state.hud.fps} fps", style = Oni.type.mono, color = c.textMuted)
+                Spacer(Modifier.width(12.dp))
+            }
         }
         if (state.hud.faults > 0 || state.hud.error.isNotEmpty()) {
             Row(

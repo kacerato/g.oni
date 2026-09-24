@@ -13,5 +13,5 @@ exportar) com uma interface nova. Plano, cortes e estado em
 | 0 | Limpeza: docs/scripts arquivados, runtime-demo removido, marcações de fase fora dos comentários | feito |
 | 1 | Protocolo único do editor (`snapshot`/`call`), JNI de 130 → 21 funções, modelos de entidade e de projeto | feito |
 | 2 | Interface nova em Compose (Início, editor com 3 abas, modo jogo, editor de script) | feito, falta validar no aparelho |
-| 3 | Exportar/importar `.goni` e jogar sem o editor | feito dentro do app; APK independente pendente |
+| 3 | Exportar/importar `.goni`, jogar sem o editor e exportar APK instalável do jogo | feito |
 | 4 | Polimento guiado pelo uso no aparelho | a fazer |

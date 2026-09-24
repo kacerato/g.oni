@@ -70,3 +70,26 @@ Cada `external fun` de `NativeBridge.kt` precisa de um símbolo
 `EditorJni.cpp`. O teste `[jni]` da suíte do editor lê o arquivo Kotlin e
 confere todos por `dlsym`; o CI Android também recusa símbolos com nome
 C++ (manglados).
+
+## Exportar um jogo como APK
+
+No menu de um jogo, **Exportar APK (instalável)** gera um app só com o
+jogo, no próprio aparelho (`app/.../export/ApkExporter.kt`):
+
+1. copia o APK instalado do G.ONI e põe o jogo em `assets/game.goni`;
+2. reescreve o pool de strings do manifesto binário: pacote
+   `com.goni.game.<nome>_<hash>` (e as authorities/permissões derivadas
+   dele) e o nome do jogo como rótulo do app;
+3. assina com `apksig` (v2 + v3) usando uma chave RSA guardada no Android
+   Keystore do aparelho. Re-exportar o mesmo jogo instala por cima.
+
+Ao abrir, o `MainActivity` encontra `game.goni`, importa e começa jogando;
+voltar fecha o app. O teste da JVM confere o resultado com as ferramentas
+do SDK (`aapt2 dump badging`, `apksigner verify`, `zipalign -c -p 4`):
+
+```bash
+./gradlew assembleDebug :app:testDebugUnitTest   # precisa de ANDROID_HOME
+```
+
+O APK exportado não serve para a Play Store (chave do aparelho, sem
+assinatura de upload); é para instalar e compartilhar direto.

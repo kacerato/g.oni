@@ -375,7 +375,8 @@ fun androidx.compose.foundation.layout.ColumnScope.ProjectMenuContent(
         MenuItem("Renomear", OniIcons.Edit) {
             state.sheet = Sheet.Rename("Renomear jogo", project.name) { actions.renameProject(project.folder, it) }
         },
-        MenuItem("Exportar (.goni)", OniIcons.Share) { actions.exportProject(project.folder) },
+        MenuItem("Exportar APK (instalável)", OniIcons.Download) { actions.exportApk(project.folder) },
+        MenuItem("Exportar projeto (.goni)", OniIcons.Share) { actions.exportProject(project.folder) },
         MenuItem("Excluir", OniIcons.Trash, danger = true) {
             state.sheet = Sheet.Confirm(
                 "Excluir \"${project.name}\"?",

@@ -224,6 +224,8 @@ class UiState {
     var scriptDirty: Boolean by mutableStateOf(false)
     /** Modo player: roda o jogo sem nenhuma interface de edição. */
     var playerOnly: Boolean by mutableStateOf(false)
+    /** APK de um jogo exportado: sem editor, voltar fecha o app. */
+    var standalone: Boolean by mutableStateOf(false)
 }
 
 /** Ações da UI. Os padrões vazios deixam prévias e testes triviais. */
@@ -234,6 +236,8 @@ interface UiActions {
     fun renameProject(folder: String, name: String) {}
     fun deleteProject(folder: String) {}
     fun exportProject(folder: String) {}
+    /** APK instalável só com o jogo. */
+    fun exportApk(folder: String) {}
     fun importProject() {}
     fun playProject(folder: String) {}
 

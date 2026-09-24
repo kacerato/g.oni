@@ -44,6 +44,13 @@ class MainActivity : ComponentActivity(), Choreographer.FrameCallback {
         onCreated = null
     }
 
+    private val createApk = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.android.package-archive"),
+    ) { uri ->
+        uri?.let { onCreated?.invoke(it) }
+        onCreated = null
+    }
+
     private val openDoc = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { onOpened?.invoke(it, displayName(it)) }
         onOpened = null
@@ -74,7 +81,10 @@ class MainActivity : ComponentActivity(), Choreographer.FrameCallback {
         val state = UiState()
         val ctl = EditorController(this, Engine(handle), state, workspace)
         controller = ctl
-        ctl.refreshProjects()
+        // APK exportado de um jogo: abre direto nele, sem o editor.
+        if (!ctl.startStandalone()) {
+            ctl.refreshProjects()
+        }
         if (previousCrash || CrashGuard.hadCrash(this)) {
             ctl.toast("O app fechou inesperadamente da última vez. Ajustes › Exportar diagnóstico.", ToastKind.Error)
         }
@@ -127,9 +137,9 @@ class MainActivity : ComponentActivity(), Choreographer.FrameCallback {
         }
     }
 
-    fun createDocument(name: String, @Suppress("UNUSED_PARAMETER") mime: String, then: (Uri) -> Unit) {
+    fun createDocument(name: String, mime: String, then: (Uri) -> Unit) {
         onCreated = then
-        createDoc.launch(name)
+        if (mime == "application/vnd.android.package-archive") createApk.launch(name) else createDoc.launch(name)
     }
 
     fun openDocument(mimes: Array<String>, then: (Uri, String) -> Unit) {
