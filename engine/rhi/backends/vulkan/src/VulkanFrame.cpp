@@ -23,6 +23,15 @@ using eng::core::StatusCode;
     return type == eng::rhi::IndexType::Uint32 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
 }
 
+/// Viewport com Y invertido (altura negativa, core no Vulkan 1.1). Os
+/// shaders e todo o código de desenho usam a convenção de clip do GL
+/// (+1 = topo); no Vulkan +1 é a base, e sem isto o quadro inteiro
+/// (sprites, texto, grade) saía de cabeça para baixo no aparelho.
+[[nodiscard]] VkViewport glConventionViewport(float x, float y, float width, float height,
+                                              float minDepth, float maxDepth) noexcept {
+    return VkViewport{x, y + height, width, -height, minDepth, maxDepth};
+}
+
 } // namespace
 
 // =============================================================================
@@ -164,7 +173,15 @@ Result<void> VulkanBackend::createSwapchain(std::uint32_t width, std::uint32_t h
     swapchainInfo.imageColorSpace = chosenFormat.colorSpace;
     swapchainInfo.imageExtent = extent;
     swapchainInfo.imageArrayLayers = 1;
-    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    // TRANSFER_SRC quando a surface permite: habilita readPixels (testes e
+    // capturas); custo zero no caminho normal.
+    swapchainReadable_ =
+        (capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0;
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (swapchainReadable_) {
+        usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+    swapchainInfo.imageUsage = usage;
     swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchainInfo.preTransform = capabilities.currentTransform;
     swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -183,6 +200,7 @@ Result<void> VulkanBackend::createSwapchain(std::uint32_t width, std::uint32_t h
 
     swapchainFormat_ = chosenFormat.format;
     swapchainExtent_ = extent;
+    lastPresentedImage_ = -1;
     swapchainSuboptimal_ = false;
     ++stats_.swapchainRecreations;
 
@@ -399,8 +417,9 @@ Result<BeginFrameResult> VulkanBackend::beginFrame() {
 
     // Viewport/scissor default = extent inteira (dynamic state exige valores
     // antes do draw — Frame::setViewport sobrepõe).
-    const VkViewport viewport{0.f, 0.f, static_cast<float>(swapchainExtent_.width),
-                              static_cast<float>(swapchainExtent_.height), 0.f, 1.f};
+    const VkViewport viewport = glConventionViewport(
+        0.f, 0.f, static_cast<float>(swapchainExtent_.width),
+        static_cast<float>(swapchainExtent_.height), 0.f, 1.f);
     fn.vkCmdSetViewport(slot->command, 0, 1, &viewport);
     const VkRect2D scissor{{0, 0}, swapchainExtent_};
     fn.vkCmdSetScissor(slot->command, 0, 1, &scissor);
@@ -446,8 +465,9 @@ Result<void> VulkanBackend::frameSetViewport(std::uint64_t frameId, const Viewpo
         return eng::core::makeUnexpected(
             makeError(StatusCode::InvalidArgument, "rhi.vulkan.frame: sessão inválida"));
     }
-    const VkViewport vkViewport{viewport.x, viewport.y, viewport.width, viewport.height,
-                                viewport.minDepth, viewport.maxDepth};
+    const VkViewport vkViewport =
+        glConventionViewport(viewport.x, viewport.y, viewport.width, viewport.height,
+                             viewport.minDepth, viewport.maxDepth);
     library_.functions().vkCmdSetViewport(slot->command, 0, 1, &vkViewport);
     const VkRect2D scissor{
         {0, 0},
@@ -754,6 +774,7 @@ Result<void> VulkanBackend::present() {
         const VkResult result = fn.vkQueuePresentKHR(presentQueue_, &presentInfo);
         if (result == VK_SUCCESS) {
             ++stats_.presentsOk;
+            lastPresentedImage_ = pending.imageIndex;
             continue;
         }
         if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {

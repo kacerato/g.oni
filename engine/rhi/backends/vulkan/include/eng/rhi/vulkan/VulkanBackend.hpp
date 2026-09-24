@@ -93,6 +93,10 @@ public:
     eng::core::Result<void> present() override;
     eng::core::Result<void> resize(std::uint32_t width, std::uint32_t height) override;
     [[nodiscard]] bool surfaceLost() const override;
+    /// Lê a última imagem apresentada (convenção GL: linha 0 = base).
+    /// Exige swapchain com TRANSFER_SRC (pedido quando a surface permite).
+    [[nodiscard]] eng::core::Result<void> readPixels(
+        std::uint32_t width, std::uint32_t height, std::uint8_t* out) override;
 
     // --- diagnóstico (testes de hardware) ----------------------------------------
     [[nodiscard]] const VulkanStats& stats() const noexcept { return stats_; }
@@ -192,6 +196,10 @@ private:
     VkRenderPass renderPass_{VK_NULL_HANDLE};
     std::vector<VkFramebuffer> framebuffers_{};
     bool swapchainSuboptimal_{false};
+    /// Swapchain criada com VK_IMAGE_USAGE_TRANSFER_SRC_BIT (readback).
+    bool swapchainReadable_{false};
+    /// Índice da última imagem apresentada (-1 = nenhuma ainda).
+    std::int64_t lastPresentedImage_{-1};
 
     // Render passes de COMPATIBILIDADE device-only (um por formato pedido —
     // pipeline sem surface é legítimo; ver createGraphicsPipeline). Estes

@@ -98,6 +98,7 @@ struct VulkanFunctions {
     PFN_vkCreateSampler vkCreateSampler{nullptr};
     PFN_vkDestroySampler vkDestroySampler{nullptr};
     PFN_vkCmdCopyBufferToImage vkCmdCopyBufferToImage{nullptr};
+    PFN_vkCmdCopyImageToBuffer vkCmdCopyImageToBuffer{nullptr};
     PFN_vkCmdBlitImage vkCmdBlitImage{nullptr};
     PFN_vkCreateDescriptorPool vkCreateDescriptorPool{nullptr};
     PFN_vkDestroyDescriptorPool vkDestroyDescriptorPool{nullptr};

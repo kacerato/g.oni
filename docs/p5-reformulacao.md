@@ -336,6 +336,11 @@ Correções de motor encontradas no caminho:
   Play. Agora há controles padrão (toque + teclado) e a UI os desenha.
 - Colisor era escalado pelo Transform, então modelos com colisor do tamanho
   do sprite ficavam com o dobro; o pulo batia numa plataforma invisível.
+- No Vulkan (backend escolhido no aparelho quando existe) o quadro saía de
+  cabeça para baixo: viewport, jogo e texto. Os shaders usam o clip space
+  do GL e o Vulkan tem Y invertido; o viewport agora tem altura negativa.
+  O Vulkan ganhou leitura de pixels, e o teste `[orientation]` confere nos
+  dois backends que a imagem sai em pé (edição e jogo).
 - Uma camada inexistente era aceita no inspector e a cena salva não abria
   mais. O inspector mostrava a rotação como quaternion, mas aceitava graus.
 

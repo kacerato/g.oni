@@ -227,6 +227,7 @@ void VulkanLibrary::loadDeviceFunctions(VkDevice device) {
     ENG_VK_LOAD(vkCreateSampler);
     ENG_VK_LOAD(vkDestroySampler);
     ENG_VK_LOAD(vkCmdCopyBufferToImage);
+    ENG_VK_LOAD(vkCmdCopyImageToBuffer);
     ENG_VK_LOAD(vkCmdBlitImage);
     ENG_VK_LOAD(vkCreateDescriptorPool);
     ENG_VK_LOAD(vkDestroyDescriptorPool);

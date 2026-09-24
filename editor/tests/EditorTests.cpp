@@ -3658,6 +3658,8 @@ TEST_CASE("editor: P1 — renderer desenha GIZMO por cima do sprite (readback)",
     if (editorGraphicsUnavailable()) {
         SKIP("sem driver gráfico (lavapipe/EGL) — suite completo roda no CI");
     }
+    // Workspace limpo: sobra de outra execução reabriria a cena antiga.
+    std::filesystem::remove_all(".editor-test-ws-p1gizmo");
     auto host = eng::editor::EditorHost::create("gles", ".editor-test-ws-p1gizmo");
     REQUIRE(host.ok());
     std::unique_ptr<eng::editor::EditorHost> owned{host.value()};
@@ -3796,6 +3798,8 @@ TEST_CASE("editor: P1 — VERTICAL SLICE: import→sprite→gizmos→duplicate�
     if (editorGraphicsUnavailable()) {
         SKIP("sem driver gráfico (lavapipe/EGL) — suite completo roda no CI");
     }
+    // Workspace limpo: sobra de outra execução reabriria a cena antiga.
+    std::filesystem::remove_all(".editor-test-ws-p1vs");
     auto host = eng::editor::EditorHost::create("gles", ".editor-test-ws-p1vs");
     REQUIRE(host.ok());
     std::unique_ptr<eng::editor::EditorHost> owned{host.value()};

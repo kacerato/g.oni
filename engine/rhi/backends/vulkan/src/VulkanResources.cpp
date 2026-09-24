@@ -51,9 +51,13 @@ using eng::rhi::BufferUsage;
     return VK_CULL_MODE_NONE;
 }
 
+/// O viewport do Vulkan é invertido em Y (altura negativa, ver
+/// VulkanFrame.cpp) para seguir a convenção de clip do GL, o que também
+/// espelha o sentido dos triângulos na tela. Trocar o mapeamento mantém o
+/// mesmo "front" nos dois backends.
 [[nodiscard]] VkFrontFace toVkFrontFace(eng::rhi::FrontFace face) noexcept {
-    return face == eng::rhi::FrontFace::Clockwise ? VK_FRONT_FACE_CLOCKWISE
-                                                  : VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    return face == eng::rhi::FrontFace::Clockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE
+                                                  : VK_FRONT_FACE_CLOCKWISE;
 }
 
 [[nodiscard]] VkPolygonMode toVkPolygonMode(eng::rhi::FillMode mode,
@@ -1041,6 +1045,134 @@ Result<void> VulkanBackend::destroySampler(SamplerHandle handle) {
     }
     invalidateTextureDescriptorCache();
     library_.functions().vkDestroySampler(device_, entry.sampler, nullptr);
+    return {};
+}
+
+Result<void> VulkanBackend::readPixels(std::uint32_t width, std::uint32_t height,
+                                       std::uint8_t* out) {
+    if (auto ready = requireInitialized(); !ready) {
+        return eng::core::makeUnexpected(ready.error());
+    }
+    if (!hasSurface_ || !swapchainReadable_ || lastPresentedImage_ < 0 ||
+        width == 0 || height == 0 || width > swapchainExtent_.width ||
+        height > swapchainExtent_.height) {
+        return eng::core::makeUnexpected(makeError(
+            StatusCode::NotSupported,
+            "rhi.vulkan: readback exige um frame apresentado numa swapchain legível"));
+    }
+    const bool bgra = swapchainFormat_ == VK_FORMAT_B8G8R8A8_UNORM ||
+                      swapchainFormat_ == VK_FORMAT_B8G8R8A8_SRGB;
+    const bool rgba = swapchainFormat_ == VK_FORMAT_R8G8B8A8_UNORM ||
+                      swapchainFormat_ == VK_FORMAT_R8G8B8A8_SRGB;
+    if (!bgra && !rgba) {
+        return eng::core::makeUnexpected(makeError(
+            StatusCode::NotSupported, "rhi.vulkan: readback só em formatos de 8 bits RGBA/BGRA"));
+    }
+    const auto& fn = library_.functions();
+    fn.vkDeviceWaitIdle(device_);
+
+    const VkDeviceSize size = static_cast<VkDeviceSize>(width) * height * 4u;
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkResult result = fn.vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer);
+    if (result != VK_SUCCESS) {
+        return eng::core::makeUnexpected(vkErr(StatusCode::Unknown, "rhi.vulkan: readback buffer", result));
+    }
+    VkMemoryRequirements requirements{};
+    fn.vkGetBufferMemoryRequirements(device_, buffer, &requirements);
+    auto memoryType = pickMemoryType(requirements.memoryTypeBits,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     "readback");
+    if (!memoryType) {
+        fn.vkDestroyBuffer(device_, buffer, nullptr);
+        return eng::core::makeUnexpected(memoryType.error());
+    }
+    VkMemoryAllocateInfo alloc{};
+    alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc.allocationSize = requirements.size;
+    alloc.memoryTypeIndex = memoryType.value();
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    result = fn.vkAllocateMemory(device_, &alloc, nullptr, &memory);
+    if (result != VK_SUCCESS) {
+        fn.vkDestroyBuffer(device_, buffer, nullptr);
+        return eng::core::makeUnexpected(vkErr(StatusCode::OutOfMemory, "rhi.vulkan: readback", result));
+    }
+    fn.vkBindBufferMemory(device_, buffer, memory, 0);
+
+    VkCommandBufferAllocateInfo commandInfo{};
+    commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandInfo.commandPool = commandPool_;
+    commandInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandInfo.commandBufferCount = 1;
+    VkCommandBuffer command = VK_NULL_HANDLE;
+    result = fn.vkAllocateCommandBuffers(device_, &commandInfo, &command);
+    if (result != VK_SUCCESS) {
+        fn.vkDestroyBuffer(device_, buffer, nullptr);
+        fn.vkFreeMemory(device_, memory, nullptr);
+        return eng::core::makeUnexpected(vkErr(StatusCode::Unknown, "rhi.vulkan: readback cmd", result));
+    }
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    fn.vkBeginCommandBuffer(command, &beginInfo);
+
+    const VkImage image = swapchainImages_[static_cast<std::size_t>(lastPresentedImage_)];
+    imageBarrier(fn, command, image, 0, 1, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                 VK_PIPELINE_STAGE_TRANSFER_BIT, 0, VK_ACCESS_TRANSFER_READ_BIT);
+    // A imagem guarda a linha do TOPO primeiro; o contrato (GL) começa
+    // pela base: copia as `height` linhas de baixo e inverte na saída.
+    VkBufferImageCopy region{};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, static_cast<std::int32_t>(swapchainExtent_.height - height), 0};
+    region.imageExtent = {width, height, 1};
+    fn.vkCmdCopyImageToBuffer(command, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1,
+                              &region);
+    imageBarrier(fn, command, image, 0, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                 VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0);
+    fn.vkEndCommandBuffer(command);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &command;
+    result = fn.vkQueueSubmit(graphicsQueue_, 1, &submitInfo, VK_NULL_HANDLE);
+    if (result == VK_SUCCESS) {
+        result = fn.vkDeviceWaitIdle(device_);
+    }
+    fn.vkFreeCommandBuffers(device_, commandPool_, 1, &command);
+    if (result == VK_SUCCESS) {
+        void* mapped = nullptr;
+        result = fn.vkMapMemory(device_, memory, 0, size, 0, &mapped);
+        if (result == VK_SUCCESS) {
+            const auto* src = static_cast<const std::uint8_t*>(mapped);
+            const std::size_t rowBytes = static_cast<std::size_t>(width) * 4u;
+            for (std::uint32_t row = 0; row < height; ++row) {
+                const std::uint8_t* line = src + static_cast<std::size_t>(height - 1u - row) * rowBytes;
+                std::uint8_t* dst = out + static_cast<std::size_t>(row) * rowBytes;
+                for (std::uint32_t x = 0; x < width; ++x) {
+                    const std::uint8_t* p = line + x * 4u;
+                    dst[x * 4u + 0] = bgra ? p[2] : p[0];
+                    dst[x * 4u + 1] = p[1];
+                    dst[x * 4u + 2] = bgra ? p[0] : p[2];
+                    dst[x * 4u + 3] = p[3];
+                }
+            }
+            fn.vkUnmapMemory(device_, memory);
+        }
+    }
+    fn.vkDestroyBuffer(device_, buffer, nullptr);
+    fn.vkFreeMemory(device_, memory, nullptr);
+    if (result != VK_SUCCESS) {
+        return eng::core::makeUnexpected(vkErr(StatusCode::Unknown, "rhi.vulkan: readback", result));
+    }
     return {};
 }
 
