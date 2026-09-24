@@ -308,6 +308,21 @@ Feito:
 - **Etapa 3 (parte)**: exportar `.goni`, importar (cria cópia se o jogo já
   existe) e **Jogar** direto da tela inicial, sem o editor.
 
+- **Exemplos e jogo de toque**: catálogo `project.templates` com Plataforma
+  2D, **Voo** (estilo Flappy: pássaro, canos gerados de um molde, placar,
+  recomeço), Chuva de caixas e Vazio. Motor ganhou moldes (`spawn` clona
+  entidade + filhos), texto na cena (componente Texto, fixo na tela ou no
+  mundo), sprites de cor sólida, Play sem overlays de edição e nativos de
+  jogo (`random`, `global_*`, `restart`, `view_*`, `count`, `play_sound`…).
+- **Ajustes universais do jogo** (`settings.game`): cor de fundo, orientação
+  da tela no Play e controles de toque (botões, toque ou nenhum).
+- **Tema próprio**: paleta brasa/violeta, Space Grotesk + Inter + JetBrains
+  Mono, cartões de exemplo ilustrados na Início e no "Novo jogo", seletores
+  em cartões nos Ajustes, marca de molde na cena.
+- **Validação**: teste `[props]` edita todo campo de todo componente,
+  relê pelo inspector e confere depois de salvar e recarregar; o Voo é
+  jogado por piloto automático no teste e em captura de GPU headless.
+
 Correções de motor encontradas no caminho:
 
 - `NiRuntime`: os bindings do catálogo guardavam ponteiro para memória já
@@ -319,6 +334,10 @@ Correções de motor encontradas no caminho:
   (`scriptAsset`): salvar atualiza as entidades e o Play usa a versão atual.
 - Sem ações de input configuradas, `action_down(...)` nunca disparava no
   Play. Agora há controles padrão (toque + teclado) e a UI os desenha.
+- Colisor era escalado pelo Transform, então modelos com colisor do tamanho
+  do sprite ficavam com o dobro; o pulo batia numa plataforma invisível.
+- Uma camada inexistente era aceita no inspector e a cena salva não abria
+  mais. O inspector mostrava a rotação como quaternion, mas aceitava graus.
 
 Pendente:
 

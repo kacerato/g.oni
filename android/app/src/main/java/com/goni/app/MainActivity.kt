@@ -1,6 +1,7 @@
 package com.goni.app
 
 import android.net.Uri
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.Choreographer
@@ -96,6 +97,20 @@ class MainActivity : ComponentActivity(), Choreographer.FrameCallback {
                 )
             }
         }
+    }
+
+    /**
+     * No Play a tela segue o ajuste do jogo; no editor fica livre. O
+     * manifesto declara configChanges, então girar não recria a Activity.
+     */
+    fun applyPlayOrientation(playing: Boolean, orientation: String) {
+        val wanted = when {
+            !playing -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            orientation == "portrait" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            orientation == "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+        if (requestedOrientation != wanted) requestedOrientation = wanted
     }
 
     private fun showFatal(message: String) {

@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -79,7 +80,7 @@ fun BoxScope.SheetHost(state: UiState, actions: UiActions) {
     val isDialog = sheet is Sheet.Rename || sheet is Sheet.Confirm || sheet is Sheet.TextInput
     ModalSheet(visible = sheet != null && !isDialog, onDismiss = dismiss, title = sheetTitle(sheet)) {
         when (sheet) {
-            Sheet.NewProject -> NewProjectSheetContent { name, template -> actions.createProject(name, template) }
+            is Sheet.NewProject -> NewProjectSheetContent(state.examples, sheet.template) { name, template -> actions.createProject(name, template) }
             is Sheet.ProjectMenu -> ProjectMenuContent(sheet.project, actions, state)
             Sheet.AddEntity -> AddEntityContent(actions)
             is Sheet.EntityMenu -> EntityMenuContent(sheet, state, actions)
@@ -114,7 +115,7 @@ fun BoxScope.SheetHost(state: UiState, actions: UiActions) {
 }
 
 private fun sheetTitle(sheet: Sheet?): String? = when (sheet) {
-    Sheet.NewProject -> "Novo jogo"
+    is Sheet.NewProject -> "Novo jogo"
     is Sheet.ProjectMenu -> sheet.project.name
     Sheet.AddEntity -> "Adicionar à cena"
     is Sheet.EntityMenu -> sheet.node.name
@@ -169,6 +170,7 @@ private val templates = listOf(
     Template("character", "Personagem", "Anda e pula com script", "character", OniIcons.Person),
     Template("ground", "Chão", "Plataforma sólida", "empty", OniIcons.Layers),
     Template("physics", "Caixa física", "Cai e colide", "sprite", OniIcons.Cube),
+    Template("text", "Texto", "Placar, avisos", "text", OniIcons.Text),
     Template("camera", "Câmera", "O que o jogador vê", "camera", OniIcons.Camera),
     Template("light", "Luz", "Ilumina sprites", "light", OniIcons.Sun),
     Template("particles", "Partículas", "Faíscas, fumaça", "particles", OniIcons.Sparkles),
@@ -457,6 +459,60 @@ private fun SettingsContent(state: UiState, actions: UiActions) {
     Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         SectionLabel("Jogo")
         OniField(s.projectName, { actions.setProjectName(it) }, Modifier.fillMaxWidth(), prefix = "Nome")
+        Text(
+            "Valem para todas as cenas, no editor e no jogo exportado.",
+            style = Oni.type.caption,
+            color = c.textFaint,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        SubLabel("Cor de fundo")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (hex in backgroundSwatches) {
+                    val col = parseHex(hex) ?: Color.Black
+                    val on = hex.equals(s.background, ignoreCase = true)
+                    Box(
+                        Modifier
+                            .size(36.dp)
+                            .clip(OniShape.sm)
+                            .background(col)
+                            .border(if (on) 2.dp else 1.dp, if (on) c.accent else c.lineStrong, OniShape.sm)
+                            .clickable { actions.setGame(hex, s.orientation, s.controls) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (on) OniIcon(OniIcons.Check, tint = if (col.luminance() > 0.5f) Color.Black else Color.White, size = 16.dp)
+                    }
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+            OniField(
+                s.background.uppercase(),
+                { v -> normalizeHex(v)?.let { actions.setGame(it, s.orientation, s.controls) } },
+                Modifier.width(112.dp),
+                minHeight = 40.dp,
+            )
+        }
+        SubLabel("Tela")
+        OptionTiles(
+            listOf(
+                Option("portrait", "Em pé", OniIcons.Portrait),
+                Option("landscape", "Deitada", OniIcons.Landscape),
+                Option("auto", "Livre", OniIcons.Auto),
+            ),
+            s.orientation,
+        ) { actions.setGame(s.background, it, s.controls) }
+        SubLabel("Controles de toque")
+        OptionTiles(
+            listOf(
+                Option("platformer", "Botões", OniIcons.Gamepad, "◀ ▶ e pulo"),
+                Option("tap", "Toque", OniIcons.Tap, "a tela toda"),
+                Option("none", "Nenhum", OniIcons.Close, "só scripts"),
+            ),
+            s.controls,
+        ) { actions.setGame(s.background, s.orientation, it) }
         SectionLabel("Grade do editor")
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Mostrar grade", style = Oni.type.body, color = c.text, modifier = Modifier.weight(1f))
@@ -505,6 +561,56 @@ private fun SettingsContent(state: UiState, actions: UiActions) {
             color = c.textFaint,
             modifier = Modifier.padding(vertical = 12.dp),
         )
+    }
+}
+
+private val backgroundSwatches = listOf(
+    "#12141C", "#1B2A55", "#5CA3DB", "#8FD3F4", "#2E4A2A", "#3A1E2E", "#F2D7B6", "#FFFFFF",
+)
+
+/** "#abc", "abc123", "#AABBCC" → "#AABBCC"; null se não for cor. */
+private fun normalizeHex(input: String): String? {
+    val h = input.trim().removePrefix("#")
+    val full = when (h.length) {
+        3 -> h.map { "$it$it" }.joinToString("")
+        6 -> h
+        else -> return null
+    }
+    return if (full.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) "#" + full.uppercase() else null
+}
+
+@Composable
+private fun SubLabel(text: String) {
+    Text(text, style = Oni.type.label, color = Oni.colors.textMuted, modifier = Modifier.padding(top = 14.dp, bottom = 8.dp))
+}
+
+private data class Option(val id: String, val label: String, val icon: ImageVector, val hint: String = "")
+
+/** Escolha única em cartões com ícone — mais legível que um seletor de texto. */
+@Composable
+private fun OptionTiles(options: List<Option>, selected: String, onSelect: (String) -> Unit) {
+    val c = Oni.colors
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (o in options) {
+            val on = o.id == selected
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(OniShape.md)
+                    .background(if (on) c.accentSoft else c.s2)
+                    .border(if (on) 2.dp else 1.dp, if (on) c.accent else c.line, OniShape.md)
+                    .clickable { onSelect(o.id) }
+                    .padding(vertical = 12.dp, horizontal = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                OniIcon(o.icon, tint = if (on) c.accent else c.textMuted, size = 22.dp)
+                Spacer(Modifier.height(6.dp))
+                Text(o.label, style = Oni.type.label, color = if (on) c.text else c.textMuted, maxLines = 1)
+                if (o.hint.isNotEmpty()) {
+                    Text(o.hint, style = Oni.type.caption, color = c.textFaint, maxLines = 1)
+                }
+            }
+        }
     }
 }
 

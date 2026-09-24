@@ -118,14 +118,28 @@ fun ScenePanel(state: UiState, actions: UiActions) {
                 }
                 KindBadge(node.kind, size = 28.dp)
                 Spacer(Modifier.width(12.dp))
-                Text(
-                    node.name,
-                    style = if (selected) Oni.type.bodyStrong else Oni.type.body,
-                    color = c.text,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        node.name,
+                        style = if (selected) Oni.type.bodyStrong else Oni.type.body,
+                        color = c.text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (node.template) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "MOLDE",
+                            style = Oni.type.overline,
+                            color = c.kindTemplate,
+                            modifier = Modifier
+                                .clip(OniShape.xs)
+                                .background(c.kindTemplate.copy(alpha = 0.14f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
                 IconAction(OniIcons.More, onClick = { state.sheet = Sheet.EntityMenu(node) }, size = 40.dp, iconSize = 18.dp)
             }
         }
@@ -299,6 +313,8 @@ private fun componentIcon(name: String) = when (name) {
     "eng::editor::AudioSource" -> OniIcons.Speaker
     "eng::render::Light2D" -> OniIcons.Sun
     "eng::scene::LayerMember" -> OniIcons.Layers
+    "eng::editor::TextData" -> OniIcons.Text
+    "eng::scene::Template" -> OniIcons.Stamp
     else -> OniIcons.Sliders
 }
 
@@ -314,6 +330,9 @@ private val fieldNames = mapOf(
     "lodOptOut" to "Sempre atualizar", "snapToGround" to "Grudar no chão", "posX" to "Deslocamento X", "posY" to "Deslocamento Y",
     "rotationDeg" to "Rotação", "deadzoneW" to "Zona morta L", "deadzoneH" to "Zona morta A", "smoothingTime" to "Suavização",
     "volume" to "Volume", "loop" to "Repetir", "playOnStart" to "Tocar ao iniciar", "clip" to "Som", "intensity" to "Intensidade",
+    "text" to "Texto", "size" to "Tamanho", "colorR,colorG,colorB" to "Cor", "align" to "Alinhamento",
+    "screenSpace" to "Fixo na tela", "screenX" to "Posição na tela X", "screenY" to "Posição na tela Y",
+    "viewHeight" to "Altura visível",
     "speed" to "Velocidade", "playing" to "Tocando", "rate" to "Taxa", "lifetime" to "Duração", "maxParticles" to "Máx. partículas",
 )
 
@@ -328,6 +347,7 @@ private fun prettyLabel(path: String): String {
 private val enumNames = mapOf(
     "Static" to "Estático", "Kinematic" to "Cinemático", "DynamicLite" to "Dinâmico",
     "Sphere" to "Círculo", "Box" to "Caixa",
+    "Left" to "Esquerda", "Center" to "Centro", "Right" to "Direita",
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -336,6 +356,15 @@ private fun ComponentFields(entity: Long, comp: ComponentModel, state: UiState, 
     // Vetores (a.x/a.y/a.z) viram uma linha só; z fica de fora no editor 2D.
     val fields = comp.fields.filterNot { f ->
         f.path.endsWith(".z") && comp.fields.any { it.path == f.path.removeSuffix(".z") + ".x" }
+    }
+    if (comp.name == "eng::scene::Template") {
+        Text(
+            "Molde: fica fora do jogo. Scripts criam cópias com spawn(\"${state.inspector?.name ?: "Nome"}\"), " +
+                "como os canos do Voo.",
+            style = Oni.type.caption,
+            color = Oni.colors.textMuted,
+        )
+        return
     }
     val done = mutableSetOf<String>()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

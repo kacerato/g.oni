@@ -24,6 +24,13 @@ import com.goni.ui.model.TickLayer
 import com.goni.ui.model.TransformModel
 import com.goni.ui.model.UiState
 import org.junit.Rule
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.goni.ui.components.drawExampleArt
+import com.goni.ui.components.exampleBackground
 import org.junit.Test
 
 /**
@@ -128,7 +135,7 @@ class ScreenshotTest {
 
     @Test
     fun homeEmptyNewProject() {
-        val state = UiState().apply { sheet = Sheet.NewProject }
+        val state = UiState().apply { sheet = Sheet.NewProject() }
         paparazzi.snapshot { GoniApp(state, NoActions) {} }
     }
 
@@ -177,6 +184,86 @@ class ScreenshotTest {
     }
 
     @Test
+    fun newProjectFromExample() {
+        val state = UiState().apply { sheet = Sheet.NewProject("flappy") }
+        paparazzi.snapshot { GoniApp(state, NoActions) {} }
+    }
+
+    private fun flappyState() = UiState().apply {
+        screen = Screen.Editor
+        snapshot = EditorSnapshot(
+            projectName = "Voo",
+            projectFolder = "Voo",
+            scenePath = "main.json",
+            selection = 12,
+            tool = 1,
+            controls = "tap",
+            orientation = "portrait",
+            hierarchy = listOf(
+                HierarchyNode(10, "Câmera", 0, "camera"),
+                HierarchyNode(11, "Chão", 0, "sprite"),
+                HierarchyNode(12, "Pássaro", 0, "sprite"),
+                HierarchyNode(13, "Cano", 0, "empty", template = true),
+                HierarchyNode(14, "Cima", 1, "sprite"),
+                HierarchyNode(15, "Baixo", 1, "sprite"),
+                HierarchyNode(16, "Vão", 1, "empty"),
+                HierarchyNode(17, "Gerador", 0, "script"),
+                HierarchyNode(18, "Placar", 0, "text"),
+                HierarchyNode(19, "Mensagem", 0, "text"),
+            ),
+        )
+        settings = SettingsModel(projectName = "Voo", background = "#5CA3DB", orientation = "portrait", controls = "tap")
+        inspector = InspectorModel(
+            id = 18,
+            name = "Placar",
+            kind = "text",
+            transform = TransformModel(),
+            components = listOf(
+                ComponentModel(
+                    "eng::editor::TextData", "Texto", "Render", true,
+                    listOf(
+                        FieldModel("text", "string", "0", "text"),
+                        FieldModel("size", "f32", "0.9", "number"),
+                        FieldModel("colorR,colorG,colorB", "color", "#FFFFFF", "color"),
+                        FieldModel("align", "eng::editor::TextAlign", "Center", "enum", listOf("Left", "Center", "Right")),
+                        FieldModel("screenSpace", "bool", "true", "bool"),
+                        FieldModel("screenX", "f32", "0.5", "number"),
+                        FieldModel("screenY", "f32", "0.9", "number"),
+                    ),
+                ),
+                ComponentModel("eng::scene::Template", "Molde", "Lógica", true, listOf(FieldModel("active", "bool", "false", "bool"))),
+            ),
+        )
+    }
+
+    @Test
+    fun flappyScene() {
+        val state = flappyState().apply { tab = EditorTab.Scene }
+        paparazzi.snapshot { GoniApp(state, NoActions) { FlappyViewport() } }
+    }
+
+    @Test
+    fun flappyTextProperties() {
+        val state = flappyState().apply { tab = EditorTab.Properties; panelTall = true }
+        paparazzi.snapshot { GoniApp(state, NoActions) { FlappyViewport() } }
+    }
+
+    @Test
+    fun flappyPlayingTap() {
+        val state = flappyState().apply {
+            snapshot = snapshot.copy(playing = true)
+            hud = HudModel(fps = 60, scripts = 4)
+        }
+        paparazzi.snapshot { GoniApp(state, NoActions) { FlappyViewport() } }
+    }
+
+    @Test
+    fun gameSettingsSheet() {
+        val state = flappyState().apply { sheet = Sheet.Settings }
+        paparazzi.snapshot { GoniApp(state, NoActions) { FlappyViewport() } }
+    }
+
+    @Test
     fun settingsSheet() {
         val state = editorState().apply { sheet = Sheet.Settings }
         paparazzi.snapshot { GoniApp(state, NoActions) { FakeViewport() } }
@@ -220,4 +307,10 @@ class ScreenshotTest {
         }
         paparazzi.snapshot { GoniApp(state, NoActions) {} }
     }
+}
+
+/** Quadro do Voo para as prévias (o jogo de verdade vem do motor). */
+@Composable
+private fun FlappyViewport() {
+    Canvas(Modifier.fillMaxSize().background(exampleBackground("flappy"))) { drawExampleArt("flappy") }
 }

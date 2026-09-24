@@ -68,15 +68,15 @@ fun FakeViewport(selected: Boolean = true) {
         drawRect(ground, Offset(cx - 7 * cell, cy + 1.5f * cell), Size(14 * cell, cell))
         drawRect(ground, Offset(cx + 2f * cell, cy - 0.4f * cell), Size(3 * cell, 0.4f * cell))
         val player = Offset(cx - 2.5f * cell, cy - 0.5f * cell)
-        drawRect(Color(0xFF8AB0FF), player, Size(cell, cell))
+        drawRect(Color(0xFFFF9A62), player, Size(cell, cell))
         if (selected) {
-            drawRect(Color(0xFF7C9CFF), player - Offset(3f, 3f), Size(cell + 6f, cell + 6f), style = Stroke(3f))
+            drawRect(Color(0xFFFF7A45), player - Offset(3f, 3f), Size(cell + 6f, cell + 6f), style = Stroke(3f))
             val c = player + Offset(cell / 2, cell / 2)
             drawLine(Color(0xFFFF7470), c, c + Offset(cell * 1.6f, 0f), strokeWidth = 5f)
             drawLine(Color(0xFF4FD197), c, c - Offset(0f, cell * 1.6f), strokeWidth = 5f)
             drawRoundRect(Color(0xFFF4BE5E), c - Offset(9f, 9f), Size(18f, 18f), CornerRadius(3f))
         }
-        drawRoundRect(Color(0x66B892FF), Offset(cx - 5 * cell, cy - 4 * cell), Size(10 * cell, 7.5f * cell), CornerRadius(8f), style = Stroke(2f))
+        drawRoundRect(Color(0x669B8CFF), Offset(cx - 5 * cell, cy - 4 * cell), Size(10 * cell, 7.5f * cell), CornerRadius(8f), style = Stroke(2f))
     }
 }
 

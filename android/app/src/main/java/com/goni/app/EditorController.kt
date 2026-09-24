@@ -15,6 +15,7 @@ import com.goni.ui.model.CollisionLayer
 import com.goni.ui.model.ComponentModel
 import com.goni.ui.model.EditorSnapshot
 import com.goni.ui.model.EditorTab
+import com.goni.ui.model.ExampleProject
 import com.goni.ui.model.FieldModel
 import com.goni.ui.model.HudModel
 import com.goni.ui.model.InspectorModel
@@ -110,6 +111,9 @@ class EditorController(
     private fun applySnapshot(snap: EditorSnapshot) {
         val before = state.snapshot
         state.snapshot = snap
+        if (before.playing != snap.playing || (snap.playing && before.orientation != snap.orientation)) {
+            activity.applyPlayOrientation(snap.playing, snap.orientation)
+        }
         if (before.playing && !snap.playing && state.playerOnly) {
             leavePlayer()
             return
@@ -161,6 +165,10 @@ class EditorController(
             Triple(stamp, folder, ProjectCard(folder, name.ifEmpty { folder }, editedLabel(stamp), projectThumb(dir)))
         }
         state.projects = cards.sortedByDescending { it.first }.map { it.third }
+        val examples = engine.call("project.templates").array.objects().map {
+            ExampleProject(it.optString("id"), it.optString("title"), it.optString("description"))
+        }
+        if (examples.isNotEmpty()) state.examples = examples
     }
 
     private fun newestTimestamp(dir: File): Long {
@@ -234,7 +242,7 @@ class EditorController(
         val r = engine.call("project.new", "name" to folder, "template" to template)
         if (!check(r)) return
         enterEditor()
-        toast(if (template == "platformer") "Toque em Jogar para testar" else "Jogo criado", ToastKind.Success)
+        toast(if (template == "empty") "Jogo criado" else "Toque em Jogar para testar", ToastKind.Success)
     }
 
     override fun renameProject(folder: String, name: String) {
@@ -726,6 +734,7 @@ class EditorController(
     private fun loadSettings() {
         val s = engine.call("settings.get").obj ?: return
         val grid = s.optJSONObject("grid") ?: JSONObject()
+        val game = s.optJSONObject("game")
         val dt = s.optDouble("physicsDt", 1.0 / 60.0)
         state.settings = SettingsModel(
             projectName = state.snapshot.projectName,
@@ -738,6 +747,12 @@ class EditorController(
             collisionLayers = s.optJSONArray("collisionLayers")?.objects().orEmpty().map {
                 CollisionLayer(it.optString("name"), it.optLong("bit"))
             },
+            background = game?.optJSONArray("background")?.let { bg ->
+                fun ch(i: Int) = (bg.optDouble(i, 0.0).coerceIn(0.0, 1.0) * 255.0 + 0.5).toInt()
+                String.format("#%02X%02X%02X", ch(0), ch(1), ch(2))
+            } ?: "#12141C",
+            orientation = game?.optString("orientation")?.ifEmpty { null } ?: "auto",
+            controls = game?.optString("controls")?.ifEmpty { null } ?: "platformer",
             version = "Versão ${BuildConfig.VERSION_NAME}" + BuildConfig.GONI_COMMIT.take(7).let { if (it.isEmpty()) "" else " · $it" },
             backend = engine.call("host.info").obj?.optString("backend").orEmpty(),
         )
@@ -758,6 +773,20 @@ class EditorController(
 
     override fun setGrid(visible: Boolean, cell: Float) {
         check(engine.call("settings.grid", "visible" to visible, "cell" to cell))
+        loadSettings()
+    }
+
+    override fun setGame(background: String, orientation: String, controls: String) {
+        val rgb = background.removePrefix("#").toLongOrNull(16) ?: return
+        val channels = JSONArray()
+            .put(((rgb shr 16) and 0xFF) / 255.0)
+            .put(((rgb shr 8) and 0xFF) / 255.0)
+            .put((rgb and 0xFF) / 255.0)
+        val r = engine.call("settings.game", "background" to channels, "orientation" to orientation, "controls" to controls)
+        if (check(r)) {
+            engine.call("project.save")
+            state.snapshot = engine.pollSnapshot(force = true) ?: state.snapshot
+        }
         loadSettings()
     }
 

@@ -61,6 +61,32 @@ camera.position(x,y)   → bool     (P4.7.0 B4 — offsets da câmera)
 camera.follow("nome")  → bool     (P4.7.0 B4 — "" solta o follow)
 ```
 
+### Nativos de jogo do editor (NiRuntime::registerNatives)
+
+Registrados pelo runtime do editor (o `script.compile` usa a mesma
+tabela, então o editor de script reconhece todos):
+
+```
+random()               → float    [0, 1)
+random(min, max)       → float    [min, max)
+random_int(min, max)   → int      inteiro entre min e max, inclusive
+global_set("k", n)     → bool     valor compartilhado entre scripts
+global_get("k")        → float    0 se nunca definido
+time()                 → float    segundos desde o Play
+restart()              → bool     recomeça a cena no fim do frame
+view_left() / view_right() / view_bottom() / view_top() → float
+                                  bordas do que a câmera mostra (mundo)
+play_sound("x.wav", v?) → bool    toca um som do projeto (volume 0–1)
+count("nome")          → int      entidades vivas com esse nome
+log(valor)             → bool     aparece no HUD do Play
+```
+
+`spawn("Nome")` clona um **molde** (entidade com o componente Molde e
+todos os filhos) e devolve a cópia ativa, já com scripts. Os moldes ficam
+fora do jogo; `despawn` vale no fim do frame. O `random` muda a cada Play;
+os testes fixam a semente (`EditorDocument::setScriptSeed`) para serem
+reproduzíveis.
+
 `NiHost` é implementado pelo consumidor (editor: clone + runtimeInput_;
 testes: harness próprio). Sem host configurado, os nativos de host falham
 com `NativeError` (mensagens explícitas — nunca crash).

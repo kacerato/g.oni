@@ -18,7 +18,26 @@ data class ProjectCard(
 )
 
 @Immutable
-data class HierarchyNode(val id: Long, val name: String, val depth: Int, val kind: String)
+data class HierarchyNode(
+    val id: Long,
+    val name: String,
+    val depth: Int,
+    val kind: String,
+    /** Molde: fica fora do jogo; scripts criam cópias com spawn("Nome"). */
+    val template: Boolean = false,
+)
+
+/** Exemplo do catálogo de modelos (project.templates). */
+@Immutable
+data class ExampleProject(val id: String, val title: String, val description: String)
+
+/** Catálogo embutido — o app troca pelo do motor quando carrega. */
+val defaultExamples = listOf(
+    ExampleProject("platformer", "Plataforma 2D", "Personagem que anda e pula, chão, plataforma e câmera que segue."),
+    ExampleProject("flappy", "Voo", "Toque para voar entre canos que surgem sem parar. Placar e recomeço."),
+    ExampleProject("boxes", "Chuva de caixas", "Física: cada toque solta uma caixa que cai e empilha."),
+    ExampleProject("empty", "Vazio", "Só uma câmera. Você monta o resto."),
+)
 
 @Immutable
 data class EditorSnapshot(
@@ -35,6 +54,10 @@ data class EditorSnapshot(
     val snapRotate: Boolean = false,
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
+    /** Controles de toque do jogo: "platformer", "tap" ou "none". */
+    val controls: String = "platformer",
+    /** "portrait", "landscape" ou "auto". */
+    val orientation: String = "auto",
     val hierarchy: List<HierarchyNode> = emptyList(),
 ) {
     val selectedNode: HierarchyNode? get() = hierarchy.firstOrNull { it.id == selection }
@@ -113,6 +136,10 @@ data class SettingsModel(
     val physicsHz: Int = 60,
     val layers: List<TickLayer> = emptyList(),
     val collisionLayers: List<CollisionLayer> = emptyList(),
+    /** Cor de fundo do jogo, "#RRGGBB". */
+    val background: String = "#12141C",
+    val orientation: String = "auto",
+    val controls: String = "platformer",
     val version: String = "",
     val backend: String = "",
 )
@@ -151,7 +178,7 @@ enum class LibraryKind(val category: String, val label: String) {
 data class PickTarget(val entity: Long, val component: String, val path: String, val kind: String)
 
 sealed interface Sheet {
-    data object NewProject : Sheet
+    data class NewProject(val template: String = "platformer") : Sheet
     data class ProjectMenu(val project: ProjectCard) : Sheet
     data object AddEntity : Sheet
     data class EntityMenu(val node: HierarchyNode) : Sheet
@@ -176,6 +203,7 @@ sealed interface Sheet {
 class UiState {
     var screen: Screen by mutableStateOf(Screen.Home)
     var projects: List<ProjectCard> by mutableStateOf(emptyList())
+    var examples: List<ExampleProject> by mutableStateOf(defaultExamples)
     var snapshot: EditorSnapshot by mutableStateOf(EditorSnapshot())
     var tab: EditorTab? by mutableStateOf(null)
     var panelTall: Boolean by mutableStateOf(false)
@@ -257,6 +285,8 @@ interface UiActions {
     fun setProjectName(name: String) {}
     fun setGrid(visible: Boolean, cell: Float) {}
     fun setPhysicsHz(hz: Int) {}
+    /** Ajustes que valem para o jogo inteiro (todas as cenas). */
+    fun setGame(background: String, orientation: String, controls: String) {}
     fun addTickLayer(name: String) {}
     fun setTickLayer(layer: TickLayer) {}
     fun addCollisionLayer(name: String) {}

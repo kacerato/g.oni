@@ -20,7 +20,7 @@ Entidades são inteiros (`id`; `0` = nenhuma).
 ```json
 {
   "key": 123456,
-  "project": {"name": "Plataforma", "folder": "Plataforma"},
+  "project": {"name": "Voo", "folder": "Voo", "controls": "tap", "orientation": "portrait"},
   "scene": {"path": "main.json", "dirty": true},
   "mode": "edit",
   "paused": false,
@@ -30,19 +30,22 @@ Entidades são inteiros (`id`; `0` = nenhuma).
   "snap": {"translate": false, "rotate": false},
   "canUndo": true,
   "canRedo": false,
-  "hierarchy": [{"id": 1, "name": "Chão", "depth": 0, "kind": "sprite"}]
+  "hierarchy": [{"id": 1, "name": "Cano", "depth": 0, "kind": "empty", "template": true}]
 }
 ```
 
 `kind` é o ícone da entidade: `sprite`, `camera`, `character`, `light`,
-`particles`, `audio`, `script` ou `empty`.
+`particles`, `audio`, `script`, `text` ou `empty`. `template` marca um
+molde (componente Molde, ele ou um ancestral): fica fora do jogo e serve
+de base para `spawn("Nome")`.
 
 ## Operações
 
 | op | argumentos | resultado |
 |---|---|---|
 | `project.list` | | pastas dos projetos |
-| `project.new` | `name`, `template` (`empty` \| `platformer`) | pasta criada |
+| `project.templates` | | `[{id, title, description}]` — catálogo de exemplos |
+| `project.new` | `name`, `template` (id do catálogo) | pasta criada |
 | `project.open` | `folder` | |
 | `project.ensure` | | pasta aberta ou criada |
 | `project.save` | | |
@@ -60,6 +63,16 @@ Entidades são inteiros (`id`; `0` = nenhuma).
 | `transform.get` | `id` | `{p:[x,y,z], r:[x,y,z], s:[x,y,z]}` (rotação em graus) |
 | `transform.set` | `id`, `p`?, `r`?, `s`? | |
 | `inspector` | `id` | `{id, name, components:[{name,label,category,removable,fields:[{path,type,value,kind,options?}]}]}` |
+
+`kind` do campo diz o editor a usar: `number`, `int`, `bool`, `enum`
+(com `options`), `color` ("#RRGGBB" ou "#RRGGBBAA"), `text`, `bitfield`
+(camadas de colisão), `layer` (grupo de atualização), `texture`, `audio`,
+`material`, `script`, `code`. A rotação do Transform vem em graus.
+`component.set` recusa valores que deixariam a cena sem abrir (por
+exemplo, uma camada que não existe).
+
+| op | argumentos | resultado |
+|---|---|---|
 | `component.catalog` | `id` | componentes que ainda cabem na entidade |
 | `component.add` | `id`, `name` | nomes adicionados (inclui dependências) |
 | `component.remove` | `id`, `name` | |
@@ -84,7 +97,8 @@ Entidades são inteiros (`id`; `0` = nenhuma).
 | `anim.*` | `list`, `read`, `write`, `create`, `delete`, `assign`, `addFrame`, `setMeta`, `addKey`, `keys`, `setKey`, `deleteKey`, `preview`, `previewStop` | |
 | `material.*` | `list`, `read`, `write`, `create`, `delete` | |
 | `audio.preview` / `audio.stop` / `audio.playing` | `name` / / | / / bool |
-| `settings.get` | | grade, passo de física, camadas |
+| `settings.get` | | grade, passo de física, camadas, `game` |
+| `settings.game` | `background` [r,g,b] 0–1?, `orientation` (`portrait` \| `landscape` \| `auto`)?, `controls` (`platformer` \| `tap` \| `none`)? | |
 | `settings.grid` / `settings.physicsDt` / `settings.kinematicSweep` | | |
 | `layer.add` / `layer.set` | `name`, `timeScale`?, `update`/`physics`/`render`? | |
 | `collision.add` / `collision.rename` | `name` / `bit`, `name` | bit novo / |
@@ -94,11 +108,31 @@ Entidades são inteiros (`id`; `0` = nenhuma).
 
 Entidades (`entity.create`): `empty`, `sprite`, `camera`, `ground` (chão
 estático), `physics` (caixa dinâmica), `character` (jogador com
-`jogador.nis`), `particles`, `light`, `audio`. Cada modelo é um único passo
-de desfazer.
+`jogador.nis`), `text`, `particles`, `light`, `audio`. Cada modelo é um
+único passo de desfazer.
 
-Projetos (`project.new`): `empty` (só câmera) e `platformer` (chão,
-plataforma, jogador controlável e câmera que o segue).
+Projetos (`project.new`, listados por `project.templates`):
+
+| id | o que vem pronto | tela / controles |
+|---|---|---|
+| `platformer` | chão, plataformas, jogador que anda e pula, câmera que segue | deitada / botões |
+| `flappy` | pássaro com gravidade, molde "Cano" gerado sem parar, placar, recomeço ao bater | em pé / toque |
+| `boxes` | cada toque solta uma caixa física que cai e empilha, contador | em pé / toque |
+| `empty` | só a câmera | livre / botões |
+
+Os três exemplos jogáveis são testados de ponta a ponta no Linux
+(`[protocol]`): o Voo é jogado por um piloto automático até marcar pontos.
+
+## Ajustes do jogo
+
+Valem para todas as cenas e ficam em `project.goni.json` (chave `game`):
+
+- `background`: cor de fundo no Play;
+- `orientation`: a Activity trava a tela no Play (`portrait`, `landscape`)
+  ou deixa livre (`auto`); no editor a tela é sempre livre;
+- `controls`: o que a interface desenha por cima do jogo — `platformer`
+  (◀ ▶ e pulo), `tap` (uma dica que some; a tela toda vira a ação `tap`)
+  ou `none`.
 
 ## Controles do jogo
 
@@ -109,6 +143,7 @@ Sem configuração própria do projeto, o Play usa estas ações:
 | `left` | x 0–0,2, y 0,6–1 | ←, A |
 | `right` | x 0,2–0,4, y 0,6–1 | →, D |
 | `jump` | x 0,75–1, y 0,6–1 | Espaço, ↑ |
+| `tap` | a tela toda | Espaço, Enter |
 | `up` / `down` | | W, ↑ / S, ↓ |
 
-A interface desenha as zonas de toque por cima do jogo.
+A interface desenha as zonas de toque conforme o ajuste `controls`.

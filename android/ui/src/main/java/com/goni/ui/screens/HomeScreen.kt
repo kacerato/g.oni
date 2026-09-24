@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -49,6 +52,9 @@ import com.goni.ui.components.EmptyState
 import com.goni.ui.components.IconAction
 import com.goni.ui.components.OniButton
 import com.goni.ui.components.OniIcon
+import com.goni.ui.components.drawExampleArt
+import com.goni.ui.components.exampleBackground
+import com.goni.ui.model.ExampleProject
 import com.goni.ui.model.ProjectCard
 import com.goni.ui.model.Sheet
 import com.goni.ui.model.UiActions
@@ -72,7 +78,7 @@ fun HomeScreen(state: UiState, actions: UiActions) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LogoMark(34)
                     Spacer(Modifier.width(10.dp))
-                    Text("G.ONI", style = Oni.type.heading.copy(letterSpacing = 1.5.sp), color = c.text)
+                    Text("G.ONI", style = Oni.type.heading.copy(letterSpacing = 2.sp), color = c.text)
                     Spacer(Modifier.weight(1f))
                     IconAction(OniIcons.Download, onClick = actions::importProject)
                 }
@@ -85,24 +91,29 @@ fun HomeScreen(state: UiState, actions: UiActions) {
                     color = c.textMuted,
                 )
                 Spacer(Modifier.height(22.dp))
-                NewGameCard { state.sheet = Sheet.NewProject }
-                Spacer(Modifier.height(10.dp))
-                if (state.projects.isNotEmpty()) {
-                    Text(
-                        "RECENTES",
-                        style = Oni.type.overline,
-                        color = c.textFaint,
-                        modifier = Modifier.padding(top = 18.dp),
-                    )
+                NewGameCard { state.sheet = Sheet.NewProject() }
+                SectionOverline("EXEMPLOS", Modifier.padding(top = 26.dp, bottom = 10.dp))
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(end = 4.dp),
+            ) {
+                items(state.examples, key = { it.id }) { example ->
+                    ExampleCard(example) { state.sheet = Sheet.NewProject(example.id) }
                 }
             }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            SectionOverline("RECENTES", Modifier.padding(top = 14.dp))
         }
         if (state.projects.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 EmptyState(
                     icon = OniIcons.Gamepad,
                     title = "Nenhum jogo ainda",
-                    message = "Comece por um modelo: o Plataforma 2D já vem com personagem, chão e controles.",
+                    message = "Abra um exemplo acima: o Voo já vem pronto para jogar com um toque.",
                 )
             }
         }
@@ -117,16 +128,59 @@ fun HomeScreen(state: UiState, actions: UiActions) {
 }
 
 @Composable
+private fun SectionOverline(text: String, modifier: Modifier = Modifier) {
+    val c = Oni.colors
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(6.dp).clip(OniShape.pill).background(c.accent))
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = Oni.type.overline, color = c.textFaint)
+    }
+}
+
+@Composable
+private fun ExampleCard(example: ExampleProject, onClick: () -> Unit) {
+    val c = Oni.colors
+    Column(
+        Modifier
+            .width(212.dp)
+            .clip(OniShape.lg)
+            .background(c.s1)
+            .border(1.dp, c.line, OniShape.lg)
+            .clickable(onClick = onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().height(112.dp).clipToBounds().background(exampleBackground(example.id))) {
+            Canvas(Modifier.fillMaxSize()) { drawExampleArt(example.id) }
+        }
+        Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp)) {
+            Text(example.title, style = Oni.type.heading, color = c.text, maxLines = 1)
+            Spacer(Modifier.height(2.dp))
+            Text(
+                example.description,
+                style = Oni.type.caption,
+                color = c.textMuted,
+                maxLines = 2,
+                minLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 fun LogoMark(sizeDp: Int) {
     val c = Oni.colors
     Box(
         Modifier
             .size(sizeDp.dp)
             .clip(OniShape.sm)
-            .background(Brush.linearGradient(listOf(c.accent, Color(0xFFB892FF)))),
+            .background(Brush.linearGradient(c.brand)),
         contentAlignment = Alignment.Center,
     ) {
-        Text("G", color = c.onAccent, fontWeight = FontWeight.Black, fontSize = (sizeDp * 0.52f).sp)
+        Text(
+            "G",
+            color = c.onAccent,
+            style = Oni.type.display.copy(fontSize = (sizeDp * 0.56f).sp, lineHeight = (sizeDp * 0.6f).sp),
+        )
     }
 }
 
@@ -136,33 +190,46 @@ private fun NewGameCard(onClick: () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(132.dp)
+            .height(136.dp)
             .clip(OniShape.lg)
-            .background(Brush.linearGradient(listOf(Color(0xFF26356E), Color(0xFF3B2A6B))))
+            .background(Brush.linearGradient(listOf(Color(0xFF3A1A12), Color(0xFF2A1640), Color(0xFF16163A))))
             .border(1.dp, c.accent.copy(alpha = 0.35f), OniShape.lg)
             .clickable(onClick = onClick),
     ) {
-        Canvas(Modifier.fillMaxSize()) { drawPlatformScene(this, alpha = 0.9f) }
+        Canvas(Modifier.fillMaxSize()) {
+            // Grade de pontos: a "folha em branco" do editor.
+            val step = 22.dp.toPx()
+            var y = step / 2
+            while (y < size.height) {
+                var x = size.width * 0.5f
+                while (x < size.width) {
+                    drawCircle(Color.White.copy(alpha = 0.08f), 1.6f, Offset(x, y))
+                    x += step
+                }
+                y += step
+            }
+            drawPlatformScene(this, alpha = 0.95f)
+        }
         Column(Modifier.padding(20.dp).align(Alignment.CenterStart)) {
             Box(
-                Modifier.size(40.dp).clip(OniShape.md).background(c.accent),
+                Modifier.size(40.dp).clip(OniShape.md).background(Brush.linearGradient(c.brand)),
                 contentAlignment = Alignment.Center,
             ) { OniIcon(OniIcons.Plus, tint = c.onAccent, size = 22.dp) }
             Spacer(Modifier.height(12.dp))
             Text("Novo jogo", style = Oni.type.title, color = Color.White)
-            Text("Vazio ou a partir de um modelo", style = Oni.type.caption, color = Color.White.copy(alpha = 0.7f))
+            Text("Vazio ou a partir de um exemplo", style = Oni.type.caption, color = Color.White.copy(alpha = 0.7f))
         }
     }
 }
 
-/** Ilustração do modelo de plataforma: chão, plataforma e personagem. */
+/** Ilustração do exemplo Plataforma (capa e cartão "Novo jogo"). */
 fun drawPlatformScene(scope: DrawScope, alpha: Float = 1f) = with(scope) {
     val w = size.width
     val h = size.height
-    val ground = Color(0xFF5C6B80).copy(alpha = 0.55f * alpha)
+    val ground = Color(0xFF6B7690).copy(alpha = 0.55f * alpha)
     drawRoundRect(ground, Offset(w * 0.6f, h * 0.76f), Size(w * 0.36f, h * 0.12f), CornerRadius(8f))
     drawRoundRect(ground, Offset(w * 0.78f, h * 0.44f), Size(w * 0.16f, h * 0.07f), CornerRadius(8f))
-    drawRoundRect(Color(0xFF8AB0FF).copy(alpha = alpha), Offset(w * 0.66f, h * 0.54f), Size(h * 0.2f, h * 0.2f), CornerRadius(10f))
+    drawRoundRect(Color(0xFFFF7A45).copy(alpha = alpha), Offset(w * 0.66f, h * 0.54f), Size(h * 0.2f, h * 0.2f), CornerRadius(10f))
     drawCircle(Color(0xFFF4BE5E).copy(alpha = 0.8f * alpha), radius = h * 0.06f, center = Offset(w * 0.88f, h * 0.22f))
 }
 
@@ -216,10 +283,15 @@ private fun GeneratedCover(name: String) {
 }
 
 @Composable
-fun NewProjectSheetContent(onCreate: (String, String) -> Unit) {
+fun NewProjectSheetContent(
+    examples: List<ExampleProject>,
+    initialTemplate: String,
+    onCreate: (String, String) -> Unit,
+) {
     val c = Oni.colors
     var name by remember { mutableStateOf("") }
-    var template by remember { mutableStateOf("platformer") }
+    var template by remember { mutableStateOf(initialTemplate) }
+    val picked = examples.firstOrNull { it.id == template }
     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
         Text("Nome", style = Oni.type.label, color = c.textMuted)
         Spacer(Modifier.height(6.dp))
@@ -227,40 +299,37 @@ fun NewProjectSheetContent(onCreate: (String, String) -> Unit) {
             value = name,
             onCommit = { name = it },
             onChange = { name = it },
-            placeholder = "Meu jogo",
+            placeholder = picked?.title ?: "Meu jogo",
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(18.dp))
-        Text("Modelo", style = Oni.type.label, color = c.textMuted)
+        Text("Começar de", style = Oni.type.label, color = c.textMuted)
         Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TemplateCard(
-                title = "Plataforma 2D",
-                subtitle = "Personagem que anda e pula, chão e câmera",
-                selected = template == "platformer",
-                modifier = Modifier.weight(1f),
-                onClick = { template = "platformer" },
-            ) { drawPlatformScene(this) }
-            TemplateCard(
-                title = "Vazio",
-                subtitle = "Só uma câmera. Você monta o resto",
-                selected = template == "empty",
-                modifier = Modifier.weight(1f),
-                onClick = { template = "empty" },
-            ) {
-                drawRoundRect(
-                    Color(0xFF8E97AA).copy(alpha = 0.5f),
-                    Offset(size.width * 0.3f, size.height * 0.3f),
-                    Size(size.width * 0.4f, size.height * 0.4f),
-                    CornerRadius(10f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f),
-                )
+        for (row in examples.chunked(2)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                for (ex in row) {
+                    TemplateCard(
+                        id = ex.id,
+                        title = ex.title,
+                        selected = template == ex.id,
+                        modifier = Modifier.weight(1f),
+                        onClick = { template = ex.id },
+                    )
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
+            Spacer(Modifier.height(10.dp))
         }
-        Spacer(Modifier.height(20.dp))
+        Text(
+            picked?.description.orEmpty(),
+            style = Oni.type.caption,
+            color = c.textMuted,
+            minLines = 2,
+        )
+        Spacer(Modifier.height(16.dp))
         OniButton(
             "Criar jogo",
-            onClick = { onCreate(name.trim().ifEmpty { "Meu jogo" }, template) },
+            onClick = { onCreate(name.trim().ifEmpty { picked?.title ?: "Meu jogo" }, template) },
             icon = OniIcons.Plus,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -269,12 +338,11 @@ fun NewProjectSheetContent(onCreate: (String, String) -> Unit) {
 
 @Composable
 private fun TemplateCard(
+    id: String,
     title: String,
-    subtitle: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    art: DrawScope.() -> Unit,
 ) {
     val c = Oni.colors
     Column(
@@ -283,14 +351,15 @@ private fun TemplateCard(
             .background(if (selected) c.accentSoft else c.s2)
             .border(if (selected) 2.dp else 1.dp, if (selected) c.accent else c.line, OniShape.lg)
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(8.dp),
     ) {
-        Box(Modifier.fillMaxWidth().height(76.dp).clip(OniShape.md).background(c.bg)) {
-            Canvas(Modifier.fillMaxSize(), onDraw = art)
+        Box(Modifier.fillMaxWidth().height(70.dp).clip(OniShape.md).background(exampleBackground(id))) {
+            Canvas(Modifier.fillMaxSize()) { drawExampleArt(id) }
         }
-        Spacer(Modifier.height(10.dp))
-        Text(title, style = Oni.type.bodyStrong, color = c.text)
-        Text(subtitle, style = Oni.type.caption, color = c.textMuted, minLines = 2)
+        Row(Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = Oni.type.bodyStrong, color = c.text, maxLines = 1, modifier = Modifier.weight(1f))
+            if (selected) OniIcon(OniIcons.Check, tint = c.accent, size = 16.dp)
+        }
     }
 }
 

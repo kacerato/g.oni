@@ -46,9 +46,20 @@ O módulo `:ui` não depende do motor, então as telas renderizam na JVM com
 Paparazzi, sem aparelho:
 
 ```bash
-./gradlew :ui:recordPaparazziDebug
+ANDROID_HOME=/caminho/do/android-sdk ./gradlew :ui:recordPaparazziDebug
 # android/ui/src/test/snapshots/images/*.png
 ```
+
+O Paparazzi procura a plataforma 34 pelo `ANDROID_HOME`, não pelo
+`local.properties`.
+
+## Tema e fontes
+
+`ui/theme/Theme.kt` concentra cores (`OniColors`), tipografia (`OniType`)
+e formas (`OniShape`). As fontes ficam em `ui/src/main/res/font`: Space
+Grotesk (títulos), Inter (texto) e JetBrains Mono (código). São cortes
+estáticos, só com latim, gerados das variáveis do Google Fonts; as
+licenças OFL estão em `ui/licenses/`.
 
 Os dados de exemplo ficam em `ui/src/test/java/com/goni/ui/ScreenshotTest.kt`.
 

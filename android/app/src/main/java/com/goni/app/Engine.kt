@@ -52,7 +52,13 @@ class Engine(val handle: Long) {
         val nodes = ArrayList<HierarchyNode>(list.length())
         for (i in 0 until list.length()) {
             val n = list.getJSONObject(i)
-            nodes += HierarchyNode(n.optLong("id"), n.optString("name"), n.optInt("depth"), n.optString("kind"))
+            nodes += HierarchyNode(
+                n.optLong("id"),
+                n.optString("name"),
+                n.optInt("depth"),
+                n.optString("kind"),
+                template = n.optBoolean("template"),
+            )
         }
         return EditorSnapshot(
             projectName = project?.optString("name").orEmpty(),
@@ -68,6 +74,8 @@ class Engine(val handle: Long) {
             snapRotate = snap?.optBoolean("rotate") ?: false,
             canUndo = j.optBoolean("canUndo"),
             canRedo = j.optBoolean("canRedo"),
+            controls = project?.optString("controls")?.ifEmpty { null } ?: "platformer",
+            orientation = project?.optString("orientation")?.ifEmpty { null } ?: "auto",
             hierarchy = nodes,
         )
     }

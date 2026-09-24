@@ -31,6 +31,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -344,7 +349,11 @@ private fun PlayOverlay(state: UiState, actions: UiActions) {
                 )
             }
         }
-        TouchControls(Modifier.align(Alignment.BottomCenter))
+        when (snap.controls) {
+            "platformer" -> TouchControls(Modifier.align(Alignment.BottomCenter))
+            "tap" -> TapHint(Modifier.align(Alignment.BottomCenter))
+            else -> {}
+        }
         if (snap.paused) {
             Box(
                 Modifier.align(Alignment.Center).clip(OniShape.lg).background(c.s1.copy(alpha = 0.9f)).padding(horizontal = 22.dp, vertical = 14.dp),
@@ -367,6 +376,34 @@ private fun TouchControls(modifier: Modifier) {
         ControlGhost(OniIcons.ChevronLeft, Modifier.align(Alignment.BottomStart).offset(x = w * 0.1f - 34.dp, y = -(h * 0.5f) + 34.dp))
         ControlGhost(OniIcons.ChevronRight, Modifier.align(Alignment.BottomStart).offset(x = w * 0.3f - 34.dp, y = -(h * 0.5f) + 34.dp))
         ControlGhost(OniIcons.ArrowUp, Modifier.align(Alignment.BottomEnd).offset(x = -(w * 0.125f) + 34.dp, y = -(h * 0.5f) + 34.dp))
+    }
+}
+
+/** Jogos de toque único: uma dica que some sozinha, sem cobrir o jogo. */
+@Composable
+private fun TapHint(modifier: Modifier) {
+    var visible by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2500)
+        visible = false
+    }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = visible,
+        modifier = modifier.navigationBarsPadding().padding(bottom = 48.dp),
+        exit = androidx.compose.animation.fadeOut(),
+    ) {
+        Row(
+            Modifier
+                .clip(OniShape.pill)
+                .background(Color.Black.copy(alpha = 0.45f))
+                .border(1.dp, Color.White.copy(alpha = 0.2f), OniShape.pill)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OniIcon(OniIcons.Tap, tint = Color.White, size = 18.dp)
+            Spacer(Modifier.width(8.dp))
+            Text("Toque na tela para jogar", style = Oni.type.label, color = Color.White)
+        }
     }
 }
 

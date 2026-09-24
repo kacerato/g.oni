@@ -135,6 +135,14 @@ object OniIcons {
     val ArrowUp = icon("arrow-up", "m5 12 7-7 7 7", "M12 19V5")
 
     /** Ícone da entidade pelo tipo informado pelo protocolo. */
+    val Text = icon("text", "M5 7V5h14v2", "M12 5v14", "M9 19h6")
+    val Stamp = icon("stamp", "M4 15h16v5H4z", "M9 15v-4a3 3 0 1 1 6 0v4")
+    val Palette = icon("palette", "M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1-.9-1.4-.9-2.4s.8-1.6 1.8-1.6H17a4 4 0 0 0 4-4c0-4.7-4-8.4-9-8.4z", circle(7.5f, 11f, 1f), circle(10.5f, 7f, 1f), circle(15f, 7.5f, 1f))
+    val Portrait = icon("portrait", "M7 3h10v18H7z", "M11 18h2")
+    val Landscape = icon("landscape", "M3 7h18v10H3z", "M18 11v2")
+    val Tap = icon("tap", circle(12f, 12f, 3f), circle(12f, 12f, 8f))
+    val Auto = icon("auto", "M4 12a8 8 0 0 1 14-5.3", "M20 12a8 8 0 0 1-14 5.3", "M18 3v4h-4", "M6 21v-4h4")
+
     fun forKind(kind: String): ImageVector = when (kind) {
         "sprite" -> Image
         "camera" -> Camera
@@ -143,6 +151,8 @@ object OniIcons {
         "particles" -> Sparkles
         "audio" -> Speaker
         "script" -> Code
+        "text" -> Text
+        "template" -> Stamp
         else -> Cube
     }
 }
