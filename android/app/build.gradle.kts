@@ -48,6 +48,11 @@ android {
                     "-DANDROID_STL=c++_shared",
                     "-DCMAKE_BUILD_TYPE=Release",
                 )
+                // Ambientes sem acesso aos tarballs do FetchContent podem
+                // apontar fontes locais (ex.: -DFETCHCONTENT_SOURCE_DIR_X=…).
+                System.getenv("GONI_CMAKE_ARGS")?.split(' ')
+                    ?.filter { it.isNotBlank() }
+                    ?.let { arguments += it }
             }
         }
     }

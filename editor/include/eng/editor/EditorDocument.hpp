@@ -151,6 +151,8 @@ public:
     /// Carrega (LIMPA a cena atual e preenche — SceneSerializer::load em
     /// cena vazia; ADR-033).
     [[nodiscard]] eng::core::Result<void> loadScene(std::string_view scenePath);
+    /// Cenas salvas do projeto aberto (nomes relativos a scenes/).
+    [[nodiscard]] eng::core::Result<std::vector<std::string>> sceneList() const;
 
     // --- P4.5: undo/redo (command pattern por SNAPSHOTS de cena) ------------
     //
@@ -171,6 +173,11 @@ public:
     /// Há passos a refazer?
     [[nodiscard]] bool canRedo() const noexcept { return !redoStack_.empty(); }
     /// Restaura o snapshot anterior (erro explícito em Play/vazio).
+    /// Agrupa várias operações num único passo de desfazer (ex.: criar uma
+    /// entidade a partir de um modelo = criar + componentes + campos).
+    /// Aninhável; só o grupo mais externo grava o snapshot.
+    void beginHistoryGroup(std::string_view label);
+    void endHistoryGroup() noexcept;
     [[nodiscard]] eng::core::Result<void> undo();
     /// Restaura o estado anterior a um undo (erro explícito em Play/vazio).
     [[nodiscard]] eng::core::Result<void> redo();
@@ -851,7 +858,10 @@ private:
 
     std::deque<HistoryEntry> undoStack_;
     std::deque<HistoryEntry> redoStack_;
+    /// Componentes ligados ao script `name` recebem a fonte nova.
+    void syncLinkedScripts(std::string_view name, std::string_view content);
     bool suppressHistory_ = false;
+    int historyGroupDepth_ = 0;
     /// P4.5: undo do GESTO de gizmo — armado no begin, limpo no end
     /// (drag sem mudança real remove a própria entrada).
     bool gizmoUndoArmed_ = false;

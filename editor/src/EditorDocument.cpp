@@ -146,6 +146,44 @@ constexpr std::string_view kLastSceneFile{".goni_last_scene"};
     return true;
 }
 
+/// Controles padrão do jogo: zonas de toque (frações da tela, origem no
+/// canto superior esquerdo) + teclado. A UI desenha as mesmas zonas.
+[[nodiscard]] eng::input::ActionBindings defaultGameBindings()
+{
+    using eng::input::ActionSource;
+    using eng::input::Key;
+    eng::input::ActionBindings b;
+    auto zone = [](float x0, float y0, float x1, float y1) {
+        ActionSource s;
+        s.kind = ActionSource::Kind::TouchZone;
+        s.zoneX0 = x0;
+        s.zoneY0 = y0;
+        s.zoneX1 = x1;
+        s.zoneY1 = y1;
+        return s;
+    };
+    auto key = [](Key k) {
+        ActionSource s;
+        s.kind = ActionSource::Kind::Key;
+        s.key = k;
+        return s;
+    };
+    b.bind("left", zone(0.f, 0.6f, 0.2f, 1.f));
+    b.bind("left", key(Key::Left));
+    b.bind("left", key(Key::A));
+    b.bind("right", zone(0.2f, 0.6f, 0.4f, 1.f));
+    b.bind("right", key(Key::Right));
+    b.bind("right", key(Key::D));
+    b.bind("jump", zone(0.75f, 0.6f, 1.f, 1.f));
+    b.bind("jump", key(Key::Space));
+    b.bind("jump", key(Key::Up));
+    b.bind("up", key(Key::Up));
+    b.bind("up", key(Key::W));
+    b.bind("down", key(Key::Down));
+    b.bind("down", key(Key::S));
+    return b;
+}
+
 [[nodiscard]] eng::fs::Path scenesRootOf(
     const eng::project::ProjectFile& project)
 {
@@ -903,11 +941,17 @@ namespace {
     if (type == "eng::editor::NiScriptComponent") {
         // P4.7.0 Bloco 6: opt-out do logic LOD (additive — ausente =
         // false: o script PARTICIPA do LOD quando o setting liga).
+        bool changed = false;
         if (!data.find("lodOptOut").has_value()) {
             data.set("lodOptOut", JsonValue::boolean(false));
-            return true;
+            changed = true;
         }
-        return false;
+        // Script ligado a arquivo (ausente = fonte embutida, como antes).
+        if (!data.find("scriptAsset").has_value()) {
+            data.set("scriptAsset", JsonValue::string(""));
+            changed = true;
+        }
+        return changed;
     }
     if (type != "eng::tick::CameraData") {
         return false;
@@ -2042,6 +2086,22 @@ Result<void> EditorDocument::play()
         return makeUnexpected(
             documentError(StatusCode::InvalidState, "já em Play"));
     }
+    if (runtimeInput_.bindings().actions().empty()) {
+        runtimeInput_.setBindings(defaultGameBindings());
+    }
+    // Scripts ligados a arquivo rodam a versão atual do arquivo.
+    if (assets_ != nullptr) {
+        scene_->world().each<eng::editor::NiScriptComponent>(
+            [&](eng::ecs::Entity, eng::editor::NiScriptComponent& script) {
+                if (script.scriptAsset.empty()) {
+                    return;
+                }
+                auto content = scriptRead(script.scriptAsset);
+                if (content.ok()) {
+                    script.source = std::move(content.value());
+                }
+            });
+    }
     // P4.7.0 Bloco 1: validação de contratos ANTES de entrar em Play —
     // componente inválido (ex.: Collider.radius negativo introduzido por
     // caminho externo ao Inspector) NÃO entra em jogo: erro preciso com
@@ -2693,7 +2753,28 @@ Result<void> EditorDocument::scriptWrite(std::string_view name,
             return makeUnexpected(registered.error());
         }
     }
+    syncLinkedScripts(name, content);
     return {};
+}
+
+void EditorDocument::syncLinkedScripts(std::string_view name,
+                                       std::string_view content)
+{
+    if (mode_ != Mode::Edit || !scene_.has_value()) {
+        return;
+    }
+    bool touched = false;
+    scene_->world().each<eng::editor::NiScriptComponent>(
+        [&](eng::ecs::Entity, eng::editor::NiScriptComponent& script) {
+            if (script.scriptAsset == name && script.source != content) {
+                script.source = std::string(content);
+                touched = true;
+            }
+        });
+    if (touched) {
+        sceneDirty_ = true;
+        ++selectionRevision_;
+    }
 }
 
 Result<void> EditorDocument::scriptCreate(std::string_view rawName)
@@ -2789,7 +2870,12 @@ Result<void> EditorDocument::scriptAssign(eng::ecs::Entity entity,
     if (written.isError()) {
         return makeUnexpected(written.error());
     }
+    if (auto* script =
+            scene_->world().get<eng::editor::NiScriptComponent>(entity)) {
+        script->scriptAsset = std::string(name);
+    }
     sceneDirty_ = true;
+    ++selectionRevision_;
     ENG_INFO("script anexado: {} ({} bytes) → entidade {}", name,
              content.value().size(), entity.index);
     return {};
@@ -3970,8 +4056,8 @@ bool EditorDocument::captureScene(std::string& out) noexcept
 
 bool EditorDocument::pushHistory(std::string_view label) noexcept
 {
-    if (suppressHistory_) {
-        return false;  // op aninhada (createSprite→createEntity etc.)
+    if (suppressHistory_ || historyGroupDepth_ > 0) {
+        return false;  // op aninhada ou dentro de um grupo
     }
     if (mode_ != Mode::Edit || !scene_.has_value()) {
         return false;
@@ -4002,6 +4088,21 @@ bool EditorDocument::pushHistory(std::string_view label) noexcept
     }
     redoStack_.clear();
     return true;
+}
+
+void EditorDocument::beginHistoryGroup(std::string_view label)
+{
+    if (historyGroupDepth_ == 0) {
+        (void)pushHistory(label);
+    }
+    ++historyGroupDepth_;
+}
+
+void EditorDocument::endHistoryGroup() noexcept
+{
+    if (historyGroupDepth_ > 0) {
+        --historyGroupDepth_;
+    }
 }
 
 void EditorDocument::clearHistory() noexcept
@@ -4179,6 +4280,30 @@ void EditorDocument::viewportFit(TextureCache* textures)
     cam.posY = (minY + maxY) * 0.5f;
     cam.zoom = std::clamp(zoom, Viewport::kMinZoom, Viewport::kMaxZoom);
     ++selectionRevision_;  // Inspector/viewport sincronizam
+}
+
+Result<std::vector<std::string>> EditorDocument::sceneList() const
+{
+    if (!project_.has_value()) {
+        return makeUnexpected(
+            documentError(StatusCode::InvalidState, "sem projeto aberto"));
+    }
+    auto listed = fs_->list(scenesRootOf(*project_), false);
+    if (listed.isError()) {
+        return makeUnexpected(listed.error());
+    }
+    std::vector<std::string> names;
+    for (const auto& entry : listed.value()) {
+        if (entry.isDirectory) {
+            continue;
+        }
+        std::string name = entry.path.filename().str();
+        if (name.size() > 5 && name.ends_with(".json")) {
+            names.push_back(std::move(name));
+        }
+    }
+    std::sort(names.begin(), names.end());
+    return names;
 }
 
 }  // namespace eng::editor

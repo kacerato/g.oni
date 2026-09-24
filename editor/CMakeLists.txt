@@ -15,6 +15,7 @@
 
 add_library(eng_editor STATIC
     src/EditorDocument.cpp
+    src/EditorProtocol.cpp
     src/ProjectZip.cpp
     src/Gizmo.cpp
     src/Inspector.cpp
@@ -77,6 +78,7 @@ add_executable(eng_editor_tests
     tests/EditorTests.cpp
     tests/ContractTests.cpp
     tests/PerfTests.cpp
+    tests/ProtocolTests.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../android/app/src/main/cpp/EditorJni.cpp")
 target_include_directories(eng_editor_tests BEFORE PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/jni_shim"
@@ -85,6 +87,8 @@ target_link_libraries(eng_editor_tests PRIVATE
     eng::editor
     eng::fs
     Catch2::Catch2WithMain)
+target_compile_definitions(eng_editor_tests PRIVATE
+    GONI_NATIVE_BRIDGE_KT="${CMAKE_CURRENT_SOURCE_DIR}/../android/app/src/main/java/com/goni/app/NativeBridge.kt")
 eng_apply_test_policy(eng_editor_tests)
 set_target_properties(eng_editor_tests PROPERTIES ENABLE_EXPORTS ON)
 add_test(NAME editor COMMAND eng_editor_tests)

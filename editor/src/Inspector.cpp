@@ -340,13 +340,11 @@ template <typename Ptr>
         return "int";
     }
     if (type.name == "string") {
-        if (property.hint == "texture") {
-            return "texture";
-        }
-        // P2 (§12): mesmo mecanismo do hint texture — o picker lista os
-        // WAVs de assets/audio no host.
-        if (property.hint == "audio") {
-            return "audio";
+        // Hint de string = referência a asset do projeto (texture, audio,
+        // material, script) ou forma de edição (code): a UI escolhe o
+        // seletor pelo kind.
+        if (!property.hint.empty() && !property.hint.starts_with("color:")) {
+            return property.hint;
         }
         return "text";
     }

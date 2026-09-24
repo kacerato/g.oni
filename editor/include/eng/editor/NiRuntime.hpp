@@ -157,6 +157,8 @@ private:
 
     eng::ni::NiNativeTable natives_;
     eng::ni::NiBindingTable bindings_;
+    /// Estado dos adaptadores do catálogo (o binding guarda ponteiro cru).
+    std::vector<std::shared_ptr<void>> bindingState_;
     eng::ni::NiInstanceSet set_;
     eng::ni::NiVm vm_;
     std::unique_ptr<HostImpl> host_;

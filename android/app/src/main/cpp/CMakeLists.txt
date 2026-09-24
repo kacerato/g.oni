@@ -37,13 +37,8 @@ add_subdirectory("${GONI_ROOT}/engine" engine)
 add_subdirectory("${GONI_ROOT}/editor" editor)
 
 add_library(goni SHARED
-    GoniJni.cpp
     EditorJni.cpp
-    "${GONI_ROOT}/android/runtime/src/AndroidRuntime.cpp"
 )
-target_include_directories(goni PRIVATE
-    "${GONI_ROOT}/android/runtime/include"
-    "${GONI_ROOT}/android/runtime/src")
 target_link_libraries(goni PRIVATE
     eng::rhi
     eng::rhi::vulkan

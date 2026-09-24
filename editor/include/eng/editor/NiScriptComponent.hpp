@@ -34,11 +34,16 @@ struct NiScriptComponent {
     /// SEMPRE. Additive (default false = participa) — cenas antigas
     /// migram pelo pre-pass (mesmo padrão da câmera do B4).
     bool lodOptOut = false;
+
+    /// Script do projeto ligado a este componente (nome em assets/scripts).
+    /// Vazio = fonte embutida. Salvar o arquivo atualiza `source`.
+    std::string scriptAsset;
 };
 
 } // namespace eng::editor
 
 ENG_REFLECT_BEGIN(eng::editor::NiScriptComponent)
-    ENG_REFLECT_FIELD(source)
+    ENG_REFLECT_FIELD_HINT(source, "code")
     ENG_REFLECT_FIELD(lodOptOut)
+    ENG_REFLECT_FIELD_HINT(scriptAsset, "script")
 ENG_REFLECT_END()

@@ -27,11 +27,8 @@
 #include "eng/rhi/vulkan/VulkanBackend.hpp"
 
 #ifdef __ANDROID__
-// Caminho RELATIVO a este TU: o include dir de android/runtime/src é do
-// alvo goni (FASE 7), não do eng_editor — o caminho explícito vale nos
-// dois builds sem acoplar CMake (no Linux o preprocessor remove).
 #include <android/native_window.h>
-#include "../../android/runtime/src/LogcatSink.hpp"
+#include "LogcatSink.hpp"
 #endif
 
 namespace eng::editor {

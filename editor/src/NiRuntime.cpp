@@ -442,6 +442,11 @@ bool worldValid(void* user, eng::ecs::Entity e)
     return static_cast<eng::ecs::World*>(user)->valid(e);
 }
 
+bool catalogValid(void* user, eng::ecs::Entity e)
+{
+    return static_cast<const CatalogFetch*>(user)->world->valid(e);
+}
+
 } // namespace
 
 void NiRuntime::start(eng::scene::Scene& runtimeScene)
@@ -519,9 +524,10 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
         auto fetch = std::make_shared<CatalogFetch>();
         fetch->world = world;
         fetch->entry = &entry;
+        bindingState_.push_back(fetch);
         (void)eng::ni::niAddReflectionBinding(
             bindings_, typeName, typeName, &catalogFetchC, &catalogFetchM,
-            fetch.get(), "", &worldValid);
+            fetch.get(), "", &catalogValid);
         // P4.7.0 Bloco 1: apelido do CONTRATO (fonte única — o mesmo
         // registro alimenta Inspector e scripts) e o legado (última
         // parte do nome canônico em minúscula) CONTINUA valendo —
@@ -546,9 +552,10 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
             auto fetch2 = std::make_shared<CatalogFetch>();
             fetch2->world = world;
             fetch2->entry = &entry;
+            bindingState_.push_back(fetch2);
             (void)eng::ni::niAddReflectionBinding(
                 bindings_, *candidate, typeName, &catalogFetchC,
-                &catalogFetchM, fetch2.get(), "", &worldValid);
+                &catalogFetchM, fetch2.get(), "", &catalogValid);
         }
     }
 
@@ -672,6 +679,7 @@ void NiRuntime::shutdown() noexcept
     }
     set_.clear();
     bindings_ = eng::ni::NiBindingTable{};
+    bindingState_.clear();
     natives_ = eng::ni::NiNativeTable{};
     // P4.7.0 Bloco 1: cancela as inscrições de eventos ANTES de soltar a
     // cena (Subscription nunca sobrevive ao bus — ADR-022).

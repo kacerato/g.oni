@@ -20,6 +20,7 @@
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -723,7 +724,11 @@ TEST_CASE("editor: scriptAssign anexa fonte e PLAY roda o script (P0-7)",
     const auto* sourceField = fieldByPath(fields, "source");
     REQUIRE(sourceField != nullptr);
     CHECK(sourceField->value == src);
-    CHECK(sourceField->kind == "text");
+    CHECK(sourceField->kind == "code");
+    const auto* assetField = fieldByPath(fields, "scriptAsset");
+    REQUIRE(assetField != nullptr);
+    CHECK(assetField->value == "Andar.nis");
+    CHECK(assetField->kind == "script");
 
     // PLAY: compila e roda o up update (o mesmo caminho da FASE 11).
     REQUIRE(f.doc->play().ok());
@@ -7980,179 +7985,43 @@ TEST_CASE("p45: viewportFit enquadra a cena (e a seleção)", "[p45]")
 }
 
 // =============================================================================
-// P4.5.2 — Contrato de vinculação JNI: EditorJni.kt ⇄ símbolos C (dlsym)
+// Contrato JNI: NativeBridge.kt ⇄ símbolos C (dlsym)
 //
-// O TU Android EditorJni.cpp está compilado NESTE executável (ver
-// editor/CMakeLists.txt: shim hermético tests/jni_shim, ENABLE_EXPORTS).
-// dlsym(RTLD_DEFAULT, …) procura cada símbolo esperado na tabela dinâmica —
-// a mesma resolução nome→símbolo que o ART faz no device. Falha aqui =
-// função SEM implementação, FORA de extern "C" (nome C++ manglado
-// _Z…Java_com_…) ou sem JNIEXPORT — exatamente o crash de arranque do C33
-// (UnsatisfiedLinkError: nativeEditorGetSnapTranslate em buildUi).
-//
-// A lista abaixo É o contrato: 1:1 com as `external fun` de EditorJni.kt.
-// Para adicionar uma função nova: (1) EditorJni.kt, (2) implementação em
-// EditorJni.cpp DENTRO do bloco extern "C" (fecho é a ÚLTIMA linha do TU),
-// (3) símbolo aqui. Regenerável com scripts/jni_binding_matrix.py.
+// O TU Android EditorJni.cpp está compilado NESTE executável (shim
+// tests/jni_shim, ENABLE_EXPORTS). Cada `external fun` do Kotlin precisa de
+// um símbolo Java_com_goni_app_NativeBridge_<nome> resolvível por dlsym — a
+// mesma resolução que o ART faz no aparelho. A lista é lida do próprio
+// arquivo Kotlin: não há cópia para manter em sincronia.
 // =============================================================================
 
-TEST_CASE("JNI symbol contract — cada external fun de EditorJni.kt resolve por dlsym", "[jni][contract]")
+TEST_CASE("JNI: cada external fun de NativeBridge.kt resolve por dlsym",
+          "[jni][contract]")
 {
-static constexpr const char* kExpectedJniSymbols[] = {
-    "Java_com_goni_runtime_EditorJni_nativeEditorAddCollisionLayer",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAddComponent",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAddableComponents",
-    "Java_com_goni_runtime_EditorJni_nativeEditorComponentCategories",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationAddFrame",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationAssign",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationAddKey",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationCreate",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationKeyDelete",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationKeyList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationKeySet",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationDelete",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationRead",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationSetMeta",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAnimationWrite",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetCategories",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetDelete",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetImageInfo",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetImport",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetMove",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAssetRename",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAudioPreview",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAudioPreviewPlaying",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAudioPreviewStop",
-    "Java_com_goni_runtime_EditorJni_nativeEditorAudioStatus",
-    "Java_com_goni_runtime_EditorJni_nativeEditorCanRedo",
-    "Java_com_goni_runtime_EditorJni_nativeEditorCanUndo",
-    "Java_com_goni_runtime_EditorJni_nativeEditorComponentCatalog",
-    "Java_com_goni_runtime_EditorJni_nativeEditorComponentFields",
-    "Java_com_goni_runtime_EditorJni_nativeEditorCreate",
-    "Java_com_goni_runtime_EditorJni_nativeEditorCreateEntity",
-    "Java_com_goni_runtime_EditorJni_nativeEditorCreateSprite",
-    "Java_com_goni_runtime_EditorJni_nativeEditorCollisionLayerList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorDeleteEntity",
-    "Java_com_goni_runtime_EditorJni_nativeEditorDestroy",
-    "Java_com_goni_runtime_EditorJni_nativeEditorDumpState",
-    "Java_com_goni_runtime_EditorJni_nativeEditorDuplicateEntity",
-    "Java_com_goni_runtime_EditorJni_nativeEditorEnsureProject",
-    "Java_com_goni_runtime_EditorJni_nativeEditorEntityComponents",
-    "Java_com_goni_runtime_EditorJni_nativeEditorExportProjectZip",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGameTouch",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGetGrid",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGetSnapRotate",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGetSnapTranslate",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGetTool",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGetTransform",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGizmoDragBegin",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGizmoDragEnd",
-    "Java_com_goni_runtime_EditorJni_nativeEditorGizmoDragTo",
-    "Java_com_goni_runtime_EditorJni_nativeEditorHasProject",
-    "Java_com_goni_runtime_EditorJni_nativeEditorHierarchy",
-    "Java_com_goni_runtime_EditorJni_nativeEditorImportProjectZip",
-    "Java_com_goni_runtime_EditorJni_nativeEditorIsPaused",
-    "Java_com_goni_runtime_EditorJni_nativeEditorIsPlaying",
-    "Java_com_goni_runtime_EditorJni_nativeEditorLastError",
-    "Java_com_goni_runtime_EditorJni_nativeEditorLayerAdd",
-    "Java_com_goni_runtime_EditorJni_nativeEditorLayerList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorLayerSetParticipation",
-    "Java_com_goni_runtime_EditorJni_nativeEditorLayerSetTimeScale",
-    "Java_com_goni_runtime_EditorJni_nativeEditorListAudio",
-    "Java_com_goni_runtime_EditorJni_nativeEditorListMaterials",
-    "Java_com_goni_runtime_EditorJni_nativeEditorListProjects",
-    "Java_com_goni_runtime_EditorJni_nativeEditorListTextures",
-    "Java_com_goni_runtime_EditorJni_nativeEditorLoadScene",
-    "Java_com_goni_runtime_EditorJni_nativeEditorMaterialCreate",
-    "Java_com_goni_runtime_EditorJni_nativeEditorMaterialDelete",
-    "Java_com_goni_runtime_EditorJni_nativeEditorMaterialList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorMaterialRead",
-    "Java_com_goni_runtime_EditorJni_nativeEditorMaterialWrite",
-    "Java_com_goni_runtime_EditorJni_nativeEditorMoveEntity",
-    "Java_com_goni_runtime_EditorJni_nativeEditorNewProject",
-    "Java_com_goni_runtime_EditorJni_nativeEditorNewScene",
-    "Java_com_goni_runtime_EditorJni_nativeEditorOnPause",
-    "Java_com_goni_runtime_EditorJni_nativeEditorOnResume",
-    "Java_com_goni_runtime_EditorJni_nativeEditorOpenProject",
-    "Java_com_goni_runtime_EditorJni_nativeEditorPhysicsDt",
-    "Java_com_goni_runtime_EditorJni_nativeEditorPhysicsSetDt",
-    "Java_com_goni_runtime_EditorJni_nativeEditorPlay",
-    "Java_com_goni_runtime_EditorJni_nativeEditorPreviewStart",
-    "Java_com_goni_runtime_EditorJni_nativeEditorPreviewStop",
-    "Java_com_goni_runtime_EditorJni_nativeEditorPreviewing",
-    "Java_com_goni_runtime_EditorJni_nativeEditorProjectFolder",
-    "Java_com_goni_runtime_EditorJni_nativeEditorProjectName",
-    "Java_com_goni_runtime_EditorJni_nativeEditorRedo",
-    "Java_com_goni_runtime_EditorJni_nativeEditorRemoveComponent",
-    "Java_com_goni_runtime_EditorJni_nativeEditorRenameEntity",
-    "Java_com_goni_runtime_EditorJni_nativeEditorRenderFrame",
-    "Java_com_goni_runtime_EditorJni_nativeEditorReparentEntity",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSaveProject",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSaveScene",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSceneDirty",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptAssign",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptCompile",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptCreate",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptDelete",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptList",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptRead",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptStats",
-    "Java_com_goni_runtime_EditorJni_nativeEditorScriptWrite",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSelect",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSelection",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSelectionRevision",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetBackend",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetCollisionLayerName",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetComponentField",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetGrid",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetGameViewportSize",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetPaused",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetProjectName",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetSnap",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetTool",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetTransform",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSetUiScale",
-    "Java_com_goni_runtime_EditorJni_nativeEditorStop",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSurfaceChanged",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSurfaceCreated",
-    "Java_com_goni_runtime_EditorJni_nativeEditorSurfaceDestroyed",
-    "Java_com_goni_runtime_EditorJni_nativeEditorUndo",
-    "Java_com_goni_runtime_EditorJni_nativeEditorViewportFit",
-    "Java_com_goni_runtime_EditorJni_nativeEditorViewportPan",
-    "Java_com_goni_runtime_EditorJni_nativeEditorViewportTap",
-    "Java_com_goni_runtime_EditorJni_nativeEditorViewportZoom",
-    "Java_com_goni_runtime_EditorJni_nativeStartupHasCrashReport",
-    "Java_com_goni_runtime_EditorJni_nativeStartupInit",
-    "Java_com_goni_runtime_EditorJni_nativeStartupMark",
-    "Java_com_goni_runtime_EditorJni_nativeWatchdogArm",
-    "Java_com_goni_runtime_EditorJni_nativeWatchdogEvaluate",
-    "Java_com_goni_runtime_EditorJni_nativeWatchdogHeartbeat",
-};
+    std::ifstream kt(GONI_NATIVE_BRIDGE_KT);
+    REQUIRE(kt.good());
+    std::vector<std::string> names;
+    std::string line;
+    while (std::getline(kt, line)) {
+        const auto pos = line.find("external fun ");
+        if (pos == std::string::npos) {
+            continue;
+        }
+        const auto begin = pos + std::string("external fun ").size();
+        const auto paren = line.find('(', begin);
+        REQUIRE(paren != std::string::npos);
+        names.push_back(line.substr(begin, paren - begin));
+    }
+    REQUIRE(names.size() >= 10);
 
-    // RTLD_DEFAULT = escopo global do processo (o próprio executável,
-    // linkado com +rdynamic: símbolos JNIEXPORT → tabela dinâmica).
-    // P4.6: 120 (P4.5.2) + 3 camadas de colisão nomeadas = 123.
-    constexpr std::size_t kExpected =
-        sizeof(kExpectedJniSymbols) / sizeof(kExpectedJniSymbols[0]);
-    // P4.6: 127 + 2 da grade (Grid v2) = 129. P4.7.0 B1: +1 categorias = 130.
-    STATIC_REQUIRE(kExpected == 130);
-
-    std::vector<std::string> missing;
-    for (const char* name : kExpectedJniSymbols) {
-        if (dlsym(RTLD_DEFAULT, name) == nullptr) {
-            missing.emplace_back(name);
+    std::string missing;
+    for (const auto& name : names) {
+        const std::string symbol = "Java_com_goni_app_NativeBridge_" + name;
+        if (dlsym(RTLD_DEFAULT, symbol.c_str()) == nullptr) {
+            missing += "\n  - " + symbol;
         }
     }
     if (!missing.empty()) {
-        std::string joined;
-        for (const auto& name : missing) {
-            joined += "\n  - ";
-            joined += name;
-        }
-        FAIL("Símbolos JNI ausentes/manglados (" << missing.size() << '/'
-                                                 << kExpected << "):" << joined);
+        FAIL("Símbolos JNI ausentes/manglados:" << missing);
     }
 }
 

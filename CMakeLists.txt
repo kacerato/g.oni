@@ -37,12 +37,6 @@ include(CTest)
 add_subdirectory(engine)
 # FASE 3 (missão §2.8): integração e2e — pode compor scene+assets+project.
 add_subdirectory(tests)
-# FASE 7: runtime Android (CONSUMIDOR de engine/) — testado no Linux com
-# backends reais; o alvo do APK (libgoni.so) é construído pelo CMake do
-# app (android/app/src/main/cpp) a partir dos MESMOS fontes.
-if(ENG_BUILD_TESTS)
-    add_subdirectory(android/runtime)
-endif()
 # FASE 8: núcleo C++ do editor (CONSUMIDOR de engine/) — biblioteca
 # eng::editor + suite no Linux; o APK reusa ESTA biblioteca via
 # add_subdirectory (android/app/src/main/cpp), sem duplicar fontes.
