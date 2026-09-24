@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tema mínimo sem dependências (missão §XXI): Material nativo,
-         sem ActionBar. P4.5: fundo = splash "Curved Dark" (carvão + logo
-         96dp + wordmark) — o processo desenha por cima na primeira frame. -->
-    <style name="GoniTheme" parent="android:Theme.Material.NoActionBar.Fullscreen">
+    <!-- A UI é Compose; o tema da janela só define o splash e as barras. -->
+    <style name="GoniTheme" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/oni_splash</item>
-        <item name="android:colorEdgeEffect">@color/oni_accent</item>
-        <item name="android:statusBarColor">@color/oni_bg</item>
-        <item name="android:navigationBarColor">@color/oni_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
 </resources>

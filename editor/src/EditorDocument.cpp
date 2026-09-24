@@ -2416,22 +2416,17 @@ void EditorDocument::setGameViewportSize(float width, float height) noexcept
 // Viewport (§8.6)
 // =============================================================================
 
-std::optional<eng::ecs::Entity> EditorDocument::viewportTap(
-    float screenX, float screenY, TextureCache* textures)
+std::optional<eng::ecs::Entity> EditorDocument::viewportPick(
+    float screenX, float screenY, TextureCache* textures) const
 {
     const eng::scene::Scene* scene = sceneInFocus();
     if (scene == nullptr) {
         return std::nullopt;
     }
-    // P4.1 (T1/D1 — re-armo): um novo toque de seleção mata QUALQUER
-    // drag residual — o estado do gizmo nunca atravessa gestos.
-    gizmoDragEnd();
     auto quads = viewport_.buildQuads(*scene, selection_);
-    // RECOVERY P0: resolve as dimensões em PIXELS das texturas dos sprites
-    // (decode sem GPU, cacheado pelo TextureCache do host) — o hit-test
-    // precisa do tamanho DESENHADO, não da escala local. Sem cache (tests/
-    // hosts sem texturas), os quads seguem com dimensões 0 e o hit-test usa
-    // o caminho da escala (comportamento anterior).
+    // O hit-test precisa do tamanho DESENHADO: resolve as dimensões em
+    // pixels das texturas (decode sem GPU, cacheado pelo host). Sem cache
+    // (testes), vale a escala local.
     if (textures != nullptr && assets_ != nullptr) {
         for (auto& quad : quads) {
             if (quad.textureAsset.empty() || quad.textureWidthPx > 0u) {
@@ -2447,20 +2442,23 @@ std::optional<eng::ecs::Entity> EditorDocument::viewportTap(
             }
         }
     }
-    // P4.2 (B-D — parte da "seleção frágil no device"): o raio de toque
-    // era 14 px FIXOS — no C33 (densidade 2) isso é ~7dp de alvo, o tap
-    // errava, o gizmo não armava e o gesto virava pan ("não segue o
-    // dedo"). Escala pela densidade como o gizmo (hitPx × uiScale).
+    // Raio de toque escala com a densidade (14 px fixos erravam no C33).
     const float tapRadius = std::max(14.f * viewport_.uiScale(), 14.f);
-    auto hit = viewport_.hitTest(quads, screenX, screenY, tapRadius);
+    return viewport_.hitTest(quads, screenX, screenY, tapRadius);
+}
+
+std::optional<eng::ecs::Entity> EditorDocument::viewportTap(
+    float screenX, float screenY, TextureCache* textures)
+{
+    // Um toque novo encerra qualquer drag residual do gizmo.
+    gizmoDragEnd();
+    auto hit = viewportPick(screenX, screenY, textures);
     if (hit.has_value()) {
-        // Seleção do EDITOR segue o foco (em Play seleciona no clone — a
-        // seleção é visual e transitória; stop reseta).
         selection_ = *hit;
     } else {
         selection_.reset();
     }
-    ++selectionRevision_;  // tap mudou o estado → Inspector segue (P1.9)
+    ++selectionRevision_;
     return hit;
 }
 

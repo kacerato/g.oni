@@ -1,37 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Manifest mínimo (FASE 7/8): fullscreen escuro.
-     FASE 8: o EDITOR é o launcher do produto; o runtime-demo (GoniActivity)
-     permanece exportado para testes via adb (§XV da FASE 7).
-     P3.2: WRITE_EXTERNAL_STORAGE APENAS p/ o fallback legado (Android 9-,
-     maxSdkVersion=28) do espelho de diagnóstico — no Android 10+ (incl.
-     Realme C33, Android 12) o MediaStore.Downloads não exige permissão. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
-
     <application
-        android:label="G.ONI Editor"
+        android:label="G.ONI"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:hasCode="true"
         android:theme="@style/GoniTheme">
         <activity
-            android:name=".EditorActivity"
+            android:name="com.goni.app.MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".GoniActivity"
-            android:exported="true"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:screenOrientation="landscape" />
     </application>
 
 </manifest>

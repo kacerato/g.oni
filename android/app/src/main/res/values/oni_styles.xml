@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- P4.5 §1.6: animação dos diálogos OniDialog (fade+scale 120 ms). -->
-    <style name="OniDialogAnim">
-        <item name="android:windowEnterAnimation">@anim/oni_dialog_in</item>
-        <item name="android:windowExitAnimation">@anim/oni_dialog_out</item>
-    </style>
-</resources>

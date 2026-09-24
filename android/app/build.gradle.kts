@@ -1,15 +1,13 @@
-// Módulo app do runtime G.ONI (FASE 7, missão §XXI/§XXII/§XXIII).
-//
-// Toda a parte C++ é construída pelo CMake do NDK (externalNativeBuild)
-// reutilizando os targets do engine — nenhum fonte duplicado; o APK embute
-// lib/arm64-v8a/libgoni.so com eng::rhi + backends Vulkan/GLES + runtime.
+// App G.ONI: Activity + controlador (Kotlin) sobre a libgoni.so, que o CMake
+// do NDK constrói a partir dos mesmos fontes do engine. A interface vive no
+// módulo :ui.
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace = "com.goni.runtime"
+    namespace = "com.goni.app"
     compileSdk = 34
     ndkVersion = "27.0.12077973"
 
@@ -17,28 +15,13 @@ android {
         applicationId = "com.goni.runtime"
         minSdk = 24
         targetSdk = 34
-        // P4.7.0 Bloco 0 — fase/versionamento centralizados aqui; a UI lê
-        // SEMPRE de BuildConfig (zero hardcode).
-        versionCode = 70
-        versionName = "0.7.0"
-        // BuildConfig explícito (AGP 8 desliga por default) —
-        // PHASE_LABEL/BUILD_*/GONI_COMMIT alimentam splash-caption e a linha
-        // "Versão" da sheet de Configurações.
-        buildConfigField("String", "PHASE_LABEL", "\"P4.7.0\"")
-        buildConfigField("String", "BUILD_NAME", "\"0.7.0\"")
-        buildConfigField("int", "BUILD_CODE", "70")
-        // Hash de commit é OPCIONAL via CI (export GONI_COMMIT=<sha> antes
-        // de ./gradlew); builds locais ficam com string vazia.
+        // applicationId mantido: o APK novo instala por cima do antigo.
+        versionCode = 80
+        versionName = "0.8.0"
+        // Hash do commit (injetado pelo CI; vazio em builds locais).
         buildConfigField("String", "GONI_COMMIT",
             "\"${System.getenv("GONI_COMMIT") ?: ""}\"")
-        // Backend por argumento (missão §XV): intent extra "backend"
-        // ∈ {auto, vulkan, gles}; default auto.
-        //
-        // P3.1: x86_64 ADICIONADO ao lado do arm64-v8a (nada removido).
-        // O MESMO APK passa a ser executável no Android Emulator x86_64
-        // (validação automatizada BUILD→INSTALL→LAUNCH→OBSERVE) E nos
-        // dispositivos físicos arm64 (Realme C33). Não é uma "versão de
-        // teste": é o artefato único com cobertura de ABI estendida.
+        // arm64 para aparelhos, x86_64 para o emulador.
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
@@ -66,6 +49,10 @@ android {
 
     buildFeatures {
         buildConfig = true
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     compileOptions {
@@ -78,12 +65,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false  // runtime nativo mínimo — sem R8
+            isMinifyEnabled = false
         }
     }
 }
 
 dependencies {
-    // Intencionalmente VAZIO (missão §XXII): Activity pura + Kotlin stdlib
-    // trazida pelo plugin. Nenhuma lib de terceiros.
+    implementation(project(":ui"))
+    implementation("androidx.activity:activity-compose:1.9.0")
 }

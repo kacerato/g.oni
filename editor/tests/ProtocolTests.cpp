@@ -240,3 +240,131 @@ TEST_CASE("protocol: projeto salvo reabre com a cena", "[protocol]")
     const Json scenes = f.ok({{"op", "scene.list"}});
     CHECK(scenes.size() >= 1);
 }
+
+TEST_CASE("protocol: todas as operações que a UI usa respondem sem abortar",
+          "[protocol]")
+{
+    Fixture f;
+    f.ok({{"op", "project.new"}, {"name", "Tudo"}, {"template", "platformer"}});
+    const auto player = f.idOf("Jogador");
+    const auto ground = f.idOf("Chão");
+
+    // Estado e ajustes.
+    const Json settings = f.ok({{"op", "settings.get"}});
+    CHECK(settings["grid"].is_object());
+    CHECK(settings["collisionLayers"].is_array());
+    f.ok({{"op", "settings.grid"}, {"visible", false}, {"cell", 2.0}});
+    f.ok({{"op", "settings.physicsDt"}, {"dt", 1.0 / 30.0}});
+    f.ok({{"op", "layer.add"}, {"name", "Fundo"}});
+    f.ok({{"op", "layer.set"}, {"name", "Fundo"}, {"timeScale", 0.5},
+          {"update", true}, {"physics", false}, {"render", true}});
+    const Json bit = f.ok({{"op", "collision.add"}, {"name", "Inimigos"}});
+    f.ok({{"op", "collision.rename"}, {"bit", bit}, {"name", "Vilões"}});
+    f.ok({{"op", "host.info"}});
+    f.ok({{"op", "project.rename"}, {"name", "Tudo Novo"}});
+
+    // Entidades.
+    f.ok({{"op", "entity.select"}, {"id", 0}});
+    CHECK(f.state()["selection"] == 0);
+    f.ok({{"op", "entity.select"}, {"id", player}});
+    f.ok({{"op", "entity.rename"}, {"id", player}, {"name", "Herói"}});
+    const Json dup = f.ok({{"op", "entity.duplicate"}, {"id", ground}});
+    f.ok({{"op", "entity.reparent"}, {"id", dup}, {"parent", ground}});
+    f.ok({{"op", "entity.delete"}, {"id", dup}});
+    for (const char* t : {"sprite", "camera", "ground", "physics", "particles",
+                          "light", "audio", "empty"}) {
+        f.ok({{"op", "entity.create"}, {"template", t}});
+    }
+    CHECK_FALSE(f.call({{"op", "entity.create"}, {"template", "dragão"}})["ok"]
+                    .get<bool>());
+
+    // Transform e inspector.
+    const Json t = f.ok({{"op", "transform.get"}, {"id", player}});
+    REQUIRE(t["p"].size() == 3);
+    f.ok({{"op", "transform.set"}, {"id", player},
+          {"p", {1.5, 2.0, 0.0}}, {"r", {0.0, 0.0, 45.0}}, {"s", {2.0, 2.0, 1.0}}});
+    const Json t2 = f.ok({{"op", "transform.get"}, {"id", player}});
+    CHECK(t2["p"][0].get<double>() == 1.5);
+    const Json insp = f.ok({{"op", "inspector"}, {"id", player}});
+    bool sawColor = false;
+    for (const auto& c : insp["components"]) {
+        for (const auto& fld : c["fields"]) {
+            if (fld["kind"] == "color") sawColor = true;
+            if (fld.contains("options")) CHECK(fld["options"].is_array());
+        }
+    }
+    CHECK(sawColor);
+    f.ok({{"op", "component.set"}, {"id", player},
+          {"component", "eng::editor::SpriteData"},
+          {"path", "tintR,tintG,tintB"}, {"value", "#FF8800"}});
+    CHECK_FALSE(f.call({{"op", "component.set"}, {"id", player},
+                        {"component", "eng::physics::Collider"},
+                        {"path", "radius"}, {"value", "-3"}})["ok"]
+                    .get<bool>());
+    const Json catalog = f.ok({{"op", "component.catalog"}, {"id", player}});
+    CHECK(catalog.is_array());
+    const Json added = f.ok({{"op", "component.add"}, {"id", ground},
+                             {"name", "eng::editor::AudioSource"}});
+    CHECK(added.is_array());
+    f.ok({{"op", "component.remove"}, {"id", ground},
+          {"name", "eng::editor::AudioSource"}});
+    f.ok({{"op", "inspector"}, {"id", 0}});  // entidade inválida: null
+
+    // Ferramentas e histórico.
+    f.ok({{"op", "tool.set"}, {"tool", 2}});
+    CHECK(f.state()["tool"] == 2);
+    f.ok({{"op", "snap.set"}, {"translate", true}, {"rotate", true}});
+    f.ok({{"op", "viewport.fit"}});
+    f.ok({{"op", "viewport.zoom"}, {"factor", 1.5}, {"x", 10}, {"y", 10}});
+    f.ok({{"op", "history.undo"}});
+    f.ok({{"op", "history.redo"}});
+
+    // Biblioteca.
+    CHECK(f.ok({{"op", "asset.categories"}}).size() >= 5);
+    CHECK(f.ok({{"op", "asset.list"}, {"category", "textures"}}).is_array());
+    f.ok({{"op", "asset.imageInfo"}, {"name", "nada.png"}});
+    f.ok({{"op", "anim.create"}, {"name", "andar"}});
+    const Json anims = f.ok({{"op", "anim.list"}});
+    REQUIRE(anims.size() == 1);
+    const std::string animName = anims[0]["name"].get<std::string>();
+    f.ok({{"op", "anim.setMeta"}, {"name", animName}, {"loop", false}, {"fps", 10}});
+    CHECK_FALSE(f.ok({{"op", "anim.read"}, {"name", animName}})
+                    .get<std::string>()
+                    .empty());
+    f.ok({{"op", "material.create"}, {"name", "brilho"}});
+    const Json mats = f.ok({{"op", "material.list"}});
+    REQUIRE(mats.size() == 1);
+    const std::string mat = mats[0]["name"].get<std::string>();
+    const std::string matJson =
+        f.ok({{"op", "material.read"}, {"name", mat}}).get<std::string>();
+    f.ok({{"op", "material.write"}, {"name", mat}, {"json", matJson}});
+    f.ok({{"op", "asset.rename"}, {"category", "materials"}, {"name", mat},
+          {"newName", "luz.mat.json"}});
+    f.ok({{"op", "asset.delete"}, {"category", "materials"},
+          {"name", "luz.mat.json"}});
+    f.ok({{"op", "audio.stop"}});
+    CHECK(f.ok({{"op", "audio.playing"}}) == false);
+
+    // Cenas e projeto.
+    f.ok({{"op", "scene.save"}, {"path", "fase 2"}});
+    const Json scenes = f.ok({{"op", "scene.list"}});
+    CHECK(std::find(scenes.begin(), scenes.end(), Json("fase 2.json")) !=
+          scenes.end());
+    f.ok({{"op", "project.save"}});
+    f.ok({{"op", "project.exportZip"}, {"path", "tudo.zip"}});
+    const Json imported =
+        f.ok({{"op", "project.importZip"}, {"path", "tudo.zip"}, {"name", "Cópia"}});
+    CHECK_FALSE(imported.get<std::string>().empty());
+    CHECK(f.ok({{"op", "project.list"}}).size() >= 2);
+
+    // Play.
+    f.ok({{"op", "play.start"}});
+    f.run(10);
+    f.ok({{"op", "play.pause"}, {"paused", true}});
+    CHECK(f.state()["paused"] == true);
+    f.ok({{"op", "play.pause"}, {"paused", false}});
+    const Json hud = f.ok({{"op", "play.hud"}});
+    CHECK(hud["scripts"].is_object());
+    f.ok({{"op", "play.stop"}});
+    CHECK(f.state()["mode"] == "edit");
+}

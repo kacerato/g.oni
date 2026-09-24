@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "goni"
-include(":app")
+include(":app", ":ui")

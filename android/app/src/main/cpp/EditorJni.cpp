@@ -278,6 +278,21 @@ Java_com_goni_app_NativeBridge_nativeTap(JNIEnv*, jobject, jlong handle,
                : 0;
 }
 
+/// Entidade sob o dedo sem mudar a seleção (0 = nenhuma).
+JNIEXPORT jlong JNICALL
+Java_com_goni_app_NativeBridge_nativePick(JNIEnv*, jobject, jlong handle,
+                                          jfloat x, jfloat y)
+{
+    EditorHost* host = hostOf(handle);
+    if (host == nullptr) {
+        return 0;
+    }
+    const auto hit = host->document().viewportPick(x, y, &host->textureCache());
+    return hit.has_value()
+               ? static_cast<jlong>(EditorDocument::packEntity(*hit))
+               : 0;
+}
+
 JNIEXPORT void JNICALL
 Java_com_goni_app_NativeBridge_nativePan(JNIEnv*, jobject, jlong handle,
                                          jfloat dx, jfloat dy)

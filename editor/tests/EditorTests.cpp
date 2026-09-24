@@ -6552,7 +6552,7 @@ TEST_CASE("editor: P4.2 — B-A: newScene limpa o marker de última cena",
     CHECK(reopened.value()->hierarchySnapshot().empty());  // vazio HONESTO
 }
 
-TEST_CASE("editor: P4.2 — B-A: zip com traversal e sem project.goni.json é RECUSADO",
+TEST_CASE("editor: P4.2 — B-A: zip em pasta ocupada vira cópia",
           "[editor][p42]")
 {
     DocFixture f;
@@ -6560,12 +6560,16 @@ TEST_CASE("editor: P4.2 — B-A: zip com traversal e sem project.goni.json é RE
     REQUIRE(f.doc->saveProject().ok());
     REQUIRE(f.doc->exportProjectZip(".goni_export.zip").ok());
 
-    // Import de zip válido em destino ocupado → erro explícito (sem merge).
+    // Import de zip válido em destino ocupado → cópia com sufixo (nunca
+    // merge nem sobrescrita da pasta existente).
     REQUIRE(f.fs->mkdirs(eng::fs::Path{"ws3/TestGame"}).ok());
     auto clash = eng::editor::extractProjectZip(
         *f.fs, eng::fs::Path{".goni_export.zip"}, eng::fs::Path{"ws3"}, "x");
-    REQUIRE(clash.isError());
-    CHECK(clash.error().code == eng::core::StatusCode::AlreadyExists);
+    REQUIRE(clash.ok());
+    CHECK(clash.value() == "TestGame 2");
+    auto untouched = f.fs->exists(eng::fs::Path{"ws3/TestGame/project.goni.json"});
+    REQUIRE(untouched.ok());
+    CHECK_FALSE(untouched.value());
 }
 
 // ---- B-C/B-D: matemática dos gizmos em parâmetros de DEVICE ------------------

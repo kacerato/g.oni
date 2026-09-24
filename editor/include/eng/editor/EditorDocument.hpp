@@ -536,6 +536,10 @@ public:
     /// pixels das texturas dos sprites — o hit-test usa o tamanho DESENHADO
     /// (região/ppu), não a escala local. Nulo → sprites usam o caminho da
     /// escala (quads de cor/sem resolução).
+    /// Hit-test sem alterar a seleção (o host decide o que o gesto faz).
+    [[nodiscard]] std::optional<eng::ecs::Entity> viewportPick(
+        float screenX, float screenY,
+        class TextureCache* textures = nullptr) const;
     [[nodiscard]] std::optional<eng::ecs::Entity> viewportTap(
         float screenX, float screenY,
         class TextureCache* textures = nullptr);

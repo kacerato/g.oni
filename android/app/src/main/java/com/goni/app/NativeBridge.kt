@@ -34,6 +34,7 @@ object NativeBridge {
     external fun nativeSetUiScale(handle: Long, scale: Float)
 
     external fun nativeTap(handle: Long, x: Float, y: Float): Long
+    external fun nativePick(handle: Long, x: Float, y: Float): Long
     external fun nativePan(handle: Long, dx: Float, dy: Float)
     external fun nativeZoom(handle: Long, factor: Float, focusX: Float, focusY: Float)
     external fun nativeGizmoBegin(handle: Long, x: Float, y: Float): Boolean

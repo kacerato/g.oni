@@ -432,16 +432,26 @@ Result<std::string> extractProjectZip(eng::fs::FileSystem& fs,
                                            "'"));
     }
 
-    const eng::fs::Path target = workspaceRoot / eng::fs::Path{folder};
-    auto exists = fs.exists(target);
-    if (exists.isError()) {
-        return makeUnexpected(exists.error());
+    // Pasta ocupada (reimportar o mesmo jogo): vira "Nome 2", "Nome 3"…
+    // em vez de sobrescrever ou falhar.
+    eng::fs::Path target = workspaceRoot / eng::fs::Path{folder};
+    for (int suffix = 2;; ++suffix) {
+        auto exists = fs.exists(target);
+        if (exists.isError()) {
+            return makeUnexpected(exists.error());
+        }
+        if (!exists.value()) {
+            break;
+        }
+        if (suffix > 999) {
+            return makeUnexpected(zipError(
+                StatusCode::AlreadyExists,
+                "projeto '" + folder + "' já existe no workspace"));
+        }
+        target = workspaceRoot /
+                 eng::fs::Path{folder + " " + std::to_string(suffix)};
     }
-    if (exists.value()) {
-        return makeUnexpected(zipError(
-            StatusCode::AlreadyExists,
-            "projeto '" + folder + "' já existe no workspace"));
-    }
+    folder = target.filename().str();
     auto made = fs.mkdirs(target);
     if (made.isError()) {
         return makeUnexpected(made.error());
