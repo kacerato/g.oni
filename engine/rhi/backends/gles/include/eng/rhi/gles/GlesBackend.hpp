@@ -91,6 +91,8 @@ public:
     /// Requer contexto atual; RGBA8 em `outRgba` (4 bytes).
     [[nodiscard]] eng::core::Result<void> readCenterPixel(
         std::uint8_t outRgba[4]) override;
+    [[nodiscard]] eng::core::Result<void> readPixels(
+        std::uint32_t width, std::uint32_t height, std::uint8_t* out) override;
 
 private:
     struct BufferEntry {

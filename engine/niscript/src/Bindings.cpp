@@ -50,7 +50,7 @@ std::ptrdiff_t NiNativeTable::indexOf(std::string_view name) const noexcept
 }
 
 bool NiNativeTable::add(std::string_view name, std::uint16_t arity,
-                        NiNativeFn fn)
+                        NiNativeFn fn, NiType result)
 {
     if (find(name) != nullptr) {
         return false;
@@ -61,12 +61,13 @@ bool NiNativeTable::add(std::string_view name, std::uint16_t arity,
     e.arity = arity;
     e.maxArity = 0;
     e.fn = fn;
+    e.resultType = result;
     entries_.push_back(e);
     return true;
 }
 
 bool NiNativeTable::add(std::string_view name, std::uint16_t minArity,
-                        std::uint16_t maxArity, NiNativeFn fn)
+                        std::uint16_t maxArity, NiNativeFn fn, NiType result)
 {
     if (find(name) != nullptr || maxArity <= minArity) {
         return false;
@@ -77,6 +78,7 @@ bool NiNativeTable::add(std::string_view name, std::uint16_t minArity,
     e.arity = minArity;
     e.maxArity = maxArity;
     e.fn = fn;
+    e.resultType = result;
     entries_.push_back(e);
     return true;
 }

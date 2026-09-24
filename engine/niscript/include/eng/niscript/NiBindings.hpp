@@ -64,10 +64,11 @@ public:
 
     /// Registro extra (extensões do consumidor — nome duplicado é erro).
     [[nodiscard]] bool add(std::string_view name, std::uint16_t arity,
-                           NiNativeFn fn);
+                           NiNativeFn fn, NiType result = NiType::Dynamic);
     /// Registro variadic: argc ∈ [minArity, maxArity] (maxArity > minArity).
     [[nodiscard]] bool add(std::string_view name, std::uint16_t minArity,
-                           std::uint16_t maxArity, NiNativeFn fn);
+                           std::uint16_t maxArity, NiNativeFn fn,
+                           NiType result = NiType::Dynamic);
 
     [[nodiscard]] const NiNativeEntry* find(std::string_view name) const
         noexcept;

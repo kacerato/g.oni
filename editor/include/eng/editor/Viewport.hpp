@@ -27,6 +27,8 @@
 namespace eng::editor {
 
 /// Um quad desenhável no viewport (dados, não comandos de GPU).
+struct TextData;  // TextData.hpp
+
 struct EntityQuad {
     eng::ecs::Entity entity{};
     float worldX{0.f};
@@ -36,6 +38,8 @@ struct EntityQuad {
     float rotation{0.f};           ///< radianos no plano XY
     std::uint32_t tint{0u};        ///< hue determinístico por entidade
     bool selected{false};
+    /// Pixel de glifo de TextData (sem marcadores de seleção/Play).
+    bool textPixel{false};
 
     // --- sprite (evolução P0-3) — preenchido quando o nó tem SpriteData ---
     /// Nó TEM SpriteData (com ou sem textura). Sem textura → o renderer
@@ -226,6 +230,9 @@ public:
     /// Alvos de toque e handles do gizmo ESCALAM por isto (48 dp = 48×s px
     /// de alvo) — os 13 px do P1 eram intocáveis no dedo (defeito D3/D4).
     void setUiScale(float scale) noexcept;
+    /// Modo edição: moldes aparecem esmaecidos. No Play ficam invisíveis.
+    void setEditing(bool editing) noexcept { editing_ = editing; }
+    [[nodiscard]] bool editing() const noexcept { return editing_; }
     [[nodiscard]] float uiScale() const noexcept { return uiScale_; }
 
     // --- câmera de jogo (evolução P0-5, ADR-051) ------------------------------
@@ -306,11 +313,25 @@ public:
         const std::vector<EntityQuad>& quads) const noexcept;
 
 private:
+    void appendTextQuads(std::vector<EntityQuad>& quads, eng::ecs::Entity node,
+                         const TextData& text, float worldX,
+                         float worldY, float alphaScale) const;
+
     Camera2D camera_{};
     const Camera2D* gameCamera_ = nullptr;  ///< câmera de jogo
     float screenW_{1.f};
     float screenH_{1.f};
     float uiScale_{1.f};  ///< densidade do device
+    bool editing_{true};
+    /// Quadro da câmera de jogo (edição) para texto preso à tela.
+    struct TextFrame {
+        bool valid{false};
+        float cx{0.f};
+        float cy{0.f};
+        float halfW{0.f};
+        float halfH{0.f};
+    };
+    mutable TextFrame textFrame_{};
 };
 
 } // namespace eng::editor

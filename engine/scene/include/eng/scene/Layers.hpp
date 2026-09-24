@@ -56,6 +56,12 @@ enum class LayerStage : std::uint8_t {
 };
 
 /// Componente: entidade membro da camada `layer` (default GAME).
+/// Molde: a entidade (e seus filhos) não roda, não colide e não aparece no
+/// jogo. `spawn("nome")` nos scripts cria cópias ATIVAS dela.
+struct Template {
+    bool active = false;  ///< reservado (sempre false no molde)
+};
+
 struct LayerMember {
     std::string layer{"GAME"};
 };
@@ -118,6 +124,10 @@ private:
 };
 
 }  // namespace eng::scene
+
+ENG_REFLECT_BEGIN(eng::scene::Template)
+    ENG_REFLECT_FIELD(active)
+ENG_REFLECT_END()
 
 ENG_REFLECT_BEGIN(eng::scene::LayerMember)
     ENG_REFLECT_FIELD(layer)

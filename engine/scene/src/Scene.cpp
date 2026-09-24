@@ -300,8 +300,25 @@ std::string_view Scene::layerOf(eng::ecs::Entity node) const noexcept
     return LayerRegistry::kGame;  // default (e defensivo p/ órfãos)
 }
 
+bool Scene::isTemplated(eng::ecs::Entity node) const noexcept
+{
+    for (eng::ecs::Entity n = node; n != kNoEntity && world_.valid(n);
+         n = parentOf(n)) {
+        if (world_.get<Template>(n) != nullptr) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Scene::participatesIn(eng::ecs::Entity node,
                            LayerStage stage) const noexcept
+{
+    return !isTemplated(node) && layerParticipates(node, stage);
+}
+
+bool Scene::layerParticipates(eng::ecs::Entity node,
+                              LayerStage stage) const noexcept
 {
     const LayerMember* member =
         world_.valid(node) ? world_.get<LayerMember>(node) : nullptr;

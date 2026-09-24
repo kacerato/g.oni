@@ -1158,4 +1158,19 @@ Result<void> GlesBackend::readCenterPixel(std::uint8_t outRgba[4]) {
     return {};
 }
 
+Result<void> GlesBackend::readPixels(std::uint32_t width, std::uint32_t height,
+                                     std::uint8_t* out) {
+    if (auto ready = requireInitialized(); !ready) {
+        return eng::core::makeUnexpected(ready.error());
+    }
+    if (!hasSurface_ || width > surfaceWidth_ || height > surfaceHeight_) {
+        return eng::core::makeUnexpected(
+            makeError(StatusCode::NotSupported, "rhi.gles: readback fora da surface"));
+    }
+    library_.functions().glReadPixels(0, 0, static_cast<GLsizei>(width),
+                                      static_cast<GLsizei>(height), GL_RGBA,
+                                      GL_UNSIGNED_BYTE, out);
+    return {};
+}
+
 } // namespace eng::rhi::gles

@@ -65,6 +65,16 @@ NiScriptState& NiInstanceSet::create(
     return *instances_.back();
 }
 
+std::size_t NiInstanceSet::removeIf(bool (*drop)(void* user, ecs::Entity self),
+                                    void* user)
+{
+    const std::size_t before = instances_.size();
+    std::erase_if(instances_, [&](const std::unique_ptr<NiScriptState>& instance) {
+        return drop(user, instance->self());
+    });
+    return before - instances_.size();
+}
+
 std::vector<NiScriptState*> NiInstanceSet::instancesOf(
     ecs::Entity entity) const
 {

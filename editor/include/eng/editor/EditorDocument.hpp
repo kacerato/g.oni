@@ -290,6 +290,13 @@ public:
     }
     /// Define a grade (validação: cell > 0 finito; majorEvery 2..1024;
     /// cores 0..1). Marca projectDirty_ (flush em saveProject).
+    [[nodiscard]] const eng::project::GameConfig& gameConfig() const noexcept
+    {
+        static const eng::project::GameConfig kDefaultGame{};
+        return hasProject() ? project_->config.game : kDefaultGame;
+    }
+    [[nodiscard]] eng::core::Result<void> setGameConfig(
+        const eng::project::GameConfig& game);
     [[nodiscard]] eng::core::Result<void> setGridConfig(
         const eng::project::GridConfig& grid);
 
@@ -464,6 +471,8 @@ public:
     // --- play/stop ---------------------------------------------
 
     [[nodiscard]] eng::core::Result<void> play();
+    /// Semente fixa do random() dos scripts (0 = nova a cada Play).
+    void setScriptSeed(std::uint64_t seed) noexcept { scriptSeed_ = seed; }
     void stop() noexcept;
     [[nodiscard]] bool isPlaying() const noexcept { return mode_ == Mode::Play; }
     /// Pausa do RUNTIME — tick() não avança o
@@ -866,6 +875,7 @@ private:
     void syncLinkedScripts(std::string_view name, std::string_view content);
     bool suppressHistory_ = false;
     int historyGroupDepth_ = 0;
+    std::uint64_t scriptSeed_ = 0;
     /// Undo do GESTO de gizmo — armado no begin, limpo no end
     /// (drag sem mudança real remove a própria entrada).
     bool gizmoUndoArmed_ = false;

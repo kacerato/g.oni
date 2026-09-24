@@ -739,6 +739,12 @@ bool EditorHost::renderFrame(float deltaSeconds)
     // capacidade conquistada; o frame quente não realoca.
     quadsScratch_.clear();
     particlesScratch_.clear();
+    document_->viewport().setEditing(!document_->isPlaying());
+    {
+        const auto& game = document_->gameConfig();
+        viewportRenderer_->setPlayBackground(game.backgroundR, game.backgroundG,
+                                             game.backgroundB);
+    }
 
     // P4.7.0 B6: CULLING por câmera — SÓ no Play (no Edit o autor vê a
     // cena INTEIRA por definição; culling de editor seria ferramenta

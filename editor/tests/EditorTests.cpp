@@ -3737,7 +3737,7 @@ TEST_CASE("editor: P1 — renderer desenha GIZMO por cima do sprite (readback)",
     doc.stop();
 }
 
-TEST_CASE("editor: P1 — placeholder xadrez de sprite sem textura (readback)",
+TEST_CASE("editor: sprite sem imagem é um retângulo da cor do tint (readback)",
           "[editor][rhi_hardware]")
 {
     if (editorGraphicsUnavailable()) {
@@ -3755,48 +3755,34 @@ TEST_CASE("editor: P1 — placeholder xadrez de sprite sem textura (readback)",
 
     auto& doc = owned->document();
     ensureProject(doc, "P1PlaceholderGame");
+    REQUIRE(doc.newScene().ok());
 
-    // createSprite SEM textura: placeholder xadrez claramente identificado
-    //.
-    auto sprite = doc.createSprite("Ghost");
+    auto sprite = doc.createSprite("Bloco");
     REQUIRE(sprite.ok());
+    for (const auto& [path, value] :
+         {std::pair{"tintR", "0.2"}, {"tintG", "0.8"}, {"tintB", "0.4"}}) {
+        REQUIRE(doc.setInspectorField(sprite.value(), "eng::editor::SpriteData",
+                                      path, value)
+                    .ok());
+    }
+    // Escala 2: o quad cobre o centro da tela com folga.
+    eng::editor::TransformDesc t;
+    t.scale = eng::math::Vec3{2.f, 2.f, 1.f};
+    REQUIRE(doc.setTransform(sprite.value(), t).ok());
+    doc.deselect();
 
     REQUIRE(owned->renderFrame(1.f / 60.f));
     auto* renderer = owned->viewportRenderer();
     REQUIRE(renderer != nullptr);
-    CHECK(renderer->lastFrameTexturedSprites() == 0);  // nada texturizado
+    // Vai pelo pipeline de sprites (ordem de desenho respeitada).
+    CHECK(renderer->lastFrameTexturedSprites() == 1);
 
-    // DADOS: o quad de cor contém o xadrez magenta (0.55, 0.22, 0.55) —
-    // 8 células claras + base escura (0.13).
-    const auto& verts = renderer->lastFrameVertices();
-    int magenta = 0;
-    int dark = 0;
-    for (const auto& v : verts) {
-        if (v.r == Catch::Approx(0.55f).margin(0.02f) &&
-            v.g == Catch::Approx(0.22f).margin(0.02f) &&
-            v.b == Catch::Approx(0.55f).margin(0.02f)) {
-            ++magenta;
-        }
-        if (v.r == Catch::Approx(0.13f).margin(0.02f) &&
-            v.g == Catch::Approx(0.13f).margin(0.02f) &&
-            v.b == Catch::Approx(0.13f).margin(0.02f)) {
-            ++dark;
-        }
-    }
-    CHECK(magenta >= 6 * 8);   // 8 células × 6 vértices
-    CHECK(dark >= 6);          // base
-
-    // VISUAL: pixel de uma célula magenta — o sprite default (1 unidade)
-    // é pequeno (48px); o centro da tela cai NELE (entidade em (0,0) e
-    // célula central: local (-0.125..0.125 px…) — pega ponto seguro: o
-    // pixel central da tela está na célula (2,2)… arranjo 4x4 a partir de
-    // -24px: células de 12px; centro = fronteira. Prova está nos DADOS
-    // acima; o readback sanity-checka que o CENTRO não é hue saturado
-    // (sprite placeholder é sóbrio) nem vermelho de textura.
     std::uint8_t pixel[4] = {0, 0, 0, 0};
     REQUIRE(renderer->renderer()->readCenterPixel(pixel).ok());
-    CHECK(pixel[3] == 255);  // opaco (base escura cobre o fundo do editor)
-    CHECK((pixel[0] < 200 || pixel[2] < 200));  // não é hue rosa-vivo
+    INFO("pixel = " << int(pixel[0]) << "," << int(pixel[1]) << ","
+                    << int(pixel[2]));
+    CHECK(pixel[1] > pixel[0] + 60);  // verde domina (tint 0.2/0.8/0.4)
+    CHECK(pixel[1] > pixel[2] + 40);
 }
 
 // --- P1 vertical slice completo (host REAL, disco REAL) ----------------------------

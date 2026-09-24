@@ -1,4 +1,6 @@
 #include "eng/editor/Viewport.hpp"
+#include "eng/editor/TextData.hpp"
+#include "eng/ui/Ui.hpp"
 
 #include "eng/render/Light2D.hpp"
 
@@ -202,7 +204,12 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
         // Camadas: entidades em camada sem participação
         // de render NÃO geram quad (filhos continuam sendo visitados — a
         // camada é por entidade, não herdada).
-        if (!scene.participatesIn(node, eng::scene::LayerStage::Render)) {
+        // Moldes: invisíveis no Play; esmaecidos na edição.
+        const bool ghost =
+            editing_ && scene.isTemplated(node) &&
+            scene.layerParticipates(node, eng::scene::LayerStage::Render);
+        if (!ghost &&
+            !scene.participatesIn(node, eng::scene::LayerStage::Render)) {
             scene.eachChild(node, [&](eng::ecs::Entity child) {
                 self(self, child, depth + 1);
             });
@@ -310,8 +317,10 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
             quad.cameraActive = camera->active;
             quad.cameraCenterX = quad.worldX + camera->posX;
             quad.cameraCenterY = quad.worldY + camera->posY;
-            const float zoom =
-                camera->zoom > 0.f ? camera->zoom : 48.f;
+            float zoom = camera->zoom > 0.f ? camera->zoom : 48.f;
+            if (camera->viewHeight > 0.f && screenH_ > 1.f) {
+                zoom = screenH_ / camera->viewHeight;
+            }
             quad.cameraHalfW =
                 static_cast<float>(screenW_) / zoom * 0.5f;
             quad.cameraHalfH =
@@ -361,8 +370,16 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
             }
         }
 
+        if (ghost) {
+            quad.tintA *= 0.35f;
+        }
         quads.push_back(quad);
         (void)depth; // profundidade não muda o quad — reserva de API futura
+
+        if (const auto* text = scene.world().get<eng::editor::TextData>(node)) {
+            appendTextQuads(quads, node, *text, quad.worldX, quad.worldY,
+                            ghost ? 0.35f : 1.f);
+        }
 
         scene.eachChild(node, [&](eng::ecs::Entity child) {
             self(self, child, depth + 1);
@@ -374,6 +391,28 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
     // lista raízes diretamente — usa-se o world com cada nó criado. Solução:
     // percorrer TODOS os nós vivos e filtrar raízes (pai == kNoEntity) em
     // ordem estável por índice.
+    // Texto preso à tela: na edição aparece dentro do quadro da câmera de
+    // jogo (a mesma posição que terá no Play).
+    textFrame_ = TextFrame{};
+    if (editing_) {
+        scene.world().each<eng::tick::CameraData>(
+            [&](eng::ecs::Entity e, const eng::tick::CameraData& cam) {
+                if (textFrame_.valid || !cam.active || scene.isTemplated(e)) {
+                    return;
+                }
+                const eng::math::Mat4 world = scene.computeWorldMatrix(e);
+                float zoom = cam.zoom > 0.f ? cam.zoom : 48.f;
+                if (cam.viewHeight > 0.f && screenH_ > 1.f) {
+                    zoom = screenH_ / cam.viewHeight;
+                }
+                textFrame_.valid = true;
+                textFrame_.cx = world.at(3, 0) + cam.posX;
+                textFrame_.cy = world.at(3, 1) + cam.posY;
+                textFrame_.halfW = screenW_ / zoom * 0.5f;
+                textFrame_.halfH = screenH_ / zoom * 0.5f;
+            });
+    }
+
     std::vector<eng::ecs::Entity> roots;
     scene.world().each<eng::scene::Hierarchy>(
         [&](eng::ecs::Entity node, const eng::scene::Hierarchy& hierarchy) {
@@ -387,6 +426,97 @@ void Viewport::buildQuadsInto(std::vector<EntityQuad>& out,
               });
     for (const eng::ecs::Entity root : roots) {
         visit(visit, root, 0);
+    }
+}
+
+void Viewport::appendTextQuads(std::vector<EntityQuad>& quads,
+                               eng::ecs::Entity node, const TextData& text,
+                               float worldX, float worldY,
+                               float alphaScale) const
+{
+    if (text.text.empty() || text.size <= 0.f) {
+        return;
+    }
+    // Fonte 5×7: avanço de 6 colunas, linha de 9 (7 + espaço).
+    const float px = text.size / 7.f;
+    float originX = worldX;
+    float originY = worldY;
+    if (text.screenSpace) {
+        if (textFrame_.valid) {
+            originX = textFrame_.cx - textFrame_.halfW +
+                      text.screenX * 2.f * textFrame_.halfW;
+            originY = textFrame_.cy + textFrame_.halfH -
+                      text.screenY * 2.f * textFrame_.halfH;
+        } else {
+            originX = screenToWorldX(text.screenX * screenW_);
+            originY = screenToWorldY(text.screenY * screenH_);
+        }
+    }
+    // Quebra em linhas para alinhar cada uma.
+    std::vector<std::string_view> lines;
+    {
+        std::string_view all{text.text};
+        std::size_t start = 0;
+        while (true) {
+            const auto nl = all.find('\n', start);
+            lines.push_back(all.substr(start, nl == std::string_view::npos
+                                                  ? std::string_view::npos
+                                                  : nl - start));
+            if (nl == std::string_view::npos) {
+                break;
+            }
+            start = nl + 1;
+        }
+    }
+    const float lineH = 9.f * px;
+    const float blockH = static_cast<float>(lines.size()) * lineH - 2.f * px;
+    float lineTop = originY + blockH * 0.5f;  // bloco centrado no ponto
+    for (const std::string_view line : lines) {
+        const float width =
+            line.empty() ? 0.f : (static_cast<float>(line.size()) * 6.f - 1.f) * px;
+        float left = originX - width * 0.5f;
+        if (text.align == TextAlign::Left) {
+            left = originX;
+        } else if (text.align == TextAlign::Right) {
+            left = originX - width;
+        }
+        for (std::size_t i = 0; i < line.size(); ++i) {
+            char ch = line[i];
+            if (ch >= 'a' && ch <= 'z') {
+                // A fonte 5×7 só tem maiúsculas legíveis.
+                ch = static_cast<char>(ch - 'a' + 'A');
+            }
+            const eng::ui::FontGlyph* glyph = eng::ui::fontGlyph(ch);
+            if (glyph == nullptr) {
+                continue;
+            }
+            const float glyphLeft = left + static_cast<float>(i) * 6.f * px;
+            for (int row = 0; row < 7; ++row) {
+                for (int col = 0; col < 5; ++col) {
+                    if (!glyph->pixels[row][col]) {
+                        continue;
+                    }
+                    EntityQuad q;
+                    q.entity = node;
+                    q.textPixel = true;
+                    q.isSprite = true;
+                    q.worldX = glyphLeft + (static_cast<float>(col) + 0.5f) * px;
+                    q.worldY = lineTop - (static_cast<float>(row) + 0.5f) * px;
+                    // Sobreposição mínima evita frestas entre pixels.
+                    q.sizeX = px * 1.02f;
+                    q.sizeY = px * 1.02f;
+                    q.tintR = text.colorR;
+                    q.tintG = text.colorG;
+                    q.tintB = text.colorB;
+                    q.tintA = text.opacity * alphaScale;
+                    q.sort = text.sort;
+                    q.spritePpu = 1.f;
+                    q.materialShader = "unlit";
+                    quads.push_back(std::move(q));
+                }
+            }
+        }
+        lineTop -= lineH;
     }
 }
 

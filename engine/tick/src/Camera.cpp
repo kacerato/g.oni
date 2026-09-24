@@ -127,10 +127,13 @@ void CameraTickSystem::tick(eng::scene::Scene& scene, float dt)
 
     // CLAMP pós-zoom: o retângulo VISÍVEL (vista/zoom) fica dentro dos
     // limites. Sem hint de vista (viewW/viewH = 0) é no-op — documentado.
+    const float effectiveZoom =
+        (data.viewHeight > 0.f && viewH_ > 0.f) ? viewH_ / data.viewHeight
+                                                 : data.zoom;
     if (data.limitsEnabled && viewW_ > 0.f && viewH_ > 0.f
-        && data.zoom > 0.f) {
-        const float halfVisibleW = viewW_ / (2.f * data.zoom);
-        const float halfVisibleH = viewH_ / (2.f * data.zoom);
+        && effectiveZoom > 0.f) {
+        const float halfVisibleW = viewW_ / (2.f * effectiveZoom);
+        const float halfVisibleH = viewH_ / (2.f * effectiveZoom);
         const float minX = data.limitMinX + halfVisibleW;
         const float maxX = data.limitMaxX - halfVisibleW;
         const float minY = data.limitMinY + halfVisibleH;

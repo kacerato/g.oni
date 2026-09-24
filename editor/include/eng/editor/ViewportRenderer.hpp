@@ -70,6 +70,13 @@ public:
                      const std::vector<ParticleQuad>& particles, bool playMode);
 
     [[nodiscard]] bool isValid() const noexcept { return renderer_.has_value(); }
+    /// Cor de fundo do jogo (configuração do projeto).
+    void setPlayBackground(float r, float g, float b) noexcept
+    {
+        playBgR_ = r;
+        playBgG_ = g;
+        playBgB_ = b;
+    }
     [[nodiscard]] eng::rhi::BackendType activeBackend() const noexcept;
     [[nodiscard]] const eng::rhi::RendererCapabilities* capabilities() const
         noexcept;
@@ -205,6 +212,9 @@ private:
     std::uint64_t framesSubmitted_ = 0;
     std::uint64_t framesPresented_ = 0;
     std::size_t lastFrameVertexCount_ = 0;
+    float playBgR_ = 0.07f;
+    float playBgG_ = 0.08f;
+    float playBgB_ = 0.11f;
 };
 
 } // namespace eng::editor

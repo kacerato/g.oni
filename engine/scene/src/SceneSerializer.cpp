@@ -116,6 +116,8 @@ const bool eng_scene_builtin_components_registered = [] {
     // re-registra só sobrescreve a mesma entrada).
     (void)SceneSerializer::registerComponentType<eng::scene::LayerMember>(
         "eng::scene::LayerMember");
+    (void)SceneSerializer::registerComponentType<eng::scene::Template>(
+        "eng::scene::Template");
 
     // Contratos dos built-ins (categoria do Inspector;
     // LayerMember é organização de tick/camadas → "Lógica"; Name é
@@ -139,6 +141,13 @@ const bool eng_scene_builtin_components_registered = [] {
         c.scriptAlias = "layer";
         eng::scene::detail::registerComponentContract(
             "eng::scene::LayerMember", std::move(c));
+    }
+    {
+        ComponentContract c;
+        c.category = "Lógica";
+        c.scriptAlias = "template";
+        eng::scene::detail::registerComponentContract(
+            "eng::scene::Template", std::move(c));
     }
     return true;
 }();

@@ -21,6 +21,7 @@
 #include "eng/editor/AnimationAssets.hpp"
 #include "eng/editor/AudioSource.hpp"
 #include "eng/editor/NiScriptComponent.hpp"
+#include "eng/editor/SceneClone.hpp"
 #include "eng/editor/ProjectZip.hpp"
 #include "eng/editor/SpriteData.hpp"
 #include "eng/image/Image.hpp"
@@ -177,6 +178,10 @@ constexpr std::string_view kLastSceneFile{".goni_last_scene"};
     b.bind("jump", zone(0.75f, 0.6f, 1.f, 1.f));
     b.bind("jump", key(Key::Space));
     b.bind("jump", key(Key::Up));
+    // Toque em qualquer ponto da tela (jogos de um botão).
+    b.bind("tap", zone(0.f, 0.f, 1.f, 1.f));
+    b.bind("tap", key(Key::Space));
+    b.bind("tap", key(Key::Enter));
     b.bind("up", key(Key::Up));
     b.bind("up", key(Key::W));
     b.bind("down", key(Key::Down));
@@ -674,6 +679,38 @@ Result<std::uint32_t> EditorDocument::addCollisionLayer(
     return freeBit;
 }
 
+Result<void> EditorDocument::setGameConfig(
+    const eng::project::GameConfig& game)
+{
+    if (!hasProject()) {
+        return makeUnexpected(
+            documentError(StatusCode::InvalidState, "sem projeto aberto"));
+    }
+    if (mode_ == Mode::Play) {
+        return makeUnexpected(documentError(StatusCode::InvalidState,
+                                             "projeto é somente-leitura em Play"));
+    }
+    for (const float c : {game.backgroundR, game.backgroundG, game.backgroundB}) {
+        if (!std::isfinite(c) || c < 0.f || c > 1.f) {
+            return makeUnexpected(documentError(
+                StatusCode::InvalidArgument, "cor de fundo fora de 0..1"));
+        }
+    }
+    if (game.orientation != "portrait" && game.orientation != "landscape" &&
+        game.orientation != "auto") {
+        return makeUnexpected(documentError(StatusCode::InvalidArgument,
+                                            "orientação inválida"));
+    }
+    if (game.controls != "platformer" && game.controls != "tap" &&
+        game.controls != "none") {
+        return makeUnexpected(documentError(StatusCode::InvalidArgument,
+                                            "controles inválidos"));
+    }
+    project_->config.game = game;
+    projectDirty_ = true;
+    return {};
+}
+
 Result<void> EditorDocument::setGridConfig(
     const eng::project::GridConfig& grid)
 {
@@ -982,6 +1019,7 @@ namespace {
     injectNumber("limitMinY", 0.0);
     injectNumber("limitMaxX", 0.0);
     injectNumber("limitMaxY", 0.0);
+    injectNumber("viewHeight", 0.0);
     return changed;
 }
 
@@ -1224,16 +1262,6 @@ Result<eng::ecs::Entity> EditorDocument::duplicateEntity(
                                            "entidade obsoleta"));
     }
 
-    // Coleta a subárvore (ordem determinística por nível — collectSubtree
-    // é privada; caminhada manual BFS equivalente via eachChild).
-    std::vector<eng::ecs::Entity> subtree;
-    subtree.push_back(entity);
-    for (std::size_t i = 0; i < subtree.size(); ++i) {
-        scene_->eachChild(subtree[i], [&](eng::ecs::Entity child) {
-            subtree.push_back(child);
-        });
-    }
-
     const std::string originalName = nameOf(*scene_, entity);
     std::string cloneName = originalName + ".alt";
     // Nome com sufixo repetido: numera para manter o rótulo legível.
@@ -1243,55 +1271,11 @@ Result<eng::ecs::Entity> EditorDocument::duplicateEntity(
     }
 
     pushHistory("create");
-    // Mapa velho→novo preservando a hierarquia.
-    std::unordered_map<eng::ecs::Entity, eng::ecs::Entity> remap;
-    for (const eng::ecs::Entity source : subtree) {
-        const eng::ecs::Entity clone = scene_->createNode();
-        remap[source] = clone;
-    }
-    for (const eng::ecs::Entity source : subtree) {
-        const eng::ecs::Entity clone = remap.at(source);
-        // Componentes por encode/decode do catálogo (Name/Transform/...).
-        for (const auto& [typeName, entry] :
-             eng::scene::detail::componentEntries()) {
-            if (typeName == "eng::scene::Name") {
-                continue; // tratado abaixo (nome único do clone)
-            }
-            if (!entry.has(scene_->world(), source)) {
-                continue;
-            }
-            auto encoded = entry.encode(entry, scene_->world(), source);
-            if (encoded.isError()) {
-                ENG_WARN("duplicate: encode de '{}' falhou ({})", typeName,
-                         encoded.error().message);
-                continue;
-            }
-            auto decoded = entry.decodeAndEmplace(entry, scene_->world(),
-                                                  clone, encoded.value());
-            if (decoded.isError()) {
-                ENG_WARN("duplicate: decode de '{}' falhou ({})", typeName,
-                         decoded.error().message);
-            }
-        }
-        const std::string sourceName = nameOf(*scene_, source);
-        const std::string cloneNameThis =
-            (source == entity) ? cloneName : sourceName;
-        (void)scene_->world().emplace<eng::scene::Name>(
-            clone, eng::scene::Name{cloneNameThis});
-
-        // Hierarquia: mesmo pai (ou raiz se o original era raiz).
-        const eng::ecs::Entity parent = scene_->parentOf(source);
-        if (parent != eng::scene::kNoEntity) {
-            const auto parentIt = remap.find(parent);
-            const eng::ecs::Entity newParent =
-                parentIt != remap.end() ? parentIt->second : parent;
-            (void)scene_->attach(clone, newParent);
-        }
-    }
-
+    const eng::ecs::Entity clone =
+        cloneSubtree(*scene_, entity, cloneName, /*activate=*/false);
     sceneDirty_ = true;
     ++selectionRevision_;  // clone entrou na cena → hierarquia/inspector
-    return remap.at(entity);
+    return clone;
 }
 
 Result<void> EditorDocument::reparentEntity(eng::ecs::Entity entity,
@@ -2172,6 +2156,24 @@ Result<void> EditorDocument::play()
     niRuntime_->setLodFilter(
         logicLodEnabled_ ? &EditorDocument::lodFilterThunk : nullptr,
         this);
+    niRuntime_->setRandomSeed(
+        scriptSeed_ != 0
+            ? scriptSeed_
+            : static_cast<std::uint64_t>(
+                  std::chrono::steady_clock::now().time_since_epoch().count()));
+    niRuntime_->setSoundPlayer(
+        [](void* user, std::string_view asset, float volume) {
+            auto* doc = static_cast<EditorDocument*>(user);
+            auto sound = doc->soundFor(asset);
+            if (sound.isError()) {
+                return false;
+            }
+            return doc->audioMixer()
+                .playSound(*sound.value(), eng::audio::AudioMixer::kMasterBus,
+                           volume, false)
+                .ok();
+        },
+        this);
     niRuntime_->start(*runtimeScene_);
     niRuntime_->fireStart();
 
@@ -2312,6 +2314,15 @@ void EditorDocument::tick(float deltaSeconds) noexcept
         cameraTick_->setViewSize(viewport_.screenWidth(),
                                  viewport_.screenHeight());
     }
+    {
+        // Retângulo visível (câmera de jogo) para view_left()/… dos scripts.
+        const float left = viewport_.screenToWorldX(0.f);
+        const float right = viewport_.screenToWorldX(viewport_.screenWidth());
+        const float top = viewport_.screenToWorldY(0.f);
+        const float bottom = viewport_.screenToWorldY(viewport_.screenHeight());
+        niRuntime_->setView(std::min(left, right), std::max(left, right),
+                            std::min(top, bottom), std::max(top, bottom));
+    }
     scheduler_->runFrame(*runtimeScene_, deltaSeconds);
 
     // P2 §8: FRAMES do clip do Animator aplicados ao SpriteData do clone
@@ -2327,6 +2338,12 @@ void EditorDocument::tick(float deltaSeconds) noexcept
         cameraSystem != nullptr
             ? cameraSystem->activeCamera()
             : eng::tick::resolveActiveCamera(*runtimeScene_));
+
+    // `restart()` num script: recomeça a fase a partir da cena editada.
+    if (niRuntime_->consumeRestartRequest()) {
+        stop();
+        (void)play();
+    }
 }
 
 // Thunk do logic LOD (ponteiro de função não captura —
@@ -2378,6 +2395,9 @@ void EditorDocument::syncGameCamera(
         gameCamera_.posY = active.data.posY;
         gameCamera_.zoom =
             active.data.zoom > 0.f ? active.data.zoom : 48.f;
+        if (active.data.viewHeight > 0.f && viewport_.screenHeight() > 1.f) {
+            gameCamera_.zoom = viewport_.screenHeight() / active.data.viewHeight;
+        }
         // P4.7.0 B4: rotação da vista (graus autoráveis → radianos).
         gameCamera_.rotation =
             active.data.rotationDeg * (3.14159265358979323846f / 180.f);
@@ -2821,8 +2841,7 @@ Result<EditorDocument::ScriptCheck> EditorDocument::scriptCompile(
     // MESMA tabela visível ao runtime de Play (NiRuntime::start) — o que
     // valida aqui é o que o jogo vai compilar lá.
     eng::ni::NiNativeTable natives;
-    natives.addBaseLibrary();
-    natives.addStandardHost();
+    NiRuntime::registerNatives(natives);
 
     ScriptCheck check;
     std::vector<eng::ni::NiDiag> diags;

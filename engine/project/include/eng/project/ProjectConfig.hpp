@@ -34,6 +34,19 @@ defaultCollisionLayers()
     return {CollisionLayerName{"default", 1u}};
 }
 
+/// Configurações do jogo que valem para todas as cenas.
+struct GameConfig {
+    float backgroundR = 0.07f;  ///< cor de fundo no Play
+    float backgroundG = 0.08f;
+    float backgroundB = 0.11f;
+    /// "portrait" | "landscape" | "auto" — orientação da tela no Play.
+    std::string orientation{"auto"};
+    /// Controles de toque desenhados no Play: "platformer" (◀ ▶ pulo),
+    /// "tap" (toque em qualquer lugar) ou "none".
+    std::string controls{"platformer"};
+    [[nodiscard]] bool operator==(const GameConfig&) const = default;
+};
+
 struct ProjectConfig {
     ProjectId projectId;
     std::string name;
@@ -47,6 +60,7 @@ struct ProjectConfig {
     /// Grade do viewport em unidades de mundo (chave
     /// aditiva "grid" — ausente = default).
     GridConfig grid{};
+    GameConfig game{};
 
     [[nodiscard]] bool operator==(const ProjectConfig&) const = default;
 };

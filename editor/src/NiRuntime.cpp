@@ -20,6 +20,8 @@
 
 #include "eng/editor/Diagnostics.hpp"
 #include "eng/editor/NiScriptComponent.hpp"
+#include "eng/editor/SceneClone.hpp"
+#include "eng/scene/Layers.hpp"
 #include "eng/log/Macros.hpp"
 #include "eng/math/Quat.hpp"
 #include "eng/niscript/NiBindings.hpp"
@@ -56,27 +58,280 @@ struct NiRuntime::HostImpl final : eng::ni::NiHost {
     {
         return runtime->queryAction_(action, 2);
     }
+    /// Cria uma cópia ativa da entidade chamada `name` (normalmente um
+    /// Molde). Sem entidade com esse nome, nasce um nó vazio. Os scripts
+    /// da cópia começam a rodar no fim do tick corrente.
     eng::ecs::Entity spawn(std::string_view name) override
     {
-        const eng::ecs::Entity e = scene->createNode();
-        (void)scene->world().emplace<eng::scene::Name>(
-            e, eng::scene::Name{std::string(name)});
+        eng::ecs::Entity source = eng::scene::kNoEntity;
+        // Prefere um Molde com o nome; senão, qualquer entidade viva.
+        scene->world().each<eng::scene::Name>(
+            [&](eng::ecs::Entity e, const eng::scene::Name& n) {
+                if (n.value != name) {
+                    return;
+                }
+                if (source == eng::scene::kNoEntity ||
+                    (scene->world().get<eng::scene::Template>(e) != nullptr &&
+                     scene->world().get<eng::scene::Template>(source) == nullptr)) {
+                    source = e;
+                }
+            });
+        eng::ecs::Entity e = eng::scene::kNoEntity;
+        if (source != eng::scene::kNoEntity) {
+            e = cloneSubtree(*scene, source, name, /*activate=*/true);
+        } else {
+            e = scene->createNode();
+            (void)scene->world().emplace<eng::scene::Name>(
+                e, eng::scene::Name{std::string(name)});
+        }
+        runtime->pendingSpawn_.push_back(e);
         return e;
     }
+    /// Destruição adiada para o fim do tick: o script que se destrói
+    /// termina o handler com o `self` ainda válido.
     bool despawn(eng::ecs::Entity entity) override
     {
-        return scene->destroyNode(entity);
+        if (!scene->isNode(entity)) {
+            return false;
+        }
+        auto& pending = runtime->pendingDespawn_;
+        if (std::find(pending.begin(), pending.end(), entity) == pending.end()) {
+            pending.push_back(entity);
+        }
+        return true;
     }
+
+    // --- nativos do runtime (API de jogo) -----------------------------------
+
+    [[nodiscard]] static HostImpl* self(eng::ni::NiExecContext& ctx,
+                                        eng::ni::NiFault& fault, const char* who)
+    {
+        auto* host = static_cast<HostImpl*>(ctx.host());
+        if (host == nullptr) {
+            fault.kind = eng::ni::NiFault::Kind::NativeError;
+            fault.message = std::string(who) + ": sem jogo em execução";
+        }
+        return host;
+    }
+    [[nodiscard]] static bool number(const eng::ni::NiValue& v, double& out)
+    {
+        if (v.type == eng::ni::NiType::Float) {
+            out = v.d[0];
+            return true;
+        }
+        if (v.type == eng::ni::NiType::Int || v.type == eng::ni::NiType::Bool) {
+            out = static_cast<double>(v.i);
+            return true;
+        }
+        return false;
+    }
+    static bool typeError(eng::ni::NiFault& fault, const char* message)
+    {
+        fault.kind = eng::ni::NiFault::Kind::Type;
+        fault.message = message;
+        return false;
+    }
+    [[nodiscard]] double nextRandom()
+    {
+        // xorshift64*: rápido e determinístico dada a semente.
+        std::uint64_t& x = runtime->rng_;
+        x ^= x >> 12;
+        x ^= x << 25;
+        x ^= x >> 27;
+        const std::uint64_t r = x * 0x2545F4914F6CDD1Dull;
+        return static_cast<double>(r >> 11) * (1.0 / 9007199254740992.0);
+    }
+
+    static bool fnRandom(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                         std::uint16_t argc, eng::ni::NiValue& out,
+                         eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "random");
+        if (h == nullptr) {
+            return false;
+        }
+        double lo = 0.0;
+        double hi = 1.0;
+        if (argc == 2 && (!number(args[0], lo) || !number(args[1], hi))) {
+            return typeError(fault, "random(min, max) exige números");
+        }
+        out = eng::ni::niFloat(lo + (hi - lo) * h->nextRandom());
+        return true;
+    }
+    static bool fnRandomInt(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                            std::uint16_t, eng::ni::NiValue& out,
+                            eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "random_int");
+        if (h == nullptr) {
+            return false;
+        }
+        double lo = 0.0;
+        double hi = 0.0;
+        if (!number(args[0], lo) || !number(args[1], hi)) {
+            return typeError(fault, "random_int(min, max) exige números");
+        }
+        const auto a = static_cast<std::int64_t>(std::floor(std::min(lo, hi)));
+        const auto b = static_cast<std::int64_t>(std::floor(std::max(lo, hi)));
+        const auto span = static_cast<double>(b - a + 1);
+        out = eng::ni::niInt(a + static_cast<std::int64_t>(h->nextRandom() * span));
+        return true;
+    }
+    static bool fnGlobalSet(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                            std::uint16_t, eng::ni::NiValue& out,
+                            eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "global_set");
+        if (h == nullptr) {
+            return false;
+        }
+        double v = 0.0;
+        if (args[0].type != eng::ni::NiType::String || !number(args[1], v)) {
+            return typeError(fault, "global_set(nome, número)");
+        }
+        h->runtime->globals_[args[0].s] = v;
+        out = eng::ni::niBool(true);
+        return true;
+    }
+    static bool fnGlobalGet(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                            std::uint16_t, eng::ni::NiValue& out,
+                            eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "global_get");
+        if (h == nullptr) {
+            return false;
+        }
+        if (args[0].type != eng::ni::NiType::String) {
+            return typeError(fault, "global_get(nome) exige string");
+        }
+        const auto it = h->runtime->globals_.find(args[0].s);
+        out = eng::ni::niFloat(it == h->runtime->globals_.end() ? 0.0 : it->second);
+        return true;
+    }
+    static bool fnRestart(eng::ni::NiExecContext& ctx, const eng::ni::NiValue*,
+                          std::uint16_t, eng::ni::NiValue& out,
+                          eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "restart");
+        if (h == nullptr) {
+            return false;
+        }
+        h->runtime->restartRequested_ = true;
+        out = eng::ni::niBool(true);
+        return true;
+    }
+    static bool fnTime(eng::ni::NiExecContext& ctx, const eng::ni::NiValue*,
+                       std::uint16_t, eng::ni::NiValue& out, eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "time");
+        if (h == nullptr) {
+            return false;
+        }
+        out = eng::ni::niFloat(h->runtime->time_);
+        return true;
+    }
+    template <int Side>
+    static bool fnView(eng::ni::NiExecContext& ctx, const eng::ni::NiValue*,
+                       std::uint16_t, eng::ni::NiValue& out, eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "view");
+        if (h == nullptr) {
+            return false;
+        }
+        const NiRuntime& r = *h->runtime;
+        const float v = Side == 0   ? r.viewLeft_
+                        : Side == 1 ? r.viewRight_
+                        : Side == 2 ? r.viewBottom_
+                                    : r.viewTop_;
+        out = eng::ni::niFloat(v);
+        return true;
+    }
+    static bool fnPlaySound(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                            std::uint16_t argc, eng::ni::NiValue& out,
+                            eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "play_sound");
+        if (h == nullptr) {
+            return false;
+        }
+        double volume = 1.0;
+        if (args[0].type != eng::ni::NiType::String ||
+            (argc == 2 && !number(args[1], volume))) {
+            return typeError(fault, "play_sound(\"som.wav\", volume?)");
+        }
+        const NiRuntime& r = *h->runtime;
+        const bool played = r.soundPlayer_ != nullptr &&
+                            r.soundPlayer_(r.soundUser_, args[0].s,
+                                           static_cast<float>(volume));
+        out = eng::ni::niBool(played);
+        return true;
+    }
+    static bool fnCount(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                        std::uint16_t, eng::ni::NiValue& out, eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "count");
+        if (h == nullptr) {
+            return false;
+        }
+        if (args[0].type != eng::ni::NiType::String) {
+            return typeError(fault, "count(nome) exige string");
+        }
+        std::int64_t n = 0;
+        const auto& pending = h->runtime->pendingDespawn_;
+        h->scene->world().each<eng::scene::Name>(
+            [&](eng::ecs::Entity e, const eng::scene::Name& name) {
+                if (name.value == args[0].s && !h->scene->isTemplated(e) &&
+                    std::find(pending.begin(), pending.end(), e) == pending.end()) {
+                    ++n;
+                }
+            });
+        out = eng::ni::niInt(n);
+        return true;
+    }
+    static bool fnLog(eng::ni::NiExecContext& ctx, const eng::ni::NiValue* args,
+                      std::uint16_t, eng::ni::NiValue& out, eng::ni::NiFault& fault)
+    {
+        HostImpl* h = self(ctx, fault, "log");
+        if (h == nullptr) {
+            return false;
+        }
+        const eng::ni::NiValue& v = args[0];
+        std::string text = "<valor>";
+        if (v.type == eng::ni::NiType::String) {
+            text = v.s;
+        } else if (v.type == eng::ni::NiType::Int) {
+            text = std::to_string(v.i);
+        } else if (v.type == eng::ni::NiType::Float) {
+            char buf[48];
+            std::snprintf(buf, sizeof buf, "%g", v.d[0]);
+            text = buf;
+        } else if (v.type == eng::ni::NiType::Bool) {
+            text = v.i != 0 ? "true" : "false";
+        }
+        ENG_INFO("[script] {}", text);
+        h->runtime->stats_.lastLog = text;
+        out = eng::ni::niBool(true);
+        return true;
+    }
+    /// Primeira entidade ATIVA com o nome (moldes só se não houver outra).
     eng::ecs::Entity find(std::string_view name) const override
     {
         eng::ecs::Entity found{0xFFFFFFFFu, 0xFFFFFFFFu};
+        eng::ecs::Entity templated{0xFFFFFFFFu, 0xFFFFFFFFu};
         scene->world().each<eng::scene::Name>(
             [&](eng::ecs::Entity e, const eng::scene::Name& n) {
-                if (found.index == 0xFFFFFFFFu && n.value == name) {
+                if (n.value != name) {
+                    return;
+                }
+                if (scene->isTemplated(e)) {
+                    if (templated.index == 0xFFFFFFFFu) {
+                        templated = e;
+                    }
+                } else if (found.index == 0xFFFFFFFFu) {
                     found = e;
                 }
             });
-        return found;
+        return found.index != 0xFFFFFFFFu ? found : templated;
     }
 
     // --- P4.6: movimento de gameplay -----------------------------
@@ -362,7 +617,6 @@ struct RotationAdapter {
 bool rotationGet(void* user, eng::ecs::Entity e, std::string_view path,
                  eng::ni::NiValue& out, eng::ni::NiFault& fault)
 {
-    (void)path; // açúcar "rotation" = campo inteiro
     const auto* self = static_cast<const RotationAdapter*>(user);
     if (e.index == 0xFFFFFFFFu) {
         fault.kind = eng::ni::NiFault::Kind::EntityNull;
@@ -381,6 +635,12 @@ bool rotationGet(void* user, eng::ecs::Entity e, std::string_view path,
         return false;
     }
     const eng::math::Vec3 degrees = degreesFromQuat(transform->rotation);
+    if (path == "x" || path == "y" || path == "z") {
+        out = eng::ni::niFloat(path == "x" ? degrees.x
+                               : path == "y" ? degrees.y
+                                             : degrees.z);
+        return true;
+    }
     out = eng::ni::niVec3(degrees.x, degrees.y, degrees.z);
     return true;
 }
@@ -388,11 +648,15 @@ bool rotationGet(void* user, eng::ecs::Entity e, std::string_view path,
 bool rotationSet(void* user, eng::ecs::Entity e, std::string_view path,
                  const eng::ni::NiValue& v, eng::ni::NiFault& fault)
 {
-    (void)path;
     const auto* self = static_cast<const RotationAdapter*>(user);
-    if (v.type != eng::ni::NiType::Vec3) {
+    // `e.rotation.z = 30.0` troca só um eixo (graus).
+    const bool axis = path == "x" || path == "y" || path == "z";
+    const bool numeric =
+        v.type == eng::ni::NiType::Float || v.type == eng::ni::NiType::Int;
+    if (axis ? !numeric : v.type != eng::ni::NiType::Vec3) {
         fault.kind = eng::ni::NiFault::Kind::Type;
-        fault.message = "rotation exige vec3 (graus)";
+        fault.message = axis ? "rotation.x/y/z exige número (graus)"
+                             : "rotation exige vec3 (graus)";
         return false;
     }
     if (e.index == 0xFFFFFFFFu) {
@@ -410,6 +674,15 @@ bool rotationSet(void* user, eng::ecs::Entity e, std::string_view path,
         fault.kind = eng::ni::NiFault::Kind::ComponentMissing;
         fault.message = "Transform ausente na entidade";
         return false;
+    }
+    if (axis) {
+        eng::math::Vec3 degrees = degreesFromQuat(transform->rotation);
+        const float value = v.type == eng::ni::NiType::Float
+                                ? static_cast<float>(v.d[0])
+                                : static_cast<float>(v.i);
+        (path == "x" ? degrees.x : path == "y" ? degrees.y : degrees.z) = value;
+        transform->rotation = quatFromDegrees(degrees);
+        return true;
     }
     transform->rotation = quatFromDegrees(
         eng::math::Vec3{static_cast<float>(v.d[0]),
@@ -453,8 +726,13 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
 {
     shutdown();
     scene_ = &runtimeScene;
-    natives_.addBaseLibrary();
-    natives_.addStandardHost();
+    registerNatives(natives_);
+    pendingSpawn_.clear();
+    pendingDespawn_.clear();
+    programCache_.clear();
+    globals_.clear();
+    time_ = 0.f;
+    restartRequested_ = false;
     host_ = std::make_unique<HostImpl>();
     host_->runtime = this;
     host_->scene = scene_;
@@ -580,6 +858,12 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
                 return;
             }
             ++stats_.scriptsFound;
+            if (scene_->isTemplated(e)) {
+                // Moldes não rodam; a fonte é validada para o autor ver o
+                // erro já no Play, e as cópias reusam o programa.
+                (void)programFor(c.source);
+                return;
+            }
             std::vector<eng::ni::NiDiag> diags;
             auto program = eng::ni::compile(c.source, options, &diags);
             if (!program.ok()) {
@@ -605,6 +889,7 @@ void NiRuntime::start(eng::scene::Scene& runtimeScene)
                 return;
             }
             ++stats_.scriptsCompiled;
+            programCache_[c.source] = program.value();
             set_.create(std::move(program).value(), e);
         });
     stats_.instances =
@@ -635,8 +920,20 @@ void NiRuntime::fireStart()
 void NiRuntime::tick(float deltaSeconds)
 {
     delta_ = deltaSeconds;
+    time_ += deltaSeconds;
+    // Pedidos feitos fora do tick (eventos da física) entram agora.
+    flushPending();
     const eng::ni::NiExecContext::Params p = params();
-    for (const auto& instance : set_.asVector()) {
+    // Índice (não range-for): scripts podem pedir spawn durante o laço;
+    // as instâncias novas só entram no flush do fim.
+    const std::size_t count = set_.size();
+    for (std::size_t i = 0; i < count && i < set_.size(); ++i) {
+        const auto& instance = set_.asVector()[i];
+        const eng::ecs::Entity owner = instance->self();
+        if (!scene_->isNode(owner) ||
+            !scene_->participatesIn(owner, eng::scene::LayerStage::Update)) {
+            continue;
+        }
         // LOGIC LOD — filtro (opcional) decide se o
         // script roda neste frame. O callback vê CENA e câmera (o host
         // instala); um script opt-out (lodOptOut do NiScriptComponent)
@@ -667,6 +964,112 @@ void NiRuntime::tick(float deltaSeconds)
             diag::mark("SCRIPT_FAULT", "runtime", buf);
         }
     }
+    flushPending();
+}
+
+std::shared_ptr<const eng::ni::NiProgram> NiRuntime::programFor(
+    const std::string& source)
+{
+    const auto it = programCache_.find(source);
+    if (it != programCache_.end()) {
+        return it->second;
+    }
+    const eng::ni::CompileOptions options{&natives_};
+    std::vector<eng::ni::NiDiag> diags;
+    auto program = eng::ni::compile(source, options, &diags);
+    std::shared_ptr<const eng::ni::NiProgram> result;
+    if (program.ok()) {
+        result = program.value();
+    } else if (stats_.firstCompileError.empty() && !diags.empty()) {
+        char buf[192];
+        std::snprintf(buf, sizeof buf, "%u:%u %s",
+                      static_cast<unsigned>(diags.front().line),
+                      static_cast<unsigned>(diags.front().col),
+                      diags.front().message.c_str());
+        stats_.firstCompileError = buf;
+    }
+    programCache_[source] = result;  // falha também é lembrada (nullptr)
+    return result;
+}
+
+void NiRuntime::instantiateScripts(eng::ecs::Entity root)
+{
+    std::vector<eng::ecs::Entity> nodes{root};
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+        scene_->eachChild(nodes[i],
+                          [&](eng::ecs::Entity child) { nodes.push_back(child); });
+    }
+    const eng::ni::NiExecContext::Params p = params();
+    for (const eng::ecs::Entity e : nodes) {
+        const auto* c = scene_->world().get<eng::editor::NiScriptComponent>(e);
+        if (c == nullptr || c->source.empty() || scene_->isTemplated(e)) {
+            continue;
+        }
+        auto program = programFor(c->source);
+        if (program == nullptr) {
+            ++stats_.scriptsFailed;
+            continue;
+        }
+        eng::ni::NiScriptState& state = set_.create(std::move(program), e);
+        (void)vm_.run(state, "@init", p);
+        (void)vm_.run(state, "start", p);
+    }
+    stats_.instances = static_cast<std::uint32_t>(set_.size());
+}
+
+void NiRuntime::flushPending()
+{
+    if (scene_ == nullptr) {
+        return;
+    }
+    // Um spawn pode acontecer dentro de start() de outro recém-criado:
+    // repete até esvaziar (limitado para nunca travar o frame).
+    for (int round = 0; round < 8 && !pendingSpawn_.empty(); ++round) {
+        std::vector<eng::ecs::Entity> spawned;
+        spawned.swap(pendingSpawn_);
+        for (const eng::ecs::Entity e : spawned) {
+            if (scene_->isNode(e)) {
+                instantiateScripts(e);
+            }
+        }
+    }
+    if (!pendingDespawn_.empty()) {
+        std::vector<eng::ecs::Entity> doomed;
+        doomed.swap(pendingDespawn_);
+        const eng::ni::NiExecContext::Params p = params();
+        for (const eng::ecs::Entity e : doomed) {
+            for (eng::ni::NiScriptState* state : set_.instancesOf(e)) {
+                (void)vm_.run(*state, "destroy", p);
+            }
+            (void)scene_->destroyNode(e);
+        }
+        (void)set_.removeIf(
+            [](void* user, eng::ecs::Entity self) {
+                return !static_cast<eng::scene::Scene*>(user)->isNode(self);
+            },
+            scene_);
+        stats_.instances = static_cast<std::uint32_t>(set_.size());
+    }
+}
+
+void NiRuntime::registerNatives(eng::ni::NiNativeTable& natives_)
+{
+    using eng::ni::NiType;
+    natives_.addBaseLibrary();
+    natives_.addStandardHost();
+    (void)natives_.add("random", 0, 2, &HostImpl::fnRandom, NiType::Float);
+    (void)natives_.add("random_int", 2, &HostImpl::fnRandomInt, NiType::Int);
+    (void)natives_.add("global_set", 2, &HostImpl::fnGlobalSet, NiType::Bool);
+    (void)natives_.add("global_get", 1, &HostImpl::fnGlobalGet, NiType::Float);
+    (void)natives_.add("restart", 0, &HostImpl::fnRestart, NiType::Bool);
+    (void)natives_.add("time", 0, &HostImpl::fnTime, NiType::Float);
+    (void)natives_.add("view_left", 0, &HostImpl::fnView<0>, NiType::Float);
+    (void)natives_.add("view_right", 0, &HostImpl::fnView<1>, NiType::Float);
+    (void)natives_.add("view_bottom", 0, &HostImpl::fnView<2>, NiType::Float);
+    (void)natives_.add("view_top", 0, &HostImpl::fnView<3>, NiType::Float);
+    (void)natives_.add("play_sound", 1, 2, &HostImpl::fnPlaySound, NiType::Bool);
+    (void)natives_.add("count", 1, &HostImpl::fnCount, NiType::Int);
+    (void)natives_.add("log", 1, &HostImpl::fnLog, NiType::Bool);
 }
 
 void NiRuntime::shutdown() noexcept
@@ -678,6 +1081,9 @@ void NiRuntime::shutdown() noexcept
         }
     }
     set_.clear();
+    pendingSpawn_.clear();
+    pendingDespawn_.clear();
+    programCache_.clear();
     bindings_ = eng::ni::NiBindingTable{};
     bindingState_.clear();
     natives_ = eng::ni::NiNativeTable{};

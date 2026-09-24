@@ -200,6 +200,12 @@ public:
     /// `node` participa do estágio na sua camada? Ausência de LayerMember
     /// = GAME (tudo participante). Consulta canônica de física/animação/
     /// partículas/viewport — ADR-051.
+    /// true se o nó ou algum ancestral é um Molde (eng::scene::Template).
+    [[nodiscard]] bool isTemplated(eng::ecs::Entity node) const noexcept;
+    /// Participação só pela camada (ignora moldes) — o editor usa para
+    /// desenhar moldes esmaecidos fora do Play.
+    [[nodiscard]] bool layerParticipates(eng::ecs::Entity node,
+                                         LayerStage stage) const noexcept;
     [[nodiscard]] bool participatesIn(eng::ecs::Entity node,
                                        LayerStage stage) const noexcept;
 

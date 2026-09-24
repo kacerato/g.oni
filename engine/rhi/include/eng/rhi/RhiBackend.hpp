@@ -174,6 +174,19 @@ public:
             eng::core::StatusCode::NotSupported,
             "rhi: backend sem readback de pixels"});
     }
+
+    /// Lê a surface inteira (RGBA8, linha 0 = BASE da imagem, convenção GL)
+    /// em `out` (width*height*4 bytes). Backends sem readback → NotSupported.
+    [[nodiscard]] virtual eng::core::Result<void> readPixels(
+        std::uint32_t width, std::uint32_t height, std::uint8_t* out)
+    {
+        (void)width;
+        (void)height;
+        (void)out;
+        return eng::core::makeUnexpected(eng::core::Error{
+            eng::core::StatusCode::NotSupported,
+            "rhi: backend sem readback de pixels"});
+    }
 };
 
 } // namespace eng::rhi

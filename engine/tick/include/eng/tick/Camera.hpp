@@ -56,6 +56,9 @@ struct CameraData {
     float limitMinY{0.f};
     float limitMaxX{0.f};
     float limitMaxY{0.f};
+    /// Altura visível em unidades de mundo. > 0: o zoom se ajusta à altura
+    /// da tela (mesmo enquadramento em qualquer aparelho); 0 = usa `zoom`.
+    float viewHeight{0.f};
 };
 
 /// Câmera ativa resolvida — ou nenhuma. Dados POR VALOR: ponteiros de
@@ -142,4 +145,5 @@ ENG_REFLECT_BEGIN(eng::tick::CameraData)
     ENG_REFLECT_FIELD(limitMinY)
     ENG_REFLECT_FIELD(limitMaxX)
     ENG_REFLECT_FIELD(limitMaxY)
+    ENG_REFLECT_FIELD(viewHeight)
 ENG_REFLECT_END()

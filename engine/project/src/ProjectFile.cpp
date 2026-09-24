@@ -1,5 +1,7 @@
 #include "eng/project/ProjectFile.hpp"
 
+#include <initializer_list>
+
 #include <cmath>
 
 #include "eng/serial/Json.hpp"
@@ -217,6 +219,39 @@ eng::core::Result<ProjectConfig> ProjectFile::configFromJson(
         }
     }
 
+    // Jogo (aditivo — ausente = defaults; valores inválidos = defaults).
+    GameConfig game{};
+    if (const auto gameKey = value.find("game");
+        gameKey.has_value() && gameKey->isObject()) {
+        const auto readColor = [&](const char* key, float& out) {
+            const auto v = gameKey->find(key);
+            if (v.has_value() && v->isNumber()) {
+                const double d = v->asF64();
+                if (d >= 0.0 && d <= 1.0) {
+                    out = static_cast<float>(d);
+                }
+            }
+        };
+        readColor("backgroundR", game.backgroundR);
+        readColor("backgroundG", game.backgroundG);
+        readColor("backgroundB", game.backgroundB);
+        const auto readChoice = [&](const char* key, std::string& out,
+                                    std::initializer_list<const char*> allowed) {
+            const auto v = gameKey->find(key);
+            if (!v.has_value() || !v->isString()) {
+                return;
+            }
+            for (const char* option : allowed) {
+                if (v->asString() == option) {
+                    out = option;
+                }
+            }
+        };
+        readChoice("orientation", game.orientation,
+                   {"portrait", "landscape", "auto"});
+        readChoice("controls", game.controls, {"platformer", "tap", "none"});
+    }
+
     ProjectConfig config;
     config.projectId = projectId.value();
     config.name = name->asString();
@@ -225,6 +260,7 @@ eng::core::Result<ProjectConfig> ProjectFile::configFromJson(
     config.sceneRoots = std::move(sceneRoots);
     config.collisionLayers = std::move(collisionLayers);
     config.grid = grid;
+    config.game = game;
     return config;
 }
 
@@ -277,6 +313,15 @@ eng::core::Result<eng::serial::JsonValue> ProjectFile::toJson(
         gridJson.set("majorG", JsonValue::real(config.grid.majorG));
         gridJson.set("majorB", JsonValue::real(config.grid.majorB));
         value.set("grid", std::move(gridJson));
+    }
+    {
+        JsonValue gameJson = JsonValue::object();
+        gameJson.set("backgroundR", JsonValue::real(config.game.backgroundR));
+        gameJson.set("backgroundG", JsonValue::real(config.game.backgroundG));
+        gameJson.set("backgroundB", JsonValue::real(config.game.backgroundB));
+        gameJson.set("orientation", JsonValue::string(config.game.orientation));
+        gameJson.set("controls", JsonValue::string(config.game.controls));
+        value.set("game", std::move(gameJson));
     }
     return value;
 }

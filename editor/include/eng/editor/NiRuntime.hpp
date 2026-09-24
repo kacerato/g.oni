@@ -15,6 +15,7 @@
 /// mecanismo do Inspector, auditoria D2).
 
 #include <memory>
+#include <unordered_map>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -45,6 +46,8 @@ struct NiScriptStats {
     std::uint32_t firstFailedEntity{0xFFFFFFFFu};
     /// Último fault de runtime ("mensagem @ entidade") — vazio se nenhum.
     std::string lastFaultMessage;
+    /// Última mensagem de `log(...)` dos scripts.
+    std::string lastLog;
 
     [[nodiscard]] bool healthy() const noexcept
     {
@@ -64,6 +67,10 @@ public:
     /// diagnóstico persistido — P4.1: nunca mais silêncio), cria
     /// instâncias e roda @init na ordem de criação.
     void start(eng::scene::Scene& runtimeScene);
+
+    /// Tabela completa de nativos do jogo (&BL + host + API do runtime).
+    /// O editor usa a mesma para verificar scripts sem rodar.
+    static void registerNatives(eng::ni::NiNativeTable& natives);
 
     /// `up start` em todas as instâncias (após todos @init — ordem
     /// determinística documentada em docs/ni-script/07).
@@ -113,6 +120,38 @@ public:
     /// a política (off-screen pula; opt-out sempre roda) é do HOST do
     /// filtro — o runtime só obedece. Instalado no play() com a cena do
     /// clone; morre com o stop (o ponteiro aponta para o documento).
+    /// Retângulo visível do jogo em mundo (para spawn na borda da tela).
+    void setView(float left, float right, float bottom, float top) noexcept
+    {
+        viewLeft_ = left;
+        viewRight_ = right;
+        viewBottom_ = bottom;
+        viewTop_ = top;
+    }
+
+    /// Toca um som do projeto (instalado pelo documento).
+    void setSoundPlayer(bool (*play)(void* user, std::string_view asset,
+                                     float volume),
+                        void* user) noexcept
+    {
+        soundPlayer_ = play;
+        soundUser_ = user;
+    }
+
+    /// true uma vez depois que um script chamou `restart()`.
+    [[nodiscard]] bool consumeRestartRequest() noexcept
+    {
+        const bool requested = restartRequested_;
+        restartRequested_ = false;
+        return requested;
+    }
+
+    /// Semente do `random()` (o documento usa uma nova a cada Play).
+    void setRandomSeed(std::uint64_t seed) noexcept
+    {
+        rng_ = seed != 0 ? seed : 0x9E3779B97F4A7C15ull;
+    }
+
     void setLodFilter(bool (*filter)(void* user, eng::ecs::Entity self),
                       void* user) noexcept
     {
@@ -153,6 +192,12 @@ private:
     void runHandlerOn(eng::ecs::Entity self, std::string_view handler);
 
     [[nodiscard]] bool queryAction_(std::string_view action, int phase) const;
+    /// Aplica spawns/despawns pedidos pelos scripts (fora da iteração).
+    void flushPending();
+    void instantiateScripts(eng::ecs::Entity root);
+    [[nodiscard]] std::shared_ptr<const eng::ni::NiProgram> programFor(
+        const std::string& source);
+
     [[nodiscard]] eng::ni::NiExecContext::Params params() const;
 
     eng::ni::NiNativeTable natives_;
@@ -173,6 +218,20 @@ private:
     /// Recursão: handler de evento pode emitir contato (spawn/move) →
     /// publicar de novo? Guarda de profundidade (um nível de script).
     bool dispatching_ = false;
+    std::vector<eng::ecs::Entity> pendingSpawn_;
+    std::vector<eng::ecs::Entity> pendingDespawn_;
+    std::unordered_map<std::string, std::shared_ptr<const eng::ni::NiProgram>>
+        programCache_;
+    std::unordered_map<std::string, double> globals_;
+    float time_ = 0.f;
+    float viewLeft_ = -8.f;
+    float viewRight_ = 8.f;
+    float viewBottom_ = -6.f;
+    float viewTop_ = 6.f;
+    bool restartRequested_ = false;
+    std::uint64_t rng_ = 0x9E3779B97F4A7C15ull;
+    bool (*soundPlayer_)(void*, std::string_view, float) = nullptr;
+    void* soundUser_ = nullptr;
     /// P4.7.0 B5: varredura do kinematic no `move` (default ON).
     bool kinematicSweep_ = true;
     /// P4.7.0 B6: filtro do logic LOD (nullptr = sempre roda).

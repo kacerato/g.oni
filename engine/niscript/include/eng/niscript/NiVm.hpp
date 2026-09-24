@@ -143,6 +143,9 @@ public:
     NiScriptState& create(std::shared_ptr<const NiProgram> program,
                           ecs::Entity self);
     void clear() noexcept { instances_.clear(); }
+    /// Remove as instâncias cujo `self` não passa em `keep` (entidades
+    /// destruídas durante o jogo). Devolve quantas saíram.
+    std::size_t removeIf(bool (*drop)(void* user, ecs::Entity self), void* user);
     [[nodiscard]] bool empty() const noexcept { return instances_.empty(); }
     [[nodiscard]] std::size_t size() const noexcept { return instances_.size(); }
 

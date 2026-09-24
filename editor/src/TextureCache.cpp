@@ -111,6 +111,48 @@ const TextureCache::GpuTexture* TextureCache::acquire(
     return &inserted->second.gpu;
 }
 
+const TextureCache::GpuTexture* TextureCache::acquireSolid(
+    eng::rhi::Renderer& renderer)
+{
+    static const std::string kKey{"@solid"};
+    auto it = entries_.find(kKey);
+    if (it != entries_.end() && it->second.alive) {
+        return &it->second.gpu;
+    }
+    std::vector<std::byte> white(2u * 2u * 4u, std::byte{0xFF});
+    eng::rhi::TextureDesc desc{};
+    desc.width = 2;
+    desc.height = 2;
+    desc.format = eng::rhi::Format::R8G8B8A8Srgb;
+    desc.initialData = std::span{white};
+    desc.generateMipmaps = false;
+    auto texture = renderer.createTexture(desc);
+    if (texture.isError()) {
+        return nullptr;
+    }
+    eng::rhi::SamplerDesc samplerDesc{};
+    samplerDesc.minFilter = eng::rhi::FilterMode::Nearest;
+    samplerDesc.magFilter = eng::rhi::FilterMode::Nearest;
+    samplerDesc.mipFilter = eng::rhi::FilterMode::Nearest;
+    samplerDesc.addressU = eng::rhi::AddressMode::ClampToEdge;
+    samplerDesc.addressV = eng::rhi::AddressMode::ClampToEdge;
+    auto sampler = renderer.createSampler(samplerDesc);
+    if (sampler.isError()) {
+        (void)renderer.destroyTexture(texture.value());
+        return nullptr;
+    }
+    Entry entry{};
+    entry.gpu.texture = texture.value();
+    entry.gpu.sampler = sampler.value();
+    entry.gpu.width = 2;
+    entry.gpu.height = 2;
+    entry.gpu.alpha = false;
+    entry.alive = true;
+    auto [inserted, _] = entries_.insert_or_assign(kKey, std::move(entry));
+    (void)_;
+    return &inserted->second.gpu;
+}
+
 void TextureCache::clear(eng::rhi::Renderer& renderer)
 {
     for (auto& [name, entry] : entries_) {

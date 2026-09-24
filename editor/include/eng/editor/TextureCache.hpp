@@ -51,6 +51,9 @@ public:
 
     /// Invalida TUDO (troca de projeto, reimport, destruição do renderer).
     /// Destroi os recursos GPU via renderer ANTES de esvaziar.
+    /// Textura branca 2×2 para sprites de cor sólida e texto (tint = cor).
+    [[nodiscard]] const GpuTexture* acquireSolid(eng::rhi::Renderer& renderer);
+
     void clear(eng::rhi::Renderer& renderer);
 
     /// Descarta as entradas SEM destruir recursos GPU (renderer já morto —

@@ -5,6 +5,7 @@
 #include "eng/editor/NiRuntime.hpp"
 #include "eng/editor/NiScriptComponent.hpp"
 #include "eng/editor/SpriteData.hpp"
+#include "eng/editor/TextData.hpp"
 #include "eng/particles/Particles.hpp"
 #include "eng/render/Light2D.hpp"
 #include "eng/physics/Physics.hpp"
@@ -171,6 +172,14 @@ const bool goni_editor_components_registered = [] {
         c.scriptAlias = "sprite";
         (void)SceneSerializer::registerComponentType<eng::editor::SpriteData>(
             "eng::editor::SpriteData", std::move(c));
+    }
+    // Texto na cena ou preso à tela (placar, mensagens).
+    {
+        Contract c;
+        c.category = "Render";
+        c.scriptAlias = "text";
+        (void)SceneSerializer::registerComponentType<eng::editor::TextData>(
+            "eng::editor::TextData", std::move(c));
     }
     // Scripts NI-Script anexados a nós
     {

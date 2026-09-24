@@ -19,6 +19,7 @@
 #include "eng/editor/Inspector.hpp"
 #include "eng/fs/MemoryFileSystem.hpp"
 #include "eng/input/Input.hpp"
+#include "eng/scene/Name.hpp"
 
 namespace {
 
@@ -367,4 +368,172 @@ TEST_CASE("protocol: todas as operações que a UI usa respondem sem abortar",
     CHECK(hud["scripts"].is_object());
     f.ok({{"op", "play.stop"}});
     CHECK(f.state()["mode"] == "edit");
+}
+
+namespace {
+
+std::vector<eng::ecs::Entity> entitiesNamed(const eng::scene::Scene& scene,
+                                            const std::string& name,
+                                            bool includeTemplates = false)
+{
+    std::vector<eng::ecs::Entity> out;
+    scene.world().each<eng::scene::Name>(
+        [&](eng::ecs::Entity e, const eng::scene::Name& n) {
+            if (n.value == name && (includeTemplates || !scene.isTemplated(e))) {
+                out.push_back(e);
+            }
+        });
+    return out;
+}
+
+std::string textOf(const eng::scene::Scene& scene, const std::string& name)
+{
+    const auto found = entitiesNamed(scene, name);
+    if (found.empty()) {
+        return "<sem entidade>";
+    }
+    auto v = eng::editor::Inspector::getField(scene, found.front(),
+                                              "eng::editor::TextData", "text");
+    return v.ok() ? v.value() : "<sem texto>";
+}
+
+double numberOf(const eng::scene::Scene& scene, eng::ecs::Entity e,
+                const char* comp, const char* path)
+{
+    auto v = eng::editor::Inspector::getField(scene, e, comp, path);
+    return v.ok() ? std::atof(v.value().c_str()) : 0.0;
+}
+
+}  // namespace
+
+TEST_CASE("protocol: exemplo Voo é jogável do começo ao recomeço", "[protocol][flappy]")
+{
+    Fixture f;
+    f.ok({{"op", "project.new"}, {"name", "Voo"}, {"template", "flappy"}});
+    const Json settings = f.ok({{"op", "settings.get"}});
+    CHECK(settings["game"]["controls"] == "tap");
+    CHECK(settings["game"]["orientation"] == "portrait");
+
+    // Todos os scripts do exemplo compilam.
+    for (const char* script : {"passaro.nis", "cano.nis", "gerador.nis"}) {
+        const Json src = f.ok({{"op", "script.read"}, {"name", script}});
+        const Json check = f.ok({{"op", "script.compile"}, {"source", src}});
+        INFO(script << ": " << check.dump());
+        REQUIRE(check["ok"].get<bool>());
+    }
+
+    // Tela de celular em retrato.
+    f.doc->viewport().setScreenSize(720.f, 1600.f);
+    f.doc->setGameViewportSize(720.f, 1600.f);
+    f.doc->setScriptSeed(42);
+    f.ok({{"op", "play.start"}});
+    auto& scene = *f.doc->sceneInFocus();
+
+    // O molde não roda nem aparece: nenhum cano ativo antes de começar.
+    f.run(30);
+    CHECK(entitiesNamed(scene, "Cano").empty());
+    CHECK(entitiesNamed(scene, "Cano", true).size() == 1);
+    auto bird = entitiesNamed(scene, "Pássaro").front();
+    const double startY = numberOf(scene, bird, "eng::math::Transform", "position.y");
+    CHECK(numberOf(scene, bird, "eng::math::Transform", "position.y") == startY);
+    CHECK(textOf(scene, "Mensagem") == "TOQUE PARA VOAR");
+
+    auto tap = [&] {
+        f.key(eng::input::Key::Space, true);
+        f.run(1);
+        f.key(eng::input::Key::Space, false);
+    };
+
+    // Piloto automático: toca quando o pássaro fica abaixo do vão do próximo
+    // cano (ou do centro, se não há cano à frente).
+    tap();
+    CHECK(textOf(scene, "Mensagem").empty());
+    int frames = 0;
+    std::size_t maxPipes = 0;
+    for (; frames < 60 * 20; ++frames) {
+        bird = entitiesNamed(scene, "Pássaro").front();
+        const double by = numberOf(scene, bird, "eng::math::Transform", "position.y");
+        const double vy = numberOf(scene, bird, "eng::physics::RigidBody", "velocity.y");
+        double target = 0.3;
+        double nearest = 1e9;
+        const auto pipes = entitiesNamed(scene, "Cano");
+        maxPipes = std::max(maxPipes, pipes.size());
+        for (const auto pipe : pipes) {
+            const double px = numberOf(scene, pipe, "eng::math::Transform", "position.x");
+            if (px > -1.2 - 0.8 && px < nearest) {
+                nearest = px;
+                target = numberOf(scene, pipe, "eng::math::Transform", "position.y");
+            }
+        }
+        if (by < target - 0.4 && vy < 0.0) {
+            tap();
+        } else {
+            f.run(1);
+        }
+        if (textOf(scene, "Mensagem").rfind("FIM", 0) == 0) {
+            break;
+        }
+    }
+    const std::string score = textOf(scene, "Placar");
+    INFO("placar=" << score << " quadros=" << frames << " canos=" << maxPipes);
+    CHECK(maxPipes >= 2);                 // canos surgem pela direita
+    CHECK(std::atoi(score.c_str()) >= 3); // passou por vários canos
+    const Json hud = f.ok({{"op", "play.hud"}});
+    INFO(hud.dump());
+    CHECK(hud["scripts"]["faults"] == 0);
+
+    // Canos andam para a esquerda e somem fora da tela (não acumulam).
+    CHECK(entitiesNamed(scene, "Cano").size() <= 4);
+
+    // Sem tocar, o pássaro cai e bate: fim de jogo.
+    for (int i = 0; i < 60 * 5 && textOf(scene, "Mensagem").rfind("FIM", 0) != 0; ++i) {
+        f.run(1);
+    }
+    REQUIRE(textOf(scene, "Mensagem").rfind("FIM", 0) == 0);
+    // Parado: canos não andam mais.
+    const auto still = entitiesNamed(scene, "Cano");
+    if (!still.empty()) {
+        const double x0 = numberOf(scene, still.front(), "eng::math::Transform", "position.x");
+        f.run(30);
+        CHECK(numberOf(scene, still.front(), "eng::math::Transform", "position.x") == x0);
+    }
+
+    // Toque recomeça a fase do zero.
+    tap();
+    f.run(2);
+    auto& fresh = *f.doc->sceneInFocus();
+    CHECK(f.doc->isPlaying());
+    CHECK(textOf(fresh, "Placar") == "0");
+    CHECK(textOf(fresh, "Mensagem") == "TOQUE PARA VOAR");
+    CHECK(entitiesNamed(fresh, "Cano").empty());
+    f.ok({{"op", "play.stop"}});
+}
+
+TEST_CASE("protocol: exemplo Chuva de caixas solta, empilha e limpa caixas",
+          "[protocol][boxes]")
+{
+    Fixture f;
+    f.ok({{"op", "project.new"}, {"name", "Caixas"}, {"template", "boxes"}});
+    f.doc->viewport().setScreenSize(720.f, 1600.f);
+    f.doc->setScriptSeed(7);
+    f.ok({{"op", "play.start"}});
+    auto& scene = *f.doc->sceneInFocus();
+    f.run(60 * 4);
+    const auto boxes = entitiesNamed(scene, "Caixa");
+    INFO("caixas=" << boxes.size() << " texto=" << textOf(scene, "Contador"));
+    CHECK(boxes.size() >= 4);
+    CHECK(textOf(scene, "Contador").rfind("CAIXAS: ", 0) == 0);
+    // Alguma caixa parou sobre o chão (topo do chão em y = -4.1).
+    bool resting = false;
+    for (const auto box : boxes) {
+        const double y = numberOf(scene, box, "eng::math::Transform", "position.y");
+        resting = resting || (y < -3.0 && y > -4.2);
+    }
+    CHECK(resting);
+    const Json hud = f.ok({{"op", "play.hud"}});
+    INFO(hud.dump());
+    CHECK(hud["scripts"]["faults"] == 0);
+    // Tempo de vida: depois de muitos segundos o número fica limitado.
+    f.run(60 * 20);
+    CHECK(entitiesNamed(scene, "Caixa").size() <= 18);
 }

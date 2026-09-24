@@ -145,6 +145,8 @@ std::string shortName(std::string_view canonical)
         {"eng::tick::CameraData", "Câmera"},
         {"eng::editor::AudioSource", "Som"},
         {"eng::render::Light2D", "Luz 2D"},
+        {"eng::editor::TextData", "Texto"},
+        {"eng::scene::Template", "Molde"},
     };
     const auto it = kNames.find(canonical);
     if (it != kNames.end()) {
@@ -169,6 +171,9 @@ std::string entityKind(const std::vector<std::string>& components)
         (hasC("eng::editor::NiScriptComponent") &&
          hasC("eng::physics::RigidBody"))) {
         return "character";
+    }
+    if (hasC("eng::editor::TextData")) {
+        return "text";
     }
     if (hasC("eng::render::Light2D")) {
         return "light";
@@ -230,6 +235,117 @@ constexpr const char* kPlayerScript =
     "    stop\n"
     "stop\n";
 
+constexpr const char* kBirdScript =
+    "# Pássaro: toque para voar e passe entre os canos.\n"
+    "add &BL\n"
+    "\n"
+    "var forca = 7.0\n"
+    "var vivo = true\n"
+    "var comecou = false\n"
+    "var pontos = 0\n"
+    "\n"
+    "up update:\n"
+    "    var me = self()\n"
+    "    if action_pressed(\"tap\"):\n"
+    "        if vivo:\n"
+    "            if not comecou:\n"
+    "                comecou = true\n"
+    "                me.rigidbody.useGravity = true\n"
+    "                global_set(\"jogando\", 1)\n"
+    "                var msg = find(\"Mensagem\")\n"
+    "                msg.text.text = \"\"\n"
+    "            stop\n"
+    "            me.rigidbody.velocity.y = forca\n"
+    "            play_sound(\"asa.wav\")\n"
+    "        stop\n"
+    "        else:\n"
+    "            restart()\n"
+    "        stop\n"
+    "    stop\n"
+    "    # Inclina o pássaro conforme sobe ou cai.\n"
+    "    var vy: float = me.rigidbody.velocity.y\n"
+    "    me.rotation.z = clamp(vy * 5.0, -70.0, 30.0)\n"
+    "stop\n"
+    "\n"
+    "up on_hit:\n"
+    "    if vivo:\n"
+    "        vivo = false\n"
+    "        global_set(\"jogando\", 0)\n"
+    "        var msg = find(\"Mensagem\")\n"
+    "        msg.text.text = \"FIM!\\nTOQUE PARA JOGAR\"\n"
+    "    stop\n"
+    "stop\n"
+    "\n"
+    "up on_enter:\n"
+    "    if vivo:\n"
+    "        pontos = pontos + 1\n"
+    "        var placar = find(\"Placar\")\n"
+    "        placar.text.text = str(pontos)\n"
+    "    stop\n"
+    "stop\n";
+
+constexpr const char* kPipeScript =
+    "# Cano: anda para a esquerda enquanto o jogo roda e some fora da tela.\n"
+    "var velocidade = 2.4\n"
+    "\n"
+    "up update:\n"
+    "    var me = self()\n"
+    "    if global_get(\"jogando\") > 0.5:\n"
+    "        me.position.x = me.position.x - velocidade * delta()\n"
+    "    stop\n"
+    "    if me.position.x < view_left() - 2.0:\n"
+    "        despawn(me)\n"
+    "    stop\n"
+    "stop\n";
+
+constexpr const char* kPipeSpawnerScript =
+    "# Gerador: um cano novo a cada intervalo, com o vão em altura aleatória.\n"
+    "var intervalo = 1.7\n"
+    "var espera = 0.0\n"
+    "\n"
+    "up update:\n"
+    "    if global_get(\"jogando\") > 0.5:\n"
+    "        espera = espera - delta()\n"
+    "        if espera <= 0.0:\n"
+    "            espera = intervalo\n"
+    "            var cano = spawn(\"Cano\")\n"
+    "            cano.position.x = view_right() + 1.5\n"
+    "            cano.position.y = random(-1.5, 2.0)\n"
+    "        stop\n"
+    "    stop\n"
+    "stop\n";
+
+constexpr const char* kBoxSpawnerScript =
+    "# Gerador: solta uma caixa a cada toque (e sozinho, de tempos em tempos).\n"
+    "add &BL\n"
+    "\n"
+    "var espera = 0.0\n"
+    "\n"
+    "up update:\n"
+    "    espera = espera - delta()\n"
+    "    if action_pressed(\"tap\") or espera <= 0.0:\n"
+    "        espera = 0.8\n"
+    "        var caixa = spawn(\"Caixa\")\n"
+    "        caixa.position.x = random(view_left() + 0.5, view_right() - 0.5)\n"
+    "        caixa.position.y = view_top() + 1.0\n"
+    "        caixa.rotation.z = random(0.0, 90.0)\n"
+    "        var hud = find(\"Contador\")\n"
+    "        hud.text.text = \"CAIXAS: \" + str(count(\"Caixa\"))\n"
+    "    stop\n"
+    "stop\n";
+
+constexpr const char* kBoxScript =
+    "# Caixa: some depois de um tempo para a cena não encher.\n"
+    "var vida = 0.0\n"
+    "\n"
+    "up update:\n"
+    "    vida = vida + delta()\n"
+    "    var me = self()\n"
+    "    if vida > 12.0:\n"
+    "        despawn(me)\n"
+    "    stop\n"
+    "stop\n";
+
 class Builder {
 public:
     explicit Builder(EditorDocument& doc) : doc_(doc) {}
@@ -285,6 +401,54 @@ public:
         }
         std::snprintf(buf, sizeof buf, "%g", static_cast<double>(hy));
         return set(e, "eng::physics::Collider", "halfExtents.y", buf);
+    }
+
+    Result<void> text(eng::ecs::Entity e, std::string_view value, float size,
+                      bool screen, float sx, float sy)
+    {
+        const auto* scene = doc_.sceneInFocus();
+        const auto comps = scene != nullptr
+                               ? Inspector::componentsOf(*scene, e)
+                               : std::vector<std::string>{};
+        if (std::find(comps.begin(), comps.end(), "eng::editor::TextData") ==
+            comps.end()) {
+            if (auto r = add(e, "eng::editor::TextData"); !r.ok()) {
+                return r;
+            }
+        }
+        char buf[32];
+        auto num = [&](float v) {
+            std::snprintf(buf, sizeof buf, "%g", static_cast<double>(v));
+            return std::string(buf);
+        };
+        const std::pair<const char*, std::string> fields[] = {
+            {"text", std::string(value)},
+            {"size", num(size)},
+            {"screenSpace", screen ? "true" : "false"},
+            {"screenX", num(sx)},
+            {"screenY", num(sy)},
+        };
+        for (const auto& [path, v] : fields) {
+            if (auto r = set(e, "eng::editor::TextData", path, v); !r.ok()) {
+                return r;
+            }
+        }
+        return {};
+    }
+
+    Result<void> script(eng::ecs::Entity e, const std::string& name,
+                        const char* source)
+    {
+        auto listed = doc_.scriptList();
+        const bool exists =
+            listed.ok() && std::find(listed.value().begin(), listed.value().end(),
+                                     name) != listed.value().end();
+        if (!exists) {
+            if (auto r = doc_.scriptWrite(name, source); !r.ok()) {
+                return r;
+            }
+        }
+        return doc_.scriptAssign(e, name);
     }
 
     Result<void> body(eng::ecs::Entity e, std::string_view type)
@@ -382,15 +546,7 @@ Result<eng::ecs::Entity> createFromTemplate(EditorDocument& doc,
         TRY(b.tint(e.value(), 0.54f, 0.71f, 0.97f));
         TRY(b.box(e.value(), 0.5f, 0.5f));
         TRY(b.body(e.value(), "DynamicLite"));
-        const std::string script = "jogador.nis";
-        auto listed = doc.scriptList();
-        const bool exists =
-            listed.ok() && std::find(listed.value().begin(), listed.value().end(),
-                                     script) != listed.value().end();
-        if (!exists) {
-            TRY(doc.scriptWrite(script, kPlayerScript));
-        }
-        TRY(doc.scriptAssign(e.value(), script));
+        TRY(b.script(e.value(), "jogador.nis", kPlayerScript));
         return e;
     }
     if (kind == "particles") {
@@ -409,6 +565,14 @@ Result<eng::ecs::Entity> createFromTemplate(EditorDocument& doc,
         TRY(b.add(e.value(), "eng::render::Light2D"));
         return e;
     }
+    if (kind == "text") {
+        auto e = doc.createEntity(named("Texto"), parent);
+        if (e.isError()) {
+            return e;
+        }
+        TRY(b.text(e.value(), "TEXTO", 0.6f, false, 0.5f, 0.1f));
+        return e;
+    }
     if (kind == "audio") {
         auto e = doc.createEntity(named("Som"), parent);
         if (e.isError()) {
@@ -422,47 +586,144 @@ Result<eng::ecs::Entity> createFromTemplate(EditorDocument& doc,
                                                std::string(kind)});
 }
 
+/// Exemplos prontos oferecidos na tela inicial.
+struct ProjectTemplateInfo {
+    const char* id;
+    const char* title;
+    const char* description;
+};
+
+constexpr ProjectTemplateInfo kProjectTemplates[] = {
+    {"platformer", "Plataforma 2D",
+     "Personagem que anda e pula, chão, plataforma e câmera que segue."},
+    {"flappy", "Voo",
+     "Toque para voar entre canos que surgem sem parar. Placar e recomeço."},
+    {"boxes", "Chuva de caixas",
+     "Física: cada toque solta uma caixa que cai e empilha."},
+    {"empty", "Vazio", "Só uma câmera. Você monta o resto."},
+};
+
+eng::project::GameConfig gameFor(float r, float g, float b,
+                                 const char* orientation, const char* controls)
+{
+    eng::project::GameConfig game;
+    game.backgroundR = r;
+    game.backgroundG = g;
+    game.backgroundB = b;
+    game.orientation = orientation;
+    game.controls = controls;
+    return game;
+}
+
 /// Popula um projeto recém-criado a partir de um modelo de projeto.
 Result<void> applyProjectTemplate(EditorDocument& doc, std::string_view kind)
 {
+    Builder b(doc);
+    auto make = [&](const char* tpl, const char* name,
+                    eng::ecs::Entity parent = eng::scene::kNoEntity) {
+        return createFromTemplate(doc, tpl, name, parent);
+    };
+    auto camera = [&](float viewHeight, const char* follow) -> Result<void> {
+        auto cam = make("camera", "Câmera");
+        if (cam.isError()) {
+            return makeUnexpected(cam.error());
+        }
+        char buf[32];
+        std::snprintf(buf, sizeof buf, "%g", static_cast<double>(viewHeight));
+        TRY(b.set(cam.value(), "eng::tick::CameraData", "viewHeight", buf));
+        if (follow != nullptr) {
+            TRY(b.set(cam.value(), "eng::tick::CameraData", "followName", follow));
+        }
+        return {};
+    };
+#define MAKE(var, ...)                               \
+    auto var = make(__VA_ARGS__);                    \
+    if (var.isError()) {                             \
+        return makeUnexpected(var.error());          \
+    }
+
     if (kind.empty() || kind == "empty") {
-        auto cam = createFromTemplate(doc, "camera", "Câmera",
-                                      eng::scene::kNoEntity);
-        if (cam.isError()) {
-            return makeUnexpected(cam.error());
-        }
+        TRY(camera(10.f, nullptr));
+        TRY(doc.setGameConfig(gameFor(0.07f, 0.08f, 0.11f, "auto", "platformer")));
     } else if (kind == "platformer") {
-        Builder b(doc);
-        auto ground = createFromTemplate(doc, "ground", "Chão",
-                                         eng::scene::kNoEntity);
-        if (ground.isError()) {
-            return makeUnexpected(ground.error());
-        }
+        MAKE(ground, "ground", "Chão");
         TRY(b.place(ground.value(), 0.f, -2.f, 14.f, 1.f));
-        auto ledge = createFromTemplate(doc, "ground", "Plataforma",
-                                        eng::scene::kNoEntity);
-        if (ledge.isError()) {
-            return makeUnexpected(ledge.error());
-        }
+        TRY(b.tint(ground.value(), 0.30f, 0.52f, 0.36f));
+        MAKE(ledge, "ground", "Plataforma");
         TRY(b.place(ledge.value(), 3.5f, 0.2f, 3.f, 0.4f));
-        auto player = createFromTemplate(doc, "character", "Jogador",
-                                         eng::scene::kNoEntity);
-        if (player.isError()) {
-            return makeUnexpected(player.error());
-        }
+        TRY(b.tint(ledge.value(), 0.62f, 0.45f, 0.30f));
+        MAKE(player, "character", "Jogador");
         TRY(b.place(player.value(), -2.f, 0.f));
-        auto cam = createFromTemplate(doc, "camera", "Câmera",
-                                      eng::scene::kNoEntity);
-        if (cam.isError()) {
-            return makeUnexpected(cam.error());
+        TRY(camera(9.f, "Jogador"));
+        TRY(doc.setGameConfig(gameFor(0.42f, 0.66f, 0.88f, "landscape", "platformer")));
+    } else if (kind == "flappy") {
+        // Chão.
+        MAKE(ground, "ground", "Chão");
+        TRY(b.place(ground.value(), 0.f, -5.6f, 60.f, 1.2f));
+        TRY(b.tint(ground.value(), 0.42f, 0.70f, 0.30f));
+        // Pássaro.
+        MAKE(bird, "sprite", "Pássaro");
+        TRY(b.place(bird.value(), -1.2f, 0.8f, 0.7f, 0.7f));
+        TRY(b.tint(bird.value(), 1.f, 0.82f, 0.22f));
+        TRY(b.box(bird.value(), 0.45f, 0.45f));
+        TRY(b.body(bird.value(), "DynamicLite"));
+        TRY(b.set(bird.value(), "eng::physics::RigidBody", "useGravity", "false"));
+        TRY(b.set(bird.value(), "eng::physics::RigidBody", "gravity.y", "-24"));
+        TRY(b.script(bird.value(), "passaro.nis", kBirdScript));
+        // Molde do cano (par de canos + vão que conta ponto).
+        auto pipe = doc.createEntity("Cano", eng::scene::kNoEntity);
+        if (pipe.isError()) {
+            return makeUnexpected(pipe.error());
         }
-        TRY(b.set(cam.value(), "eng::tick::CameraData", "followName",
-                  "Jogador"));
+        TRY(b.place(pipe.value(), 6.f, 0.f));
+        TRY(b.add(pipe.value(), "eng::scene::Template"));
+        TRY(b.script(pipe.value(), "cano.nis", kPipeScript));
+        constexpr float kGapHalf = 1.6f;
+        MAKE(top, "ground", "Cima", pipe.value());
+        TRY(b.place(top.value(), 0.f, kGapHalf + 5.f, 1.2f, 10.f));
+        TRY(b.tint(top.value(), 0.30f, 0.74f, 0.36f));
+        MAKE(bottom, "ground", "Baixo", pipe.value());
+        TRY(b.place(bottom.value(), 0.f, -(kGapHalf + 5.f), 1.2f, 10.f));
+        TRY(b.tint(bottom.value(), 0.30f, 0.74f, 0.36f));
+        auto gap = doc.createEntity("Vão", pipe.value());
+        if (gap.isError()) {
+            return makeUnexpected(gap.error());
+        }
+        TRY(b.place(gap.value(), 0.4f, 0.f, 0.2f, 2.f * kGapHalf));
+        TRY(b.box(gap.value(), 0.5f, 0.5f));
+        TRY(b.set(gap.value(), "eng::physics::Collider", "isTrigger", "true"));
+        // Gerador e textos.
+        MAKE(spawner, "empty", "Gerador");
+        TRY(b.script(spawner.value(), "gerador.nis", kPipeSpawnerScript));
+        MAKE(score, "text", "Placar");
+        TRY(b.text(score.value(), "0", 1.1f, true, 0.5f, 0.12f));
+        MAKE(message, "text", "Mensagem");
+        TRY(b.text(message.value(), "TOQUE PARA VOAR", 0.45f, true, 0.5f, 0.36f));
+        TRY(camera(12.f, nullptr));
+        TRY(doc.setGameConfig(gameFor(0.36f, 0.64f, 0.86f, "portrait", "tap")));
+    } else if (kind == "boxes") {
+        MAKE(ground, "ground", "Chão");
+        TRY(b.place(ground.value(), 0.f, -4.5f, 7.f, 0.8f));
+        TRY(b.tint(ground.value(), 0.55f, 0.58f, 0.66f));
+        auto box = make("physics", "Caixa");
+        if (box.isError()) {
+            return makeUnexpected(box.error());
+        }
+        TRY(b.place(box.value(), 0.f, 8.f, 0.8f, 0.8f));
+        TRY(b.add(box.value(), "eng::scene::Template"));
+        TRY(b.script(box.value(), "caixa.nis", kBoxScript));
+        MAKE(spawner, "empty", "Gerador");
+        TRY(b.script(spawner.value(), "gerador.nis", kBoxSpawnerScript));
+        MAKE(counter, "text", "Contador");
+        TRY(b.text(counter.value(), "TOQUE PARA SOLTAR CAIXAS", 0.4f, true, 0.5f, 0.1f));
+        TRY(camera(12.f, nullptr));
+        TRY(doc.setGameConfig(gameFor(0.10f, 0.11f, 0.16f, "portrait", "tap")));
     } else {
         return makeUnexpected(eng::core::Error{
             eng::core::StatusCode::InvalidArgument,
             "modelo de projeto desconhecido: " + std::string(kind)});
     }
+#undef MAKE
     doc.deselect();
     TRY(doc.saveProject());
     return {};
@@ -484,6 +745,7 @@ Json hierarchyJson(const EditorDocument& doc)
         n["kind"] = scene != nullptr
                         ? entityKind(Inspector::componentsOf(*scene, node.entity))
                         : "empty";
+        n["template"] = scene != nullptr && scene->isTemplated(node.entity);
         list.push_back(std::move(n));
     }
     return list;
@@ -569,6 +831,10 @@ Json settingsJson(const EditorDocument& doc)
         collision.push_back({{"name", c.name}, {"bit", c.bit}});
     }
     out["collisionLayers"] = std::move(collision);
+    const auto& game = doc.gameConfig();
+    out["game"] = {{"background", {game.backgroundR, game.backgroundG, game.backgroundB}},
+                   {"orientation", game.orientation},
+                   {"controls", game.controls}};
     return out;
 }
 
@@ -612,8 +878,11 @@ std::string EditorProtocol::snapshot(std::uint64_t sinceKey)
     Json s;
     s["key"] = key;
     if (doc_.hasProject()) {
+        const auto& game = doc_.gameConfig();
         s["project"] = {{"name", doc_.projectName()},
-                        {"folder", doc_.projectRoot().filename().str()}};
+                        {"folder", doc_.projectRoot().filename().str()},
+                        {"controls", game.controls},
+                        {"orientation", game.orientation}};
     } else {
         s["project"] = nullptr;
     }
@@ -1087,6 +1356,29 @@ std::string EditorProtocol::call(std::string_view requestJson)
             g.cell = static_cast<float>(num(req, "cell", g.cell));
             g.majorEvery = static_cast<int>(num(req, "majorEvery", g.majorEvery));
             reply = fromResult(doc.setGridConfig(g));
+        } else if (op == "settings.game") {
+            eng::project::GameConfig game = doc.gameConfig();
+            if (const Json* bg = arg(req, "background");
+                bg != nullptr && bg->is_array() && bg->size() == 3) {
+                float* channels[] = {&game.backgroundR, &game.backgroundG,
+                                     &game.backgroundB};
+                for (std::size_t i = 0; i < 3; ++i) {
+                    if ((*bg)[i].is_number()) {
+                        *channels[i] = (*bg)[i].get<float>();
+                    }
+                }
+            }
+            game.orientation = str(req, "orientation", game.orientation);
+            game.controls = str(req, "controls", game.controls);
+            reply = fromResult(doc.setGameConfig(game));
+        } else if (op == "project.templates") {
+            Json list = Json::array();
+            for (const auto& t : kProjectTemplates) {
+                list.push_back({{"id", t.id},
+                                {"title", t.title},
+                                {"description", t.description}});
+            }
+            reply = ok(std::move(list));
         } else if (op == "settings.physicsDt") {
             reply = fromResult(
                 doc.setPhysicsFixedDt(static_cast<float>(num(req, "dt", 1.0 / 60.0))));

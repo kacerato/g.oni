@@ -194,6 +194,10 @@ public:
     /// Readback do pixel central da surface (RGBA8) — validação visual em
     /// testes. Backend sem readback → `NotSupported` preciso.
     [[nodiscard]] eng::core::Result<void> readCenterPixel(std::uint8_t outRgba[4]);
+    /// Readback da surface inteira (RGBA8, base primeiro) — capturas.
+    [[nodiscard]] eng::core::Result<void> readPixels(std::uint32_t width,
+                                                     std::uint32_t height,
+                                                     std::uint8_t* out);
 
 private:
     Renderer(std::unique_ptr<RhiBackend> backend, BackendType type, bool hasSurface);

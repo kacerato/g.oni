@@ -508,6 +508,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
     struct ResolvedSprite {
         const EntityQuad* quad{};
         const TextureCache::GpuTexture* gpu{};
+        bool solid{false};  ///< cor sólida (sem imagem): tamanho = escala
     };
     std::vector<ResolvedSprite> resolvedSprites{};
     resolvedSprites.reserve(quads.size());
@@ -517,7 +518,15 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         if (!quad.textureAsset.empty() && assets != nullptr && textures != nullptr) {
             if (const auto* gpu = textures->acquire(*assets, *renderer_,
                                                     quad.textureAsset)) {
-                resolvedSprites.push_back({&quad, gpu});
+                resolvedSprites.push_back({&quad, gpu, false});
+                continue;
+            }
+        }
+        // Sprite sem imagem = retângulo de cor sólida (o tint é a cor) —
+        // passa pelo pipeline de sprites para respeitar a ordem de desenho.
+        if (quad.isSprite && quad.textureAsset.empty() && textures != nullptr) {
+            if (const auto* gpu = textures->acquireSolid(*renderer_)) {
+                resolvedSprites.push_back({&quad, gpu, true});
                 continue;
             }
         }
@@ -597,7 +606,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
     };
     const eng::project::GridConfig& gridConf =
         grid != nullptr ? *grid : kDefaultGridConfig;
-    if (gridConf.visible) {
+    if (gridConf.visible && !playMode) {
         const float zoom = viewport.effectiveCamera().zoom;  // P0-5
         const eng::project::GridLod lod =
             eng::project::computeGridLod(gridConf, zoom);
@@ -675,9 +684,8 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         // (a vista girada gira o que se vê — bordas giram junto).
         const auto [mcx, mcy] = w2sPair(quad.worldX, quad.worldY);
         const float markerRot = quad.rotation + viewRot;
-        if (playMode) {
-            pushQuadPx(frameVertices_, mapper, mcx, mcy, halfWPx + 4.f,
-                       halfHPx + 4.f, markerRot, 0.10f, 0.75f, 0.35f);
+        if (playMode || quad.textPixel) {
+            return;  // o jogo não mostra marcas do editor
         }
         if (quad.selected) {
             pushQuadPx(frameVertices_, mapper, mcx, mcy, halfWPx + 2.f,
@@ -693,44 +701,16 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         const float halfHPx = std::max(quad.sizeY * zoom,
                                        Viewport::kMinQuadPixels) * 0.5f;
 
-        pushEntityMarkers(quad, halfWPx, halfHPx);
-
-        // PLACEHOLDER de sprite: SpriteData SEM textura vira
-        // xadrez magenta/escuro (convenção clássica "sem textura"),
-        // CLARAMENTE identificado — não é sprite renderizado nem o hue
-        // de entidade crua. Entidades sem SpriteData seguem hue.
+        if (!quad.isSprite && playMode) {
+            continue;  // objetos sem sprite (câmera, vazios) não aparecem no jogo
+        }
+        // Sprite sem imagem (sem cache de texturas): cor sólida do tint.
         if (quad.isSprite) {
-            constexpr int kChecker = 4;  // células por eixo
-            constexpr float kChessR = 0.55f, kChessG = 0.22f, kChessB = 0.55f;
-            constexpr float kDarkR = 0.13f, kDarkG = 0.13f, kDarkB = 0.13f;
-            // Base escura PRIMEIRO (painter: por baixo), xadrez por cima.
-            pushQuadPx(frameVertices_, mapper, w2sX(quad.worldX),
-                       w2sY(quad.worldY), halfWPx, halfHPx, quad.rotation,
-                       kDarkR, kDarkG, kDarkB);
-            const float cellW = halfWPx * 2.f / kChecker;
-            const float cellH = halfHPx * 2.f / kChecker;
-            const float cosR = std::cos(quad.rotation);
-            const float sinR = std::sin(quad.rotation);
-            const auto [chkX, chkY] = w2sPair(quad.worldX, quad.worldY);
-            const float centerPxX = chkX;
-            const float centerPxY = chkY;
-            for (int iy = 0; iy < kChecker; ++iy) {
-                for (int ix = 0; ix < kChecker; ++ix) {
-                    if (((ix + iy) & 1) == 0) {
-                        continue;  // célula escura já é o fundo
-                    }
-                    const float lx =
-                        -halfWPx + cellW * (static_cast<float>(ix) + 0.5f);
-                    const float ly =
-                        -halfHPx + cellH * (static_cast<float>(iy) + 0.5f);
-                    // Mesma projeção do quad base (y negado — N3/N4).
-                    pushQuadPx(frameVertices_, mapper,
-                               centerPxX + lx * cosR - ly * sinR,
-                               centerPxY - (lx * sinR + ly * cosR),
-                               cellW * 0.5f, cellH * 0.5f, quad.rotation,
-                               kChessR, kChessG, kChessB);
-                }
-            }
+            pushEntityMarkers(quad, halfWPx, halfHPx);
+            const auto [scx, scy] = w2sPair(quad.worldX, quad.worldY);
+            pushQuadPx(frameVertices_, mapper, scx, scy, halfWPx, halfHPx,
+                       quad.rotation + viewRot, quad.tintR, quad.tintG,
+                       quad.tintB);
             continue;
         }
 
@@ -739,9 +719,16 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         float b = 0.f;
         hsvToRgb(quad.tint, r, g, b);
 
+        // Objeto sem sprite (câmera, gerador, texto…): marcador pequeno de
+        // tamanho fixo em tela — não confunde com um bloco da cena.
+        const float markerPx = std::min(std::min(halfWPx, halfHPx), 9.f);
+        pushEntityMarkers(quad, markerPx + 3.f, markerPx + 3.f);
         const auto [ccx, ccy] = w2sPair(quad.worldX, quad.worldY);
-        pushQuadPx(frameVertices_, mapper, ccx, ccy, halfWPx, halfHPx,
-                   quad.rotation + viewRot, r, g, b);
+        pushQuadPx(frameVertices_, mapper, ccx, ccy, markerPx + 2.f,
+                   markerPx + 2.f, 0.785398f, kViewportBgR, kViewportBgG,
+                   kViewportBgB);
+        pushQuadPx(frameVertices_, mapper, ccx, ccy, markerPx, markerPx,
+                   0.785398f, r, g, b);
     }
 
     // --- partículas (drift D6 da FASE 10 — auditoria final) ------------------
@@ -774,8 +761,8 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         const float kInflatePx = 1.f;
         const float kHalfThickPx = 0.6f;  // contorno de 1.2 px
         for (const EntityQuad& quad : quads) {
-            if (!quad.hasCollider) {
-                continue;
+            if (!quad.hasCollider || playMode) {
+                continue;  // contornos são ferramenta de edição
             }
             const float r =
                 quad.colliderTrigger ? kTriggerR : kSolidR;
@@ -841,7 +828,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
         const float kOffR = 0.30f, kOffG = 0.32f, kOffB = 0.36f;
         const float kHalfThickPx = 0.6f;  // 1.2 px constantes
         for (const EntityQuad& quad : quads) {
-            if (!quad.hasCamera) {
+            if (!quad.hasCamera || playMode) {
                 continue;
             }
             const float r = quad.cameraActive ? kCamR : kOffR;
@@ -1014,10 +1001,14 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
             static_cast<float>(sprite.gpu->width) * (quad.u1 - quad.u0);
         const float regionPy =
             static_cast<float>(sprite.gpu->height) * (quad.v1 - quad.v0);
-        const float worldW = std::max(quad.sizeX * regionPx / quad.spritePpu,
-                                      Viewport::kMinQuadPixels / zoom);
-        const float worldH = std::max(quad.sizeY * regionPy / quad.spritePpu,
-                                      Viewport::kMinQuadPixels / zoom);
+        const float minWorld =
+            quad.textPixel ? 0.f : Viewport::kMinQuadPixels / zoom;
+        const float worldW = std::max(
+            sprite.solid ? quad.sizeX : quad.sizeX * regionPx / quad.spritePpu,
+            minWorld);
+        const float worldH = std::max(
+            sprite.solid ? quad.sizeY : quad.sizeY * regionPy / quad.spritePpu,
+            minWorld);
         // Borda de seleção/play no pipeline de cor (embaixo do sprite).
         // Em PX — half = world*zoom/2 px.
         pushEntityMarkers(quad, worldW * zoom * 0.5f, worldH * zoom * 0.5f);
@@ -1127,7 +1118,7 @@ bool ViewportRenderer::buildAndDraw(const Viewport& viewport,
     eng::rhi::ClearDesc clear;
     clear.color = {0.13f, 0.14f, 0.16f, 1.f};
     if (playMode) {
-        clear.color = {0.10f, 0.13f, 0.11f, 1.f}; // tom levemente esverdeado
+        clear.color = {playBgR_, playBgG_, playBgB_, 1.f};
     }
     bool frameOk = true;
     auto cleared = frame.clear(clear);
