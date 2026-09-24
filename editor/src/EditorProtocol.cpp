@@ -717,7 +717,7 @@ Result<void> applyProjectTemplate(EditorDocument& doc, std::string_view kind)
         MAKE(spawner, "empty", "Gerador");
         TRY(b.script(spawner.value(), "gerador.nis", kBoxSpawnerScript));
         MAKE(counter, "text", "Contador");
-        TRY(b.text(counter.value(), "TOQUE PARA SOLTAR CAIXAS", 0.4f, true, 0.5f, 0.1f));
+        TRY(b.text(counter.value(), "TOQUE PARA\nSOLTAR CAIXAS", 0.4f, true, 0.5f, 0.1f));
         TRY(camera(12.f, nullptr));
         TRY(doc.setGameConfig(gameFor(0.10f, 0.11f, 0.16f, "portrait", "tap")));
     } else {

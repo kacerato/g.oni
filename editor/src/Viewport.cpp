@@ -438,7 +438,7 @@ void Viewport::appendTextQuads(std::vector<EntityQuad>& quads,
         return;
     }
     // Fonte 5×7: avanço de 6 colunas, linha de 9 (7 + espaço).
-    const float px = text.size / 7.f;
+    float px = text.size / 7.f;
     float originX = worldX;
     float originY = worldY;
     if (text.screenSpace) {
@@ -466,6 +466,21 @@ void Viewport::appendTextQuads(std::vector<EntityQuad>& quads,
                 break;
             }
             start = nl + 1;
+        }
+    }
+    // Texto preso à tela nunca sai pelas bordas: em telas mais estreitas
+    // (ou frases longas) a letra encolhe até caber em 92% da largura.
+    if (text.screenSpace) {
+        const float available =
+            textFrame_.valid ? 2.f * textFrame_.halfW
+                             : std::abs(screenToWorldX(screenW_) - screenToWorldX(0.f));
+        std::size_t longest = 0;
+        for (const std::string_view line : lines) {
+            longest = std::max(longest, line.size());
+        }
+        const float widest = longest == 0 ? 0.f : (static_cast<float>(longest) * 6.f - 1.f) * px;
+        if (available > 0.f && widest > available * 0.92f) {
+            px *= available * 0.92f / widest;
         }
     }
     const float lineH = 9.f * px;

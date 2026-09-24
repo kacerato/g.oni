@@ -312,6 +312,21 @@ public:
     [[nodiscard]] std::size_t quadCount(
         const std::vector<EntityQuad>& quads) const noexcept;
 
+    /// Retângulo (mundo) que a câmera de jogo mostra, calculado no último
+    /// buildQuads em edição. false quando a cena não tem câmera ativa.
+    [[nodiscard]] bool gameCameraFrame(float& minX, float& minY, float& maxX,
+                                       float& maxY) const noexcept
+    {
+        if (!textFrame_.valid) {
+            return false;
+        }
+        minX = textFrame_.cx - textFrame_.halfW;
+        maxX = textFrame_.cx + textFrame_.halfW;
+        minY = textFrame_.cy - textFrame_.halfH;
+        maxY = textFrame_.cy + textFrame_.halfH;
+        return true;
+    }
+
 private:
     void appendTextQuads(std::vector<EntityQuad>& quads, eng::ecs::Entity node,
                          const TextData& text, float worldX,

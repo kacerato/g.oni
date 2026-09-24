@@ -657,3 +657,55 @@ TEST_CASE("protocol: todo campo de todo componente edita, relê e sobrevive ao "
     INFO(report);
     CHECK(failures.empty());
 }
+
+TEST_CASE("protocol: enquadrar sem seleção mostra o quadro da câmera do jogo; "
+          "texto preso à tela cabe na largura",
+          "[protocol][fit]")
+{
+    Fixture f;
+    f.ok({{"op", "project.new"}, {"name", "Enquadrar"}, {"template", "boxes"}});
+    auto& vp = f.doc->viewport();
+    vp.setScreenSize(360.f, 760.f);
+    f.ok({{"op", "entity.select"}, {"id", 0}});
+    f.ok({{"op", "viewport.fit"}});
+
+    // Câmera do exemplo mostra 12 unidades de altura; o enquadramento deixa
+    // uma folga pequena, bem diferente do AABB do chão (60 de largura).
+    const auto& cam = vp.camera();
+    const float visibleH = 760.f / cam.zoom;
+    CHECK(visibleH > 12.f);
+    CHECK(visibleH < 14.f);
+
+    // O aviso do exemplo (texto fixo na tela) fica dentro do quadro.
+    const auto quads = vp.buildQuads(*f.doc->sceneInFocus(), std::nullopt);
+    float fx0 = 0.f, fy0 = 0.f, fx1 = 0.f, fy1 = 0.f;
+    REQUIRE(vp.gameCameraFrame(fx0, fy0, fx1, fy1));
+    int pixels = 0;
+    for (const auto& q : quads) {
+        if (!q.textPixel) {
+            continue;
+        }
+        ++pixels;
+        CHECK(q.worldX > fx0);
+        CHECK(q.worldX < fx1);
+    }
+    CHECK(pixels > 0);
+
+    // Frase comprida numa tela estreita também encolhe para caber.
+    const Json id = f.ok({{"op", "entity.create"}, {"template", "text"}});
+    f.ok({{"op", "component.set"}, {"id", id}, {"component", "eng::editor::TextData"},
+          {"path", "text"}, {"value", "UMA FRASE BEM COMPRIDA QUE NAO CABE"}});
+    f.ok({{"op", "component.set"}, {"id", id}, {"component", "eng::editor::TextData"},
+          {"path", "screenSpace"}, {"value", "true"}});
+    f.ok({{"op", "component.set"}, {"id", id}, {"component", "eng::editor::TextData"},
+          {"path", "size"}, {"value", "1.5"}});
+    vp.setScreenSize(300.f, 760.f);
+    const auto narrow = vp.buildQuads(*f.doc->sceneInFocus(), std::nullopt);
+    REQUIRE(vp.gameCameraFrame(fx0, fy0, fx1, fy1));
+    for (const auto& q : narrow) {
+        if (q.textPixel) {
+            CHECK(q.worldX > fx0);
+            CHECK(q.worldX < fx1);
+        }
+    }
+}

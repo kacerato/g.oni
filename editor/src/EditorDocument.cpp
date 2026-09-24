@@ -4306,6 +4306,17 @@ void EditorDocument::viewportFit(TextureCache* textures)
             maxY = std::max(maxY, quad.worldY + ey);
         }
     }
+    // Sem seleção: enquadra o que o jogador vai ver (quadro da câmera de
+    // jogo). O AABB da cena inteira ficava minúsculo com um chão longo.
+    bool cameraFrame = false;
+    if (!selection_.has_value()) {
+        float fx0 = 0.f, fy0 = 0.f, fx1 = 0.f, fy1 = 0.f;
+        if (viewport_.gameCameraFrame(fx0, fy0, fx1, fy1)) {
+            minX = fx0; minY = fy0; maxX = fx1; maxY = fy1;
+            any = true;
+            cameraFrame = true;
+        }
+    }
     auto& cam = viewport_.camera();
     if (!any) {
         // Cena vazia: reset honesto (origem, zoom de fábrica).
@@ -4315,9 +4326,11 @@ void EditorDocument::viewportFit(TextureCache* textures)
         ++selectionRevision_;
         return;
     }
-    // Margem de 25% para o conteúdo respirar (não colado nas arestas).
-    const float halfW = std::max((maxX - minX) * 0.5f * 1.25f, 0.5f);
-    const float halfH = std::max((maxY - minY) * 0.5f * 1.25f, 0.5f);
+    // Margem para o conteúdo respirar (não colado nas arestas); o quadro
+    // da câmera só precisa de uma folga para a moldura aparecer.
+    const float margin = cameraFrame ? 1.08f : 1.25f;
+    const float halfW = std::max((maxX - minX) * 0.5f * margin, 0.5f);
+    const float halfH = std::max((maxY - minY) * 0.5f * margin, 0.5f);
     const float screenW = viewport_.screenWidth();
     const float screenH = viewport_.screenHeight();
     const float zoom = std::min(screenW / (2.f * halfW),
